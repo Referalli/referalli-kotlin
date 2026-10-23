@@ -90,7 +90,7 @@ class UrlConnectionTrackerTransport(
             connection.connectTimeout = connectTimeoutMs
             connection.readTimeout = readTimeoutMs
             connection.useCaches = false
-            request.headers.forEach { (k, v) -> connection.setRequestProperty(k, v) }
+            for ((k, v) in request.headers) connection.setRequestProperty(k, v)
             if (request.body != null) {
                 connection.doOutput = true
                 connection.outputStream.use { it.write(request.body.toByteArray(Charsets.UTF_8)) }
