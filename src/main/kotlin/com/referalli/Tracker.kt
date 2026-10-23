@@ -194,7 +194,7 @@ class ReferalliTracker @JvmOverloads constructor(
         }
 
     /** The stored referral, if one was captured. Does not hit the network. */
-    val referral: ReferalliReferral?
+    val storedReferral: ReferalliReferral?
         get() = synchronized(stateLock) { loadReferral() }
 
     // -- Links ---------------------------------------------------------------
@@ -242,9 +242,9 @@ class ReferalliTracker @JvmOverloads constructor(
      * null and the lookup is retried on the next call.
      */
     fun getReferral(): ReferalliReferral? {
-        referral?.let { return it }
+        storedReferral?.let { return it }
         synchronized(resolveLock) {
-            referral?.let { return it }
+            storedReferral?.let { return it }
             if (firstOpenDone()) return null
             if (!freshInstall()) {
                 markFirstOpen()
@@ -268,9 +268,9 @@ class ReferalliTracker @JvmOverloads constructor(
 
     /** Runs the deferred resolver once per install (call it yourself when [deferredResolution] is off). */
     fun resolveDeferred(): ReferalliReferral? {
-        referral?.let { return it }
+        storedReferral?.let { return it }
         synchronized(resolveLock) {
-            referral?.let { return it }
+            storedReferral?.let { return it }
             if (firstOpenDone()) return null
             return resolveDeferredLocked()
         }
