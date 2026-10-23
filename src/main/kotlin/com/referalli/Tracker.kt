@@ -259,7 +259,7 @@ class ReferalliTracker @JvmOverloads constructor(
                     storage.put(FIRST_OPEN_KEY, "1")
                 }
                 runCatching { reportVisit(fromStore) }
-                return referral
+                return storedReferral
             }
             if (!deferredResolution) return null
             return resolveDeferredLocked()
