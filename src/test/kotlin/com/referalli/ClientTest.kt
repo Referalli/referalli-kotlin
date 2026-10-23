@@ -91,7 +91,13 @@ class ClientTest {
             first.getValue("now").long(),
         )
         assertEquals(WebhookTopic.REFERRAL_CREATED, event.topic)
-        assertIs<WebhookPayload.ReferralCreated>(event.payload)
+        // The shared vector's data is partial (only partnerId), so it decodes to the Unknown fallback.
+        assertIs<WebhookPayload.Unknown>(event.payload)
+        // A complete referral.created payload decodes to its typed class.
+        val full = JsonValue.parse(
+            """{"referralId":"ref_1","programId":"prg_1","partnerId":"ptr_1","customerRef":"cus_1","status":"pending","matchedVia":"link"}""",
+        )
+        assertIs<WebhookPayload.ReferralCreated>(WebhookPayload.decode("referral.created", full))
         assertFailsWith<WebhookVerificationException> {
             ReferalliWebhook.constructEvent(first.getValue("body").string(), emptyMap(), listOf("whsec_x"))
         }
