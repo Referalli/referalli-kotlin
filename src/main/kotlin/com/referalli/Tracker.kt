@@ -1,5 +1,5 @@
 // Referalli app attribution for Kotlin/JVM and Android (stdlib + java.net only,
-// no java.net.http, so it runs on Android minSdk 21).
+// only HttpURLConnection, so it runs on Android minSdk 21).
 //
 //   Referalli.configure(publishableKey = "tk_…", programId = "prg_…", storage = prefsStorage)
 //   Referalli.handleDeepLink(url)                     // app/universal link opened the app
