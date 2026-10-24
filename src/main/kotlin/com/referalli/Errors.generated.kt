@@ -23,6 +23,10 @@ class AuthenticationError(status: Int, code: String, apiMessage: String, request
 class StepUpRequiredError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
 
+/** `reauth_required` (HTTP 401). */
+class ReauthRequiredError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
 /** `payment_required` (HTTP 402). */
 class PaymentRequiredError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
@@ -114,6 +118,7 @@ internal fun apiException(status: Int, code: String, apiMessage: String, request
         "bad_request" -> BadRequestError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "unauthorized" -> AuthenticationError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "step_up_required" -> StepUpRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "reauth_required" -> ReauthRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "payment_required" -> PaymentRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "forbidden" -> PermissionDeniedError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "webhooks_disabled" -> WebhooksDisabledError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)

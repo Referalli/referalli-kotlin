@@ -1037,6 +1037,32 @@ data class CommissionRule(
     }
 }
 
+data class BillingFilter(
+    val metadata: Map<String, String>? = null,
+    val productIds: List<String>? = null,
+    val priceIds: List<String>? = null,
+    val skus: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@BillingFilter.metadata != null) put("metadata", (this@BillingFilter.metadata?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@BillingFilter.productIds != null) put("productIds", (this@BillingFilter.productIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@BillingFilter.priceIds != null) put("priceIds", (this@BillingFilter.priceIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@BillingFilter.skus != null) put("skus", (this@BillingFilter.skus?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): BillingFilter {
+            val o = json.obj()
+            return BillingFilter(
+                metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                productIds = o["productIds"]?.orNull()?.let { it.array().map { it.string() } },
+                priceIds = o["priceIds"]?.orNull()?.let { it.array().map { it.string() } },
+                skus = o["skus"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
 data class ValueMapping(
     val cash: String? = null,
     val creditApplied: String? = null,
@@ -1327,6 +1353,7 @@ data class BillingConnection(
     val needsCredentials: Boolean,
     val hasCredentials: Boolean,
     val valueMapping: ValueMapping? = null,
+    val filter: BillingFilter? = null,
     val rotation: BillingConnectionRotation,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -1339,6 +1366,7 @@ data class BillingConnection(
         put("needsCredentials", JsonValue.Bool(this@BillingConnection.needsCredentials))
         put("hasCredentials", JsonValue.Bool(this@BillingConnection.hasCredentials))
         put("valueMapping", (this@BillingConnection.valueMapping?.let { it.toJson() } ?: JsonValue.Null))
+        put("filter", (this@BillingConnection.filter?.let { it.toJson() } ?: JsonValue.Null))
         put("rotation", this@BillingConnection.rotation.toJson())
     })
 
@@ -1355,6 +1383,7 @@ data class BillingConnection(
                 needsCredentials = o.field("needsCredentials").bool(),
                 hasCredentials = o.field("hasCredentials").bool(),
                 valueMapping = o.field("valueMapping").orNull()?.let { ValueMapping.fromJson(it) },
+                filter = o.field("filter").orNull()?.let { BillingFilter.fromJson(it) },
                 rotation = BillingConnectionRotation.fromJson(o.field("rotation")),
             )
         }
@@ -1366,12 +1395,14 @@ data class CreatedBillingConnection(
     val provider: String,
     val webhookSecret: String,
     val webhookUrl: String,
+    val filter: BillingFilter? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@CreatedBillingConnection.id))
         put("provider", JsonValue.Str(this@CreatedBillingConnection.provider))
         put("webhookSecret", JsonValue.Str(this@CreatedBillingConnection.webhookSecret))
         put("webhookUrl", JsonValue.Str(this@CreatedBillingConnection.webhookUrl))
+        put("filter", (this@CreatedBillingConnection.filter?.let { it.toJson() } ?: JsonValue.Null))
     })
 
     companion object {
@@ -1382,6 +1413,7 @@ data class CreatedBillingConnection(
                 provider = o.field("provider").string(),
                 webhookSecret = o.field("webhookSecret").string(),
                 webhookUrl = o.field("webhookUrl").string(),
+                filter = o.field("filter").orNull()?.let { BillingFilter.fromJson(it) },
             )
         }
     }
@@ -1398,6 +1430,11 @@ data class BillingEvent(
     val fees: Long,
     val currency: String,
     val occurredAt: String,
+    val connectionId: String? = null,
+    val productRef: String,
+    val status: String,
+    val ignoredReason: String? = null,
+    val catalog: Map<String, List<String>>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@BillingEvent.id))
@@ -1410,6 +1447,11 @@ data class BillingEvent(
         put("fees", JsonValue.Num(this@BillingEvent.fees.toDouble()))
         put("currency", JsonValue.Str(this@BillingEvent.currency))
         put("occurredAt", JsonValue.Str(this@BillingEvent.occurredAt))
+        put("connectionId", (this@BillingEvent.connectionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("productRef", JsonValue.Str(this@BillingEvent.productRef))
+        put("status", JsonValue.Str(this@BillingEvent.status))
+        put("ignoredReason", (this@BillingEvent.ignoredReason?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("catalog", (this@BillingEvent.catalog?.let { JsonValue.Obj(it.mapValues { JsonValue.Arr(it.value.map { JsonValue.Str(it) }) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -1426,6 +1468,127 @@ data class BillingEvent(
                 fees = o.field("fees").long(),
                 currency = o.field("currency").string(),
                 occurredAt = o.field("occurredAt").string(),
+                connectionId = o.field("connectionId").orNull()?.let { it.string() },
+                productRef = o.field("productRef").string(),
+                status = o.field("status").string(),
+                ignoredReason = o.field("ignoredReason").orNull()?.let { it.string() },
+                catalog = o.field("catalog").orNull()?.let { it.obj().mapValues { it.value.array().map { it.string() } } },
+            )
+        }
+    }
+}
+
+data class InternalCustomer(
+    val customerRef: String,
+    val note: String,
+    val createdAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("customerRef", JsonValue.Str(this@InternalCustomer.customerRef))
+        put("note", JsonValue.Str(this@InternalCustomer.note))
+        put("createdAt", JsonValue.Str(this@InternalCustomer.createdAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): InternalCustomer {
+            val o = json.obj()
+            return InternalCustomer(
+                customerRef = o.field("customerRef").string(),
+                note = o.field("note").string(),
+                createdAt = o.field("createdAt").string(),
+            )
+        }
+    }
+}
+
+data class IdentityProviderSampleHookOption1(
+    val language: String,
+    val filename: String,
+    val code: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("language", JsonValue.Str(this@IdentityProviderSampleHookOption1.language))
+        put("filename", JsonValue.Str(this@IdentityProviderSampleHookOption1.filename))
+        put("code", JsonValue.Str(this@IdentityProviderSampleHookOption1.code))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): IdentityProviderSampleHookOption1 {
+            val o = json.obj()
+            return IdentityProviderSampleHookOption1(
+                language = o.field("language").string(),
+                filename = o.field("filename").string(),
+                code = o.field("code").string(),
+            )
+        }
+    }
+}
+
+data class IdentityProviderMetadataPaths(
+    val anonId: List<String>,
+    val clickId: List<String>,
+    val coupon: List<String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("anonId", JsonValue.Arr(this@IdentityProviderMetadataPaths.anonId.map { JsonValue.Str(it) }))
+        put("clickId", JsonValue.Arr(this@IdentityProviderMetadataPaths.clickId.map { JsonValue.Str(it) }))
+        put("coupon", JsonValue.Arr(this@IdentityProviderMetadataPaths.coupon.map { JsonValue.Str(it) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): IdentityProviderMetadataPaths {
+            val o = json.obj()
+            return IdentityProviderMetadataPaths(
+                anonId = o.field("anonId").array().map { it.string() },
+                clickId = o.field("clickId").array().map { it.string() },
+                coupon = o.field("coupon").array().map { it.string() },
+            )
+        }
+    }
+}
+
+data class IdentityProvider(
+    val id: String,
+    val label: String,
+    val mechanism: String,
+    val status: String,
+    val docsUrl: String,
+    val vendorDocsUrl: String,
+    val secretKind: String,
+    val secretIssuedBy: String,
+    val vendorSteps: List<String>,
+    val sampleHook: IdentityProviderSampleHookOption1? = null,
+    val metadataPaths: IdentityProviderMetadataPaths,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@IdentityProvider.id))
+        put("label", JsonValue.Str(this@IdentityProvider.label))
+        put("mechanism", JsonValue.Str(this@IdentityProvider.mechanism))
+        put("status", JsonValue.Str(this@IdentityProvider.status))
+        put("docsUrl", JsonValue.Str(this@IdentityProvider.docsUrl))
+        put("vendorDocsUrl", JsonValue.Str(this@IdentityProvider.vendorDocsUrl))
+        put("secretKind", JsonValue.Str(this@IdentityProvider.secretKind))
+        put("secretIssuedBy", JsonValue.Str(this@IdentityProvider.secretIssuedBy))
+        put("vendorSteps", JsonValue.Arr(this@IdentityProvider.vendorSteps.map { JsonValue.Str(it) }))
+        put("sampleHook", (this@IdentityProvider.sampleHook?.let { it.toJson() } ?: JsonValue.Null))
+        put("metadataPaths", this@IdentityProvider.metadataPaths.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): IdentityProvider {
+            val o = json.obj()
+            return IdentityProvider(
+                id = o.field("id").string(),
+                label = o.field("label").string(),
+                mechanism = o.field("mechanism").string(),
+                status = o.field("status").string(),
+                docsUrl = o.field("docsUrl").string(),
+                vendorDocsUrl = o.field("vendorDocsUrl").string(),
+                secretKind = o.field("secretKind").string(),
+                secretIssuedBy = o.field("secretIssuedBy").string(),
+                vendorSteps = o.field("vendorSteps").array().map { it.string() },
+                sampleHook = o.field("sampleHook").orNull()?.let { IdentityProviderSampleHookOption1.fromJson(it) },
+                metadataPaths = IdentityProviderMetadataPaths.fromJson(o.field("metadataPaths")),
             )
         }
     }
@@ -1451,6 +1614,29 @@ data class WebhookEndpointRotation(
     }
 }
 
+data class WebhookEndpointLastFailureOption1(
+    val statusCode: Long? = null,
+    val error: String? = null,
+    val at: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("statusCode", (this@WebhookEndpointLastFailureOption1.statusCode?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("error", (this@WebhookEndpointLastFailureOption1.error?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("at", JsonValue.Str(this@WebhookEndpointLastFailureOption1.at))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): WebhookEndpointLastFailureOption1 {
+            val o = json.obj()
+            return WebhookEndpointLastFailureOption1(
+                statusCode = o.field("statusCode").orNull()?.let { it.long() },
+                error = o.field("error").orNull()?.let { it.string() },
+                at = o.field("at").string(),
+            )
+        }
+    }
+}
+
 data class WebhookEndpoint(
     val id: String,
     val url: String,
@@ -1462,6 +1648,11 @@ data class WebhookEndpoint(
     val failingSince: String? = null,
     val disabledAt: String? = null,
     val disabledReason: String? = null,
+    val health: String,
+    val lastSuccessAt: String? = null,
+    val lastFailure: WebhookEndpointLastFailureOption1? = null,
+    val consecutiveFailures: Long,
+    val alertContacts: List<String>,
     val createdAt: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -1475,6 +1666,11 @@ data class WebhookEndpoint(
         put("failingSince", (this@WebhookEndpoint.failingSince?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("disabledAt", (this@WebhookEndpoint.disabledAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("disabledReason", (this@WebhookEndpoint.disabledReason?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("health", JsonValue.Str(this@WebhookEndpoint.health))
+        put("lastSuccessAt", (this@WebhookEndpoint.lastSuccessAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("lastFailure", (this@WebhookEndpoint.lastFailure?.let { it.toJson() } ?: JsonValue.Null))
+        put("consecutiveFailures", JsonValue.Num(this@WebhookEndpoint.consecutiveFailures.toDouble()))
+        put("alertContacts", JsonValue.Arr(this@WebhookEndpoint.alertContacts.map { JsonValue.Str(it) }))
         put("createdAt", JsonValue.Str(this@WebhookEndpoint.createdAt))
     })
 
@@ -1492,7 +1688,44 @@ data class WebhookEndpoint(
                 failingSince = o.field("failingSince").orNull()?.let { it.string() },
                 disabledAt = o.field("disabledAt").orNull()?.let { it.string() },
                 disabledReason = o.field("disabledReason").orNull()?.let { it.string() },
+                health = o.field("health").string(),
+                lastSuccessAt = o.field("lastSuccessAt").orNull()?.let { it.string() },
+                lastFailure = o.field("lastFailure").orNull()?.let { WebhookEndpointLastFailureOption1.fromJson(it) },
+                consecutiveFailures = o.field("consecutiveFailures").long(),
+                alertContacts = o.field("alertContacts").array().map { it.string() },
                 createdAt = o.field("createdAt").string(),
+            )
+        }
+    }
+}
+
+data class HealthCheck(
+    val id: String,
+    val ok: Boolean,
+    val detail: String,
+    val fix: String? = null,
+    val docs: String? = null,
+    val hop: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@HealthCheck.id))
+        put("ok", JsonValue.Bool(this@HealthCheck.ok))
+        put("detail", JsonValue.Str(this@HealthCheck.detail))
+        if (this@HealthCheck.fix != null) put("fix", (this@HealthCheck.fix?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@HealthCheck.docs != null) put("docs", (this@HealthCheck.docs?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@HealthCheck.hop != null) put("hop", (this@HealthCheck.hop?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): HealthCheck {
+            val o = json.obj()
+            return HealthCheck(
+                id = o.field("id").string(),
+                ok = o.field("ok").bool(),
+                detail = o.field("detail").string(),
+                fix = o["fix"]?.orNull()?.let { it.string() },
+                docs = o["docs"]?.orNull()?.let { it.string() },
+                hop = o["hop"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -2341,6 +2574,7 @@ data class CreatedAuthConnection(
     val provider: String,
     val secret: String,
     val webhookUrl: String? = null,
+    val docsUrl: String? = null,
     val metadataKeys: Map<String, String>? = null,
     val programId: String? = null,
     val instanceId: String? = null,
@@ -2355,6 +2589,7 @@ data class CreatedAuthConnection(
         put("provider", JsonValue.Str(this@CreatedAuthConnection.provider))
         put("secret", JsonValue.Str(this@CreatedAuthConnection.secret))
         if (this@CreatedAuthConnection.webhookUrl != null) put("webhookUrl", (this@CreatedAuthConnection.webhookUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@CreatedAuthConnection.docsUrl != null) put("docsUrl", (this@CreatedAuthConnection.docsUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.metadataKeys != null) put("metadataKeys", (this@CreatedAuthConnection.metadataKeys?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.programId != null) put("programId", (this@CreatedAuthConnection.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.instanceId != null) put("instanceId", (this@CreatedAuthConnection.instanceId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -2373,6 +2608,7 @@ data class CreatedAuthConnection(
                 provider = o.field("provider").string(),
                 secret = o.field("secret").string(),
                 webhookUrl = o["webhookUrl"]?.orNull()?.let { it.string() },
+                docsUrl = o["docsUrl"]?.orNull()?.let { it.string() },
                 metadataKeys = o["metadataKeys"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
                 programId = o["programId"]?.orNull()?.let { it.string() },
                 instanceId = o["instanceId"]?.orNull()?.let { it.string() },
@@ -6295,7 +6531,7 @@ data class PrivacyRequestCompletedEvent(
     }
 }
 
-/** `data` of a `webhook_endpoint.disabled` event: Sent to your other active endpoints when one is disabled after every delivery failed for 5 days. */
+/** `data` of a `webhook_endpoint.disabled` event: Sent to your other active endpoints when one is disabled after every delivery failed for 72 hours (or 1000 attempts in a row). */
 data class WebhookEndpointDisabledEventData(
     val endpointId: String,
     val url: String,
@@ -6353,6 +6589,138 @@ data class WebhookEndpointDisabledEvent(
                 livemode = o.field("livemode").bool(),
                 createdAt = o.field("createdAt").string(),
                 data = WebhookEndpointDisabledEventData.fromJson(o.field("data")),
+            )
+        }
+    }
+}
+
+/** `data` of a `webhook_endpoint.failing` event: Sent to your other active endpoints (never the failing one) when an endpoint has failed every delivery for 1 hour, and again at 24 hours. It's disabled at `disablesAt` unless a delivery succeeds first. */
+data class WebhookEndpointFailingEventData(
+    val endpointId: String,
+    val url: String,
+    val stage: String,
+    val failingSince: String,
+    val consecutiveFailures: Long,
+    val lastStatusCode: Long? = null,
+    val sampleError: String? = null,
+    val disablesAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("endpointId", JsonValue.Str(this@WebhookEndpointFailingEventData.endpointId))
+        put("url", JsonValue.Str(this@WebhookEndpointFailingEventData.url))
+        put("stage", JsonValue.Str(this@WebhookEndpointFailingEventData.stage))
+        put("failingSince", JsonValue.Str(this@WebhookEndpointFailingEventData.failingSince))
+        put("consecutiveFailures", JsonValue.Num(this@WebhookEndpointFailingEventData.consecutiveFailures.toDouble()))
+        put("lastStatusCode", (this@WebhookEndpointFailingEventData.lastStatusCode?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("sampleError", (this@WebhookEndpointFailingEventData.sampleError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("disablesAt", JsonValue.Str(this@WebhookEndpointFailingEventData.disablesAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): WebhookEndpointFailingEventData {
+            val o = json.obj()
+            return WebhookEndpointFailingEventData(
+                endpointId = o.field("endpointId").string(),
+                url = o.field("url").string(),
+                stage = o.field("stage").string(),
+                failingSince = o.field("failingSince").string(),
+                consecutiveFailures = o.field("consecutiveFailures").long(),
+                lastStatusCode = o.field("lastStatusCode").orNull()?.let { it.long() },
+                sampleError = o.field("sampleError").orNull()?.let { it.string() },
+                disablesAt = o.field("disablesAt").string(),
+            )
+        }
+    }
+}
+
+/** A webhook endpoint keeps failing: the `webhook_endpoint.failing` delivery body. */
+data class WebhookEndpointFailingEvent(
+    val id: String,
+    val topic: String,
+    val orgId: String,
+    val livemode: Boolean,
+    val createdAt: String,
+    val data: WebhookEndpointFailingEventData,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@WebhookEndpointFailingEvent.id))
+        put("topic", JsonValue.Str(this@WebhookEndpointFailingEvent.topic))
+        put("orgId", JsonValue.Str(this@WebhookEndpointFailingEvent.orgId))
+        put("livemode", JsonValue.Bool(this@WebhookEndpointFailingEvent.livemode))
+        put("createdAt", JsonValue.Str(this@WebhookEndpointFailingEvent.createdAt))
+        put("data", this@WebhookEndpointFailingEvent.data.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): WebhookEndpointFailingEvent {
+            val o = json.obj()
+            return WebhookEndpointFailingEvent(
+                id = o.field("id").string(),
+                topic = o.field("topic").string(),
+                orgId = o.field("orgId").string(),
+                livemode = o.field("livemode").bool(),
+                createdAt = o.field("createdAt").string(),
+                data = WebhookEndpointFailingEventData.fromJson(o.field("data")),
+            )
+        }
+    }
+}
+
+/** `data` of a `webhook_endpoint.recovered` event: Sent to your active endpoints, including the recovered one, when a delivery succeeds after the endpoint was failing. */
+data class WebhookEndpointRecoveredEventData(
+    val endpointId: String,
+    val url: String,
+    val failingSince: String,
+    val downForMs: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("endpointId", JsonValue.Str(this@WebhookEndpointRecoveredEventData.endpointId))
+        put("url", JsonValue.Str(this@WebhookEndpointRecoveredEventData.url))
+        put("failingSince", JsonValue.Str(this@WebhookEndpointRecoveredEventData.failingSince))
+        put("downForMs", JsonValue.Num(this@WebhookEndpointRecoveredEventData.downForMs.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): WebhookEndpointRecoveredEventData {
+            val o = json.obj()
+            return WebhookEndpointRecoveredEventData(
+                endpointId = o.field("endpointId").string(),
+                url = o.field("url").string(),
+                failingSince = o.field("failingSince").string(),
+                downForMs = o.field("downForMs").long(),
+            )
+        }
+    }
+}
+
+/** A failing webhook endpoint recovered: the `webhook_endpoint.recovered` delivery body. */
+data class WebhookEndpointRecoveredEvent(
+    val id: String,
+    val topic: String,
+    val orgId: String,
+    val livemode: Boolean,
+    val createdAt: String,
+    val data: WebhookEndpointRecoveredEventData,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@WebhookEndpointRecoveredEvent.id))
+        put("topic", JsonValue.Str(this@WebhookEndpointRecoveredEvent.topic))
+        put("orgId", JsonValue.Str(this@WebhookEndpointRecoveredEvent.orgId))
+        put("livemode", JsonValue.Bool(this@WebhookEndpointRecoveredEvent.livemode))
+        put("createdAt", JsonValue.Str(this@WebhookEndpointRecoveredEvent.createdAt))
+        put("data", this@WebhookEndpointRecoveredEvent.data.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): WebhookEndpointRecoveredEvent {
+            val o = json.obj()
+            return WebhookEndpointRecoveredEvent(
+                id = o.field("id").string(),
+                topic = o.field("topic").string(),
+                orgId = o.field("orgId").string(),
+                livemode = o.field("livemode").bool(),
+                createdAt = o.field("createdAt").string(),
+                data = WebhookEndpointRecoveredEventData.fromJson(o.field("data")),
             )
         }
     }
@@ -6795,6 +7163,307 @@ data class GetWellKnownAssetlinksJsonResponseValueItem(
 
 typealias GetWellKnownAssetlinksJsonResponse = List<GetWellKnownAssetlinksJsonResponseValueItem>
 
+data class GetWellKnownForgedeckEmbedJsonResponseCheckers(
+    val userAgent: String,
+    val egress: List<String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("userAgent", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseCheckers.userAgent))
+        put("egress", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponseCheckers.egress.map { JsonValue.Str(it) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseCheckers {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseCheckers(
+                userAgent = o.field("userAgent").string(),
+                egress = o.field("egress").array().map { it.string() },
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2(
+    val default: Long,
+    val max: Long,
+    val note: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("default", JsonValue.Num(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2.default.toDouble()))
+        put("max", JsonValue.Num(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2.max.toDouble()))
+        put("note", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2.note))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2 {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2(
+                default = o.field("default").long(),
+                max = o.field("max").long(),
+                note = o.field("note").string(),
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose(
+    val en: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("en", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose.en))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose(
+                en = o.field("en").string(),
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem(
+    val name: String,
+    val type: String,
+    val category: String,
+    val lifetime: String,
+    val purpose: GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose,
+    val legacy: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("name", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.name))
+        put("type", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.type))
+        put("category", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.category))
+        put("lifetime", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.lifetime))
+        put("purpose", this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.purpose.toJson())
+        if (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.legacy != null) put("legacy", (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.legacy?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem(
+                name = o.field("name").string(),
+                type = o.field("type").string(),
+                category = o.field("category").string(),
+                lifetime = o.field("lifetime").string(),
+                purpose = GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose.fromJson(o.field("purpose")),
+                legacy = o["legacy"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet(
+    val script: String,
+    val csp: Map<String, List<String>>,
+    val consentCategory: String,
+    val consentFallbackCategory: String,
+    val consentAdapters: List<String>,
+    val consentDefault: Map<String, JsonValue>? = null,
+    val cookieDays: JsonValue,
+    val storage: List<GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("script", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.script))
+        put("csp", JsonValue.Obj(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.csp.mapValues { JsonValue.Arr(it.value.map { JsonValue.Str(it) }) }))
+        put("consentCategory", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentCategory))
+        put("consentFallbackCategory", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentFallbackCategory))
+        put("consentAdapters", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentAdapters.map { JsonValue.Str(it) }))
+        if (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentDefault != null) put("consentDefault", (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentDefault?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+        put("cookieDays", this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.cookieDays)
+        put("storage", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.storage.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet(
+                script = o.field("script").string(),
+                csp = o.field("csp").obj().mapValues { it.value.array().map { it.string() } },
+                consentCategory = o.field("consentCategory").string(),
+                consentFallbackCategory = o.field("consentFallbackCategory").string(),
+                consentAdapters = o.field("consentAdapters").array().map { it.string() },
+                consentDefault = o["consentDefault"]?.orNull()?.let { it.obj().mapValues { it.value } },
+                cookieDays = o.field("cookieDays"),
+                storage = o.field("storage").array().map { GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose(
+    val en: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("en", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose.en))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose(
+                en = o.field("en").string(),
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem(
+    val name: String,
+    val type: String,
+    val category: String,
+    val lifetime: String,
+    val purpose: GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose,
+    val legacy: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("name", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.name))
+        put("type", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.type))
+        put("category", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.category))
+        put("lifetime", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.lifetime))
+        put("purpose", this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.purpose.toJson())
+        if (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.legacy != null) put("legacy", (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.legacy?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem(
+                name = o.field("name").string(),
+                type = o.field("type").string(),
+                category = o.field("category").string(),
+                lifetime = o.field("lifetime").string(),
+                purpose = GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose.fromJson(o.field("purpose")),
+                legacy = o["legacy"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed(
+    val script: String,
+    val csp: Map<String, List<String>>,
+    val consentCategory: String,
+    val storage: List<GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("script", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.script))
+        put("csp", JsonValue.Obj(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.csp.mapValues { JsonValue.Arr(it.value.map { JsonValue.Str(it) }) }))
+        put("consentCategory", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.consentCategory))
+        put("storage", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.storage.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed(
+                script = o.field("script").string(),
+                csp = o.field("csp").obj().mapValues { it.value.array().map { it.string() } },
+                consentCategory = o.field("consentCategory").string(),
+                storage = o.field("storage").array().map { GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseSurfaces(
+    val trackingSnippet: GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet,
+    val portalEmbed: GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("tracking-snippet", this@GetWellKnownForgedeckEmbedJsonResponseSurfaces.trackingSnippet.toJson())
+        put("portal-embed", this@GetWellKnownForgedeckEmbedJsonResponseSurfaces.portalEmbed.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfaces {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseSurfaces(
+                trackingSnippet = GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.fromJson(o.field("tracking-snippet")),
+                portalEmbed = GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.fromJson(o.field("portal-embed")),
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponseChangesItem(
+    val effective: String,
+    val surface: String,
+    val add: List<String>? = null,
+    val remove: List<String>? = null,
+    val note: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("effective", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.effective))
+        put("surface", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.surface))
+        if (this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.add != null) put("add", (this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.add?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.remove != null) put("remove", (this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.remove?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        put("note", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.note))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseChangesItem {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponseChangesItem(
+                effective = o.field("effective").string(),
+                surface = o.field("surface").string(),
+                add = o["add"]?.orNull()?.let { it.array().map { it.string() } },
+                remove = o["remove"]?.orNull()?.let { it.array().map { it.string() } },
+                note = o.field("note").string(),
+            )
+        }
+    }
+}
+
+data class GetWellKnownForgedeckEmbedJsonResponse(
+    val schema: String,
+    val product: String,
+    val updated: String,
+    val openapi: String,
+    val llms: String,
+    val status: String,
+    val docs: String,
+    val checkers: GetWellKnownForgedeckEmbedJsonResponseCheckers,
+    val org: String? = null,
+    val surfaces: GetWellKnownForgedeckEmbedJsonResponseSurfaces,
+    val changes: List<GetWellKnownForgedeckEmbedJsonResponseChangesItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("schema", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.schema))
+        put("product", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.product))
+        put("updated", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.updated))
+        put("openapi", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.openapi))
+        put("llms", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.llms))
+        put("status", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.status))
+        put("docs", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.docs))
+        put("checkers", this@GetWellKnownForgedeckEmbedJsonResponse.checkers.toJson())
+        if (this@GetWellKnownForgedeckEmbedJsonResponse.org != null) put("org", (this@GetWellKnownForgedeckEmbedJsonResponse.org?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("surfaces", this@GetWellKnownForgedeckEmbedJsonResponse.surfaces.toJson())
+        put("changes", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponse.changes.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponse {
+            val o = json.obj()
+            return GetWellKnownForgedeckEmbedJsonResponse(
+                schema = o.field("schema").string(),
+                product = o.field("product").string(),
+                updated = o.field("updated").string(),
+                openapi = o.field("openapi").string(),
+                llms = o.field("llms").string(),
+                status = o.field("status").string(),
+                docs = o.field("docs").string(),
+                checkers = GetWellKnownForgedeckEmbedJsonResponseCheckers.fromJson(o.field("checkers")),
+                org = o["org"]?.orNull()?.let { it.string() },
+                surfaces = GetWellKnownForgedeckEmbedJsonResponseSurfaces.fromJson(o.field("surfaces")),
+                changes = o.field("changes").array().map { GetWellKnownForgedeckEmbedJsonResponseChangesItem.fromJson(it) },
+            )
+        }
+    }
+}
+
 data class PostAgentsRegisterResponse(
     val agentId: String,
     val wallet: String,
@@ -6982,6 +7651,23 @@ data class GetAuthProvidersResponse(
     }
 }
 
+data class PostAuthBackchannelLogoutResponse(
+    val ok: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@PostAuthBackchannelLogoutResponse.ok))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthBackchannelLogoutResponse {
+            val o = json.obj()
+            return PostAuthBackchannelLogoutResponse(
+                ok = o.field("ok").bool(),
+            )
+        }
+    }
+}
+
 data class PostAuthLogoutResponse(
     val ok: Boolean,
     val logoutUrl: String? = null,
@@ -7156,6 +7842,180 @@ data class GetMeResponse(
     }
 }
 
+data class GetPortalAuthCurrentResponse(
+    val adapter: String,
+    val name: String? = null,
+    val startUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@GetPortalAuthCurrentResponse.adapter))
+        put("name", (this@GetPortalAuthCurrentResponse.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("startUrl", (this@GetPortalAuthCurrentResponse.startUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalAuthCurrentResponse {
+            val o = json.obj()
+            return GetPortalAuthCurrentResponse(
+                adapter = o.field("adapter").string(),
+                name = o.field("name").orNull()?.let { it.string() },
+                startUrl = o.field("startUrl").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetOrgPortalAuthResponseAdaptersItem(
+    val id: String,
+    val label: String,
+    val status: String,
+    val docsUrl: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetOrgPortalAuthResponseAdaptersItem.id))
+        put("label", JsonValue.Str(this@GetOrgPortalAuthResponseAdaptersItem.label))
+        put("status", JsonValue.Str(this@GetOrgPortalAuthResponseAdaptersItem.status))
+        put("docsUrl", JsonValue.Str(this@GetOrgPortalAuthResponseAdaptersItem.docsUrl))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgPortalAuthResponseAdaptersItem {
+            val o = json.obj()
+            return GetOrgPortalAuthResponseAdaptersItem(
+                id = o.field("id").string(),
+                label = o.field("label").string(),
+                status = o.field("status").string(),
+                docsUrl = o.field("docsUrl").string(),
+            )
+        }
+    }
+}
+
+data class GetOrgPortalAuthResponse(
+    val adapter: String,
+    val config: Map<String, JsonValue>,
+    val adapters: List<GetOrgPortalAuthResponseAdaptersItem>,
+    val jwtAudience: String,
+    val jwtSignInUrl: String,
+    val redirectUri: String,
+    val hasSecret: Boolean,
+    val status: String,
+    val lastOkAt: String? = null,
+    val lastError: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@GetOrgPortalAuthResponse.adapter))
+        put("config", JsonValue.Obj(this@GetOrgPortalAuthResponse.config.mapValues { it.value }))
+        put("adapters", JsonValue.Arr(this@GetOrgPortalAuthResponse.adapters.map { it.toJson() }))
+        put("jwtAudience", JsonValue.Str(this@GetOrgPortalAuthResponse.jwtAudience))
+        put("jwtSignInUrl", JsonValue.Str(this@GetOrgPortalAuthResponse.jwtSignInUrl))
+        put("redirectUri", JsonValue.Str(this@GetOrgPortalAuthResponse.redirectUri))
+        put("hasSecret", JsonValue.Bool(this@GetOrgPortalAuthResponse.hasSecret))
+        put("status", JsonValue.Str(this@GetOrgPortalAuthResponse.status))
+        put("lastOkAt", (this@GetOrgPortalAuthResponse.lastOkAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("lastError", (this@GetOrgPortalAuthResponse.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgPortalAuthResponse {
+            val o = json.obj()
+            return GetOrgPortalAuthResponse(
+                adapter = o.field("adapter").string(),
+                config = o.field("config").obj().mapValues { it.value },
+                adapters = o.field("adapters").array().map { GetOrgPortalAuthResponseAdaptersItem.fromJson(it) },
+                jwtAudience = o.field("jwtAudience").string(),
+                jwtSignInUrl = o.field("jwtSignInUrl").string(),
+                redirectUri = o.field("redirectUri").string(),
+                hasSecret = o.field("hasSecret").bool(),
+                status = o.field("status").string(),
+                lastOkAt = o.field("lastOkAt").orNull()?.let { it.string() },
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PutOrgPortalAuthResponseAdaptersItem(
+    val id: String,
+    val label: String,
+    val status: String,
+    val docsUrl: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PutOrgPortalAuthResponseAdaptersItem.id))
+        put("label", JsonValue.Str(this@PutOrgPortalAuthResponseAdaptersItem.label))
+        put("status", JsonValue.Str(this@PutOrgPortalAuthResponseAdaptersItem.status))
+        put("docsUrl", JsonValue.Str(this@PutOrgPortalAuthResponseAdaptersItem.docsUrl))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgPortalAuthResponseAdaptersItem {
+            val o = json.obj()
+            return PutOrgPortalAuthResponseAdaptersItem(
+                id = o.field("id").string(),
+                label = o.field("label").string(),
+                status = o.field("status").string(),
+                docsUrl = o.field("docsUrl").string(),
+            )
+        }
+    }
+}
+
+data class PutOrgPortalAuthResponse(
+    val adapter: String,
+    val config: Map<String, JsonValue>,
+    val adapters: List<PutOrgPortalAuthResponseAdaptersItem>,
+    val jwtAudience: String,
+    val jwtSignInUrl: String,
+    val redirectUri: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgPortalAuthResponse.adapter))
+        put("config", JsonValue.Obj(this@PutOrgPortalAuthResponse.config.mapValues { it.value }))
+        put("adapters", JsonValue.Arr(this@PutOrgPortalAuthResponse.adapters.map { it.toJson() }))
+        put("jwtAudience", JsonValue.Str(this@PutOrgPortalAuthResponse.jwtAudience))
+        put("jwtSignInUrl", JsonValue.Str(this@PutOrgPortalAuthResponse.jwtSignInUrl))
+        put("redirectUri", JsonValue.Str(this@PutOrgPortalAuthResponse.redirectUri))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgPortalAuthResponse {
+            val o = json.obj()
+            return PutOrgPortalAuthResponse(
+                adapter = o.field("adapter").string(),
+                config = o.field("config").obj().mapValues { it.value },
+                adapters = o.field("adapters").array().map { PutOrgPortalAuthResponseAdaptersItem.fromJson(it) },
+                jwtAudience = o.field("jwtAudience").string(),
+                jwtSignInUrl = o.field("jwtSignInUrl").string(),
+                redirectUri = o.field("redirectUri").string(),
+            )
+        }
+    }
+}
+
+data class PostOrgPortalAuthTestResponse(
+    val ok: Boolean,
+    val detail: String,
+    val fix: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@PostOrgPortalAuthTestResponse.ok))
+        put("detail", JsonValue.Str(this@PostOrgPortalAuthTestResponse.detail))
+        if (this@PostOrgPortalAuthTestResponse.fix != null) put("fix", (this@PostOrgPortalAuthTestResponse.fix?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOrgPortalAuthTestResponse {
+            val o = json.obj()
+            return PostOrgPortalAuthTestResponse(
+                ok = o.field("ok").bool(),
+                detail = o.field("detail").string(),
+                fix = o["fix"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
 data class GetHostsCurrentResponseValueOption1Branding(
     val logoUrl: String,
     val theme: Map<String, String>,
@@ -7196,12 +8056,150 @@ data class GetHostsCurrentResponseValueOption1ProgramsItem(
     }
 }
 
+data class GetHostsCurrentResponseValueOption1ConsentTagsItem(
+    val tag: String,
+    val attrs: Map<String, JsonValue>,
+    val inline: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("tag", JsonValue.Str(this@GetHostsCurrentResponseValueOption1ConsentTagsItem.tag))
+        put("attrs", JsonValue.Obj(this@GetHostsCurrentResponseValueOption1ConsentTagsItem.attrs.mapValues { it.value }))
+        if (this@GetHostsCurrentResponseValueOption1ConsentTagsItem.inline != null) put("inline", (this@GetHostsCurrentResponseValueOption1ConsentTagsItem.inline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetHostsCurrentResponseValueOption1ConsentTagsItem {
+            val o = json.obj()
+            return GetHostsCurrentResponseValueOption1ConsentTagsItem(
+                tag = o.field("tag").string(),
+                attrs = o.field("attrs").obj().mapValues { it.value },
+                inline = o["inline"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1(
+    val call: String? = null,
+    val attrs: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1.call != null) put("call", (this@GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1.call?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1.attrs != null) put("attrs", (this@GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1.attrs?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1 {
+            val o = json.obj()
+            return GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1(
+                call = o["call"]?.orNull()?.let { it.string() },
+                attrs = o["attrs"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetHostsCurrentResponseValueOption1ConsentBuiltin(
+    val policyUrl: String,
+    val text: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("policyUrl", JsonValue.Str(this@GetHostsCurrentResponseValueOption1ConsentBuiltin.policyUrl))
+        if (this@GetHostsCurrentResponseValueOption1ConsentBuiltin.text != null) put("text", (this@GetHostsCurrentResponseValueOption1ConsentBuiltin.text?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetHostsCurrentResponseValueOption1ConsentBuiltin {
+            val o = json.obj()
+            return GetHostsCurrentResponseValueOption1ConsentBuiltin(
+                policyUrl = o.field("policyUrl").string(),
+                text = o["text"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetHostsCurrentResponseValueOption1Consent(
+    val mode: String,
+    val provider: String,
+    val tags: List<GetHostsCurrentResponseValueOption1ConsentTagsItem>,
+    val settingsLink: GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1? = null,
+    val builtin: GetHostsCurrentResponseValueOption1ConsentBuiltin? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("mode", JsonValue.Str(this@GetHostsCurrentResponseValueOption1Consent.mode))
+        put("provider", JsonValue.Str(this@GetHostsCurrentResponseValueOption1Consent.provider))
+        put("tags", JsonValue.Arr(this@GetHostsCurrentResponseValueOption1Consent.tags.map { it.toJson() }))
+        put("settingsLink", (this@GetHostsCurrentResponseValueOption1Consent.settingsLink?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetHostsCurrentResponseValueOption1Consent.builtin != null) put("builtin", (this@GetHostsCurrentResponseValueOption1Consent.builtin?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetHostsCurrentResponseValueOption1Consent {
+            val o = json.obj()
+            return GetHostsCurrentResponseValueOption1Consent(
+                mode = o.field("mode").string(),
+                provider = o.field("provider").string(),
+                tags = o.field("tags").array().map { GetHostsCurrentResponseValueOption1ConsentTagsItem.fromJson(it) },
+                settingsLink = o.field("settingsLink").orNull()?.let { GetHostsCurrentResponseValueOption1ConsentSettingsLinkOption1.fromJson(it) },
+                builtin = o["builtin"]?.orNull()?.let { GetHostsCurrentResponseValueOption1ConsentBuiltin.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetHostsCurrentResponseValueOption1ChatOption1TagsItem(
+    val tag: String,
+    val attrs: Map<String, JsonValue>,
+    val inline: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("tag", JsonValue.Str(this@GetHostsCurrentResponseValueOption1ChatOption1TagsItem.tag))
+        put("attrs", JsonValue.Obj(this@GetHostsCurrentResponseValueOption1ChatOption1TagsItem.attrs.mapValues { it.value }))
+        if (this@GetHostsCurrentResponseValueOption1ChatOption1TagsItem.inline != null) put("inline", (this@GetHostsCurrentResponseValueOption1ChatOption1TagsItem.inline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetHostsCurrentResponseValueOption1ChatOption1TagsItem {
+            val o = json.obj()
+            return GetHostsCurrentResponseValueOption1ChatOption1TagsItem(
+                tag = o.field("tag").string(),
+                attrs = o.field("attrs").obj().mapValues { it.value },
+                inline = o["inline"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetHostsCurrentResponseValueOption1ChatOption1(
+    val provider: String,
+    val tags: List<GetHostsCurrentResponseValueOption1ChatOption1TagsItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("provider", JsonValue.Str(this@GetHostsCurrentResponseValueOption1ChatOption1.provider))
+        put("tags", JsonValue.Arr(this@GetHostsCurrentResponseValueOption1ChatOption1.tags.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetHostsCurrentResponseValueOption1ChatOption1 {
+            val o = json.obj()
+            return GetHostsCurrentResponseValueOption1ChatOption1(
+                provider = o.field("provider").string(),
+                tags = o.field("tags").array().map { GetHostsCurrentResponseValueOption1ChatOption1TagsItem.fromJson(it) },
+            )
+        }
+    }
+}
+
 data class GetHostsCurrentResponseValueOption1(
     val kind: String,
     val orgId: String,
     val orgName: String,
     val branding: GetHostsCurrentResponseValueOption1Branding,
     val programs: List<GetHostsCurrentResponseValueOption1ProgramsItem>,
+    val consent: GetHostsCurrentResponseValueOption1Consent,
+    val chat: GetHostsCurrentResponseValueOption1ChatOption1? = null,
+    val csp: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("kind", JsonValue.Str(this@GetHostsCurrentResponseValueOption1.kind))
@@ -7209,6 +8207,9 @@ data class GetHostsCurrentResponseValueOption1(
         put("orgName", JsonValue.Str(this@GetHostsCurrentResponseValueOption1.orgName))
         put("branding", this@GetHostsCurrentResponseValueOption1.branding.toJson())
         put("programs", JsonValue.Arr(this@GetHostsCurrentResponseValueOption1.programs.map { it.toJson() }))
+        put("consent", this@GetHostsCurrentResponseValueOption1.consent.toJson())
+        put("chat", (this@GetHostsCurrentResponseValueOption1.chat?.let { it.toJson() } ?: JsonValue.Null))
+        put("csp", JsonValue.Str(this@GetHostsCurrentResponseValueOption1.csp))
     })
 
     companion object {
@@ -7220,6 +8221,9 @@ data class GetHostsCurrentResponseValueOption1(
                 orgName = o.field("orgName").string(),
                 branding = GetHostsCurrentResponseValueOption1Branding.fromJson(o.field("branding")),
                 programs = o.field("programs").array().map { GetHostsCurrentResponseValueOption1ProgramsItem.fromJson(it) },
+                consent = GetHostsCurrentResponseValueOption1Consent.fromJson(o.field("consent")),
+                chat = o.field("chat").orNull()?.let { GetHostsCurrentResponseValueOption1ChatOption1.fromJson(it) },
+                csp = o.field("csp").string(),
             )
         }
     }
@@ -7227,9 +8231,11 @@ data class GetHostsCurrentResponseValueOption1(
 
 data class GetHostsCurrentResponseValueOption2(
     val kind: String,
+    val csp: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("kind", JsonValue.Str(this@GetHostsCurrentResponseValueOption2.kind))
+        put("csp", JsonValue.Str(this@GetHostsCurrentResponseValueOption2.csp))
     })
 
     companion object {
@@ -7237,6 +8243,7 @@ data class GetHostsCurrentResponseValueOption2(
             val o = json.obj()
             return GetHostsCurrentResponseValueOption2(
                 kind = o.field("kind").string(),
+                csp = o.field("csp").string(),
             )
         }
     }
@@ -7260,6 +8267,49 @@ data class GetHostsCurrentResponseValueOption3(
 }
 
 typealias GetHostsCurrentResponse = JsonValue
+
+data class GetChatlyIdentityResponseIdentityOption1(
+    val externalId: String,
+    val email: String,
+    val name: String? = null,
+    val userHash: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("externalId", JsonValue.Str(this@GetChatlyIdentityResponseIdentityOption1.externalId))
+        put("email", JsonValue.Str(this@GetChatlyIdentityResponseIdentityOption1.email))
+        if (this@GetChatlyIdentityResponseIdentityOption1.name != null) put("name", (this@GetChatlyIdentityResponseIdentityOption1.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("userHash", JsonValue.Str(this@GetChatlyIdentityResponseIdentityOption1.userHash))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetChatlyIdentityResponseIdentityOption1 {
+            val o = json.obj()
+            return GetChatlyIdentityResponseIdentityOption1(
+                externalId = o.field("externalId").string(),
+                email = o.field("email").string(),
+                name = o["name"]?.orNull()?.let { it.string() },
+                userHash = o.field("userHash").string(),
+            )
+        }
+    }
+}
+
+data class GetChatlyIdentityResponse(
+    val identity: GetChatlyIdentityResponseIdentityOption1? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("identity", (this@GetChatlyIdentityResponse.identity?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetChatlyIdentityResponse {
+            val o = json.obj()
+            return GetChatlyIdentityResponse(
+                identity = o.field("identity").orNull()?.let { GetChatlyIdentityResponseIdentityOption1.fromJson(it) },
+            )
+        }
+    }
+}
 
 data class PostMobilePurchasesResponse(
     val conversions: Long,
@@ -9239,6 +10289,26 @@ data class GetBillingEventsResponse(
                 data = o.field("data").array().map { BillingEvent.fromJson(it) },
                 hasMore = o.field("has_more").bool(),
                 nextCursor = o.field("next_cursor").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostBillingInternalCustomersResponse(
+    val customerRef: String,
+    val note: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("customerRef", JsonValue.Str(this@PostBillingInternalCustomersResponse.customerRef))
+        put("note", JsonValue.Str(this@PostBillingInternalCustomersResponse.note))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostBillingInternalCustomersResponse {
+            val o = json.obj()
+            return PostBillingInternalCustomersResponse(
+                customerRef = o.field("customerRef").string(),
+                note = o.field("note").string(),
             )
         }
     }
@@ -11648,6 +12718,7 @@ data class PostWebhookEndpointsResponse(
     val topics: List<String>,
     val programIds: List<String>? = null,
     val legacySignature: Boolean,
+    val alertContacts: List<String>,
     val secret: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -11656,6 +12727,7 @@ data class PostWebhookEndpointsResponse(
         put("topics", JsonValue.Arr(this@PostWebhookEndpointsResponse.topics.map { JsonValue.Str(it) }))
         put("programIds", (this@PostWebhookEndpointsResponse.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         put("legacySignature", JsonValue.Bool(this@PostWebhookEndpointsResponse.legacySignature))
+        put("alertContacts", JsonValue.Arr(this@PostWebhookEndpointsResponse.alertContacts.map { JsonValue.Str(it) }))
         put("secret", JsonValue.Str(this@PostWebhookEndpointsResponse.secret))
     })
 
@@ -11668,6 +12740,7 @@ data class PostWebhookEndpointsResponse(
                 topics = o.field("topics").array().map { it.string() },
                 programIds = o.field("programIds").orNull()?.let { it.array().map { it.string() } },
                 legacySignature = o.field("legacySignature").bool(),
+                alertContacts = o.field("alertContacts").array().map { it.string() },
                 secret = o.field("secret").string(),
             )
         }
@@ -11699,6 +12772,8 @@ data class GetWebhookEndpointsResponse(
         }
     }
 }
+
+typealias PatchWebhookEndpointsIdResponse = JsonValue
 
 data class PostWebhookEndpointsIdRotateSecretResponse(
     val id: String,
@@ -11777,6 +12852,29 @@ data class GetWebhookEndpointsIdDeliveriesResponse(
 
 typealias GetWebhookDeliveriesIdResponse = JsonValue
 
+data class PostWebhookEndpointsIdReplayResponse(
+    val endpointId: String,
+    val since: String,
+    val replayed: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("endpointId", JsonValue.Str(this@PostWebhookEndpointsIdReplayResponse.endpointId))
+        put("since", JsonValue.Str(this@PostWebhookEndpointsIdReplayResponse.since))
+        put("replayed", JsonValue.Num(this@PostWebhookEndpointsIdReplayResponse.replayed.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostWebhookEndpointsIdReplayResponse {
+            val o = json.obj()
+            return PostWebhookEndpointsIdReplayResponse(
+                endpointId = o.field("endpointId").string(),
+                since = o.field("since").string(),
+                replayed = o.field("replayed").long(),
+            )
+        }
+    }
+}
+
 data class PostSandboxSimulateResponse(
     val customerRef: String,
     val events: Long,
@@ -11846,6 +12944,38 @@ data class PostImportProviderResponse(
 
 typealias GetOpenapiJsonResponse = Map<String, JsonValue>
 
+data class GetBrandingResponseWarningsItem(
+    val code: String,
+    val foreground: String,
+    val background: String,
+    val ratio: Double,
+    val minimum: Double,
+    val message: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("code", JsonValue.Str(this@GetBrandingResponseWarningsItem.code))
+        put("foreground", JsonValue.Str(this@GetBrandingResponseWarningsItem.foreground))
+        put("background", JsonValue.Str(this@GetBrandingResponseWarningsItem.background))
+        put("ratio", JsonValue.Num(this@GetBrandingResponseWarningsItem.ratio.toDouble()))
+        put("minimum", JsonValue.Num(this@GetBrandingResponseWarningsItem.minimum.toDouble()))
+        put("message", JsonValue.Str(this@GetBrandingResponseWarningsItem.message))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetBrandingResponseWarningsItem {
+            val o = json.obj()
+            return GetBrandingResponseWarningsItem(
+                code = o.field("code").string(),
+                foreground = o.field("foreground").string(),
+                background = o.field("background").string(),
+                ratio = o.field("ratio").double(),
+                minimum = o.field("minimum").double(),
+                message = o.field("message").string(),
+            )
+        }
+    }
+}
+
 data class GetBrandingResponse(
     val logoUrl: String? = null,
     val theme: GetOpenapiJsonResponse? = null,
@@ -11856,6 +12986,7 @@ data class GetBrandingResponse(
     val linkDomainVerified: Boolean,
     val linkDomainStatus: String,
     val emailFrom: String? = null,
+    val warnings: List<GetBrandingResponseWarningsItem>,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("logoUrl", (this@GetBrandingResponse.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -11867,6 +12998,7 @@ data class GetBrandingResponse(
         put("linkDomainVerified", JsonValue.Bool(this@GetBrandingResponse.linkDomainVerified))
         put("linkDomainStatus", JsonValue.Str(this@GetBrandingResponse.linkDomainStatus))
         put("emailFrom", (this@GetBrandingResponse.emailFrom?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("warnings", JsonValue.Arr(this@GetBrandingResponse.warnings.map { it.toJson() }))
     })
 
     companion object {
@@ -11882,6 +13014,7 @@ data class GetBrandingResponse(
                 linkDomainVerified = o.field("linkDomainVerified").bool(),
                 linkDomainStatus = o.field("linkDomainStatus").string(),
                 emailFrom = o.field("emailFrom").orNull()?.let { it.string() },
+                warnings = o.field("warnings").array().map { GetBrandingResponseWarningsItem.fromJson(it) },
             )
         }
     }
@@ -11969,6 +13102,58 @@ data class PostBrandingDomainResponse(
                 txtName = o.field("txtName").string(),
                 verified = o.field("verified").bool(),
                 instructions = o.field("instructions").string(),
+            )
+        }
+    }
+}
+
+data class PutBrandingResponseWarningsItem(
+    val code: String,
+    val foreground: String,
+    val background: String,
+    val ratio: Double,
+    val minimum: Double,
+    val message: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("code", JsonValue.Str(this@PutBrandingResponseWarningsItem.code))
+        put("foreground", JsonValue.Str(this@PutBrandingResponseWarningsItem.foreground))
+        put("background", JsonValue.Str(this@PutBrandingResponseWarningsItem.background))
+        put("ratio", JsonValue.Num(this@PutBrandingResponseWarningsItem.ratio.toDouble()))
+        put("minimum", JsonValue.Num(this@PutBrandingResponseWarningsItem.minimum.toDouble()))
+        put("message", JsonValue.Str(this@PutBrandingResponseWarningsItem.message))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutBrandingResponseWarningsItem {
+            val o = json.obj()
+            return PutBrandingResponseWarningsItem(
+                code = o.field("code").string(),
+                foreground = o.field("foreground").string(),
+                background = o.field("background").string(),
+                ratio = o.field("ratio").double(),
+                minimum = o.field("minimum").double(),
+                message = o.field("message").string(),
+            )
+        }
+    }
+}
+
+data class PutBrandingResponse(
+    val ok: Boolean,
+    val warnings: List<PutBrandingResponseWarningsItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@PutBrandingResponse.ok))
+        put("warnings", JsonValue.Arr(this@PutBrandingResponse.warnings.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutBrandingResponse {
+            val o = json.obj()
+            return PutBrandingResponse(
+                ok = o.field("ok").bool(),
+                warnings = o.field("warnings").array().map { PutBrandingResponseWarningsItem.fromJson(it) },
             )
         }
     }
@@ -13141,6 +14326,154 @@ data class PostRewardsRedeemByCodeResponse(
                 redeemedMinor = o.field("redeemedMinor").long(),
                 remainingMinor = o.field("remainingMinor").long(),
                 capped = o.field("capped").bool(),
+            )
+        }
+    }
+}
+
+data class PostRewardsResponse(
+    val id: String,
+    val partnerId: String,
+    val programId: String,
+    val ruleKey: String? = null,
+    val reason: String,
+    val amountMinor: Long,
+    val currency: String,
+    val commissionId: String? = null,
+    val idempotencyKey: String,
+    val createdAt: String,
+    val replayed: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostRewardsResponse.id))
+        put("partnerId", JsonValue.Str(this@PostRewardsResponse.partnerId))
+        put("programId", JsonValue.Str(this@PostRewardsResponse.programId))
+        put("ruleKey", (this@PostRewardsResponse.ruleKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("reason", JsonValue.Str(this@PostRewardsResponse.reason))
+        put("amountMinor", JsonValue.Num(this@PostRewardsResponse.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@PostRewardsResponse.currency))
+        put("commissionId", (this@PostRewardsResponse.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("idempotencyKey", JsonValue.Str(this@PostRewardsResponse.idempotencyKey))
+        put("createdAt", JsonValue.Str(this@PostRewardsResponse.createdAt))
+        put("replayed", JsonValue.Bool(this@PostRewardsResponse.replayed))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostRewardsResponse {
+            val o = json.obj()
+            return PostRewardsResponse(
+                id = o.field("id").string(),
+                partnerId = o.field("partnerId").string(),
+                programId = o.field("programId").string(),
+                ruleKey = o.field("ruleKey").orNull()?.let { it.string() },
+                reason = o.field("reason").string(),
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                idempotencyKey = o.field("idempotencyKey").string(),
+                createdAt = o.field("createdAt").string(),
+                replayed = o.field("replayed").bool(),
+            )
+        }
+    }
+}
+
+data class GetRewardsGrantedResponseValueItem(
+    val id: String,
+    val partnerId: String,
+    val programId: String,
+    val ruleKey: String? = null,
+    val reason: String,
+    val amountMinor: Long,
+    val currency: String,
+    val commissionId: String? = null,
+    val idempotencyKey: String,
+    val createdAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetRewardsGrantedResponseValueItem.id))
+        put("partnerId", JsonValue.Str(this@GetRewardsGrantedResponseValueItem.partnerId))
+        put("programId", JsonValue.Str(this@GetRewardsGrantedResponseValueItem.programId))
+        put("ruleKey", (this@GetRewardsGrantedResponseValueItem.ruleKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("reason", JsonValue.Str(this@GetRewardsGrantedResponseValueItem.reason))
+        put("amountMinor", JsonValue.Num(this@GetRewardsGrantedResponseValueItem.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@GetRewardsGrantedResponseValueItem.currency))
+        put("commissionId", (this@GetRewardsGrantedResponseValueItem.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("idempotencyKey", JsonValue.Str(this@GetRewardsGrantedResponseValueItem.idempotencyKey))
+        put("createdAt", JsonValue.Str(this@GetRewardsGrantedResponseValueItem.createdAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetRewardsGrantedResponseValueItem {
+            val o = json.obj()
+            return GetRewardsGrantedResponseValueItem(
+                id = o.field("id").string(),
+                partnerId = o.field("partnerId").string(),
+                programId = o.field("programId").string(),
+                ruleKey = o.field("ruleKey").orNull()?.let { it.string() },
+                reason = o.field("reason").string(),
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                idempotencyKey = o.field("idempotencyKey").string(),
+                createdAt = o.field("createdAt").string(),
+            )
+        }
+    }
+}
+
+typealias GetRewardsGrantedResponse = List<GetRewardsGrantedResponseValueItem>
+
+data class PutRewardsRulesKeyResponse(
+    val key: String,
+    val event: String? = null,
+    val programId: String? = null,
+    val amountMinor: Long,
+    val currency: String,
+    val reason: String,
+    val enabled: Boolean,
+    val updatedAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("key", JsonValue.Str(this@PutRewardsRulesKeyResponse.key))
+        put("event", (this@PutRewardsRulesKeyResponse.event?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("programId", (this@PutRewardsRulesKeyResponse.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@PutRewardsRulesKeyResponse.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@PutRewardsRulesKeyResponse.currency))
+        put("reason", JsonValue.Str(this@PutRewardsRulesKeyResponse.reason))
+        put("enabled", JsonValue.Bool(this@PutRewardsRulesKeyResponse.enabled))
+        put("updatedAt", JsonValue.Str(this@PutRewardsRulesKeyResponse.updatedAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutRewardsRulesKeyResponse {
+            val o = json.obj()
+            return PutRewardsRulesKeyResponse(
+                key = o.field("key").string(),
+                event = o.field("event").orNull()?.let { it.string() },
+                programId = o.field("programId").orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                reason = o.field("reason").string(),
+                enabled = o.field("enabled").bool(),
+                updatedAt = o.field("updatedAt").string(),
+            )
+        }
+    }
+}
+
+data class DeleteRewardsRulesKeyResponse(
+    val ok: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@DeleteRewardsRulesKeyResponse.ok))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): DeleteRewardsRulesKeyResponse {
+            val o = json.obj()
+            return DeleteRewardsRulesKeyResponse(
+                ok = o.field("ok").bool(),
             )
         }
     }
@@ -15928,6 +17261,23 @@ data class GetPartnerSecurityResponse(
     }
 }
 
+data class GetAuthConnectionsProvidersResponse(
+    val data: List<IdentityProvider>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("data", JsonValue.Arr(this@GetAuthConnectionsProvidersResponse.data.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetAuthConnectionsProvidersResponse {
+            val o = json.obj()
+            return GetAuthConnectionsProvidersResponse(
+                data = o.field("data").array().map { IdentityProvider.fromJson(it) },
+            )
+        }
+    }
+}
+
 data class GetAuthConnectionsResponse(
     val `object`: String,
     val data: List<AuthConnection>,
@@ -15949,6 +17299,29 @@ data class GetAuthConnectionsResponse(
                 data = o.field("data").array().map { AuthConnection.fromJson(it) },
                 hasMore = o.field("has_more").bool(),
                 nextCursor = o.field("next_cursor").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PutAuthConnectionsIdSecretResponse(
+    val id: String,
+    val provider: String,
+    val ok: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PutAuthConnectionsIdSecretResponse.id))
+        put("provider", JsonValue.Str(this@PutAuthConnectionsIdSecretResponse.provider))
+        put("ok", JsonValue.Bool(this@PutAuthConnectionsIdSecretResponse.ok))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutAuthConnectionsIdSecretResponse {
+            val o = json.obj()
+            return PutAuthConnectionsIdSecretResponse(
+                id = o.field("id").string(),
+                provider = o.field("provider").string(),
+                ok = o.field("ok").bool(),
             )
         }
     }
@@ -16137,6 +17510,46 @@ data class PostAuthConnectionsIdSignupsResponse(
                 referral = o.field("referral").orNull()?.let { PostAuthConnectionsIdSignupsResponseReferralOption1.fromJson(it) },
                 reasoning = o["reasoning"]?.orNull()?.let { PostAuthConnectionsIdSignupsResponseReasoning.fromJson(it) },
                 partner = o["partner"]?.orNull()?.let { PostAuthConnectionsIdSignupsResponsePartner.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostAuthConnectionsIdPartnersResponsePartner(
+    val id: String,
+    val code: String,
+    val link: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostAuthConnectionsIdPartnersResponsePartner.id))
+        put("code", JsonValue.Str(this@PostAuthConnectionsIdPartnersResponsePartner.code))
+        put("link", (this@PostAuthConnectionsIdPartnersResponsePartner.link?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsIdPartnersResponsePartner {
+            val o = json.obj()
+            return PostAuthConnectionsIdPartnersResponsePartner(
+                id = o.field("id").string(),
+                code = o.field("code").string(),
+                link = o.field("link").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostAuthConnectionsIdPartnersResponse(
+    val partner: PostAuthConnectionsIdPartnersResponsePartner,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partner", this@PostAuthConnectionsIdPartnersResponse.partner.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsIdPartnersResponse {
+            val o = json.obj()
+            return PostAuthConnectionsIdPartnersResponse(
+                partner = PostAuthConnectionsIdPartnersResponsePartner.fromJson(o.field("partner")),
             )
         }
     }
@@ -16482,6 +17895,70 @@ data class PostAuthConnectionsIdSignalsResponse(
     }
 }
 
+data class PostAuthConnectionsInstallResponse(
+    val redirectTo: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("redirectTo", JsonValue.Str(this@PostAuthConnectionsInstallResponse.redirectTo))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsInstallResponse {
+            val o = json.obj()
+            return PostAuthConnectionsInstallResponse(
+                redirectTo = o.field("redirectTo").string(),
+            )
+        }
+    }
+}
+
+data class PostOauthTokenResponse(
+    val tokenType: String,
+    val connectionId: String,
+    val provider: String,
+    val instanceId: String,
+    val programId: String,
+    val secret: String,
+    val reinstalled: Boolean,
+    val signupsUrl: String,
+    val partnersUrl: String,
+    val eraseUrl: String,
+    val exportUrl: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("token_type", JsonValue.Str(this@PostOauthTokenResponse.tokenType))
+        put("connectionId", JsonValue.Str(this@PostOauthTokenResponse.connectionId))
+        put("provider", JsonValue.Str(this@PostOauthTokenResponse.provider))
+        put("instanceId", JsonValue.Str(this@PostOauthTokenResponse.instanceId))
+        put("programId", JsonValue.Str(this@PostOauthTokenResponse.programId))
+        put("secret", JsonValue.Str(this@PostOauthTokenResponse.secret))
+        put("reinstalled", JsonValue.Bool(this@PostOauthTokenResponse.reinstalled))
+        put("signupsUrl", JsonValue.Str(this@PostOauthTokenResponse.signupsUrl))
+        put("partnersUrl", JsonValue.Str(this@PostOauthTokenResponse.partnersUrl))
+        put("eraseUrl", JsonValue.Str(this@PostOauthTokenResponse.eraseUrl))
+        put("exportUrl", JsonValue.Str(this@PostOauthTokenResponse.exportUrl))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOauthTokenResponse {
+            val o = json.obj()
+            return PostOauthTokenResponse(
+                tokenType = o.field("token_type").string(),
+                connectionId = o.field("connectionId").string(),
+                provider = o.field("provider").string(),
+                instanceId = o.field("instanceId").string(),
+                programId = o.field("programId").string(),
+                secret = o.field("secret").string(),
+                reinstalled = o.field("reinstalled").bool(),
+                signupsUrl = o.field("signupsUrl").string(),
+                partnersUrl = o.field("partnersUrl").string(),
+                eraseUrl = o.field("eraseUrl").string(),
+                exportUrl = o.field("exportUrl").string(),
+            )
+        }
+    }
+}
+
 data class GetOrgSsoResponseProviderOption1(
     val name: String,
     val label: String,
@@ -16719,6 +18196,52 @@ data class PatchOrgSsoResponse(
     }
 }
 
+data class PutOrgSsoDirectResponse(
+    val adapter: String,
+    val config: Map<String, JsonValue>,
+    val hasSecret: Boolean,
+    val signInUrl: String,
+    val redirectUri: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgSsoDirectResponse.adapter))
+        put("config", JsonValue.Obj(this@PutOrgSsoDirectResponse.config.mapValues { it.value }))
+        put("hasSecret", JsonValue.Bool(this@PutOrgSsoDirectResponse.hasSecret))
+        put("signInUrl", JsonValue.Str(this@PutOrgSsoDirectResponse.signInUrl))
+        put("redirectUri", JsonValue.Str(this@PutOrgSsoDirectResponse.redirectUri))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgSsoDirectResponse {
+            val o = json.obj()
+            return PutOrgSsoDirectResponse(
+                adapter = o.field("adapter").string(),
+                config = o.field("config").obj().mapValues { it.value },
+                hasSecret = o.field("hasSecret").bool(),
+                signInUrl = o.field("signInUrl").string(),
+                redirectUri = o.field("redirectUri").string(),
+            )
+        }
+    }
+}
+
+data class DeleteOrgSsoDirectResponse(
+    val removed: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("removed", JsonValue.Bool(this@DeleteOrgSsoDirectResponse.removed))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): DeleteOrgSsoDirectResponse {
+            val o = json.obj()
+            return DeleteOrgSsoDirectResponse(
+                removed = o.field("removed").bool(),
+            )
+        }
+    }
+}
+
 data class PostPartnerAuthWalletNonceResponse(
     val nonce: String,
     val message: String,
@@ -16936,12 +18459,1289 @@ data class PostPublicProgramsHandleJoinResponse(
     }
 }
 
+data class GetIntegrationHealthResponse(
+    val ok: Boolean,
+    val checks: List<HealthCheck>,
+    val generatedAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@GetIntegrationHealthResponse.ok))
+        put("checks", JsonValue.Arr(this@GetIntegrationHealthResponse.checks.map { it.toJson() }))
+        put("generatedAt", JsonValue.Str(this@GetIntegrationHealthResponse.generatedAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetIntegrationHealthResponse {
+            val o = json.obj()
+            return GetIntegrationHealthResponse(
+                ok = o.field("ok").bool(),
+                checks = o.field("checks").array().map { HealthCheck.fromJson(it) },
+                generatedAt = o.field("generatedAt").string(),
+            )
+        }
+    }
+}
+
+data class GetPlansResponsePlansItem(
+    val key: String,
+    val label: String,
+    val priceMinor: Long,
+    val currency: String,
+    val interval: String,
+    val maxPrograms: Long? = null,
+    val maxPartners: Long? = null,
+    val marketplace: Boolean,
+    val discovery: Boolean,
+    val linkDomain: Boolean,
+    val portalDomain: Boolean,
+    val apiPerSec: Long,
+    val apiBurst: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("key", JsonValue.Str(this@GetPlansResponsePlansItem.key))
+        put("label", JsonValue.Str(this@GetPlansResponsePlansItem.label))
+        put("priceMinor", JsonValue.Num(this@GetPlansResponsePlansItem.priceMinor.toDouble()))
+        put("currency", JsonValue.Str(this@GetPlansResponsePlansItem.currency))
+        put("interval", JsonValue.Str(this@GetPlansResponsePlansItem.interval))
+        put("maxPrograms", (this@GetPlansResponsePlansItem.maxPrograms?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("maxPartners", (this@GetPlansResponsePlansItem.maxPartners?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("marketplace", JsonValue.Bool(this@GetPlansResponsePlansItem.marketplace))
+        put("discovery", JsonValue.Bool(this@GetPlansResponsePlansItem.discovery))
+        put("linkDomain", JsonValue.Bool(this@GetPlansResponsePlansItem.linkDomain))
+        put("portalDomain", JsonValue.Bool(this@GetPlansResponsePlansItem.portalDomain))
+        put("apiPerSec", JsonValue.Num(this@GetPlansResponsePlansItem.apiPerSec.toDouble()))
+        put("apiBurst", JsonValue.Num(this@GetPlansResponsePlansItem.apiBurst.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPlansResponsePlansItem {
+            val o = json.obj()
+            return GetPlansResponsePlansItem(
+                key = o.field("key").string(),
+                label = o.field("label").string(),
+                priceMinor = o.field("priceMinor").long(),
+                currency = o.field("currency").string(),
+                interval = o.field("interval").string(),
+                maxPrograms = o.field("maxPrograms").orNull()?.let { it.long() },
+                maxPartners = o.field("maxPartners").orNull()?.let { it.long() },
+                marketplace = o.field("marketplace").bool(),
+                discovery = o.field("discovery").bool(),
+                linkDomain = o.field("linkDomain").bool(),
+                portalDomain = o.field("portalDomain").bool(),
+                apiPerSec = o.field("apiPerSec").long(),
+                apiBurst = o.field("apiBurst").long(),
+            )
+        }
+    }
+}
+
+data class GetPlansResponse(
+    val plans: List<GetPlansResponsePlansItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("plans", JsonValue.Arr(this@GetPlansResponse.plans.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPlansResponse {
+            val o = json.obj()
+            return GetPlansResponse(
+                plans = o.field("plans").array().map { GetPlansResponsePlansItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetEventsResponseEventsItem(
+    val id: String,
+    val topic: String,
+    val orgId: String,
+    val livemode: Boolean,
+    val createdAt: String,
+    val data: GetOpenapiJsonResponse,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetEventsResponseEventsItem.id))
+        put("topic", JsonValue.Str(this@GetEventsResponseEventsItem.topic))
+        put("orgId", JsonValue.Str(this@GetEventsResponseEventsItem.orgId))
+        put("livemode", JsonValue.Bool(this@GetEventsResponseEventsItem.livemode))
+        put("createdAt", JsonValue.Str(this@GetEventsResponseEventsItem.createdAt))
+        put("data", JsonValue.Obj(this@GetEventsResponseEventsItem.data.mapValues { it.value }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetEventsResponseEventsItem {
+            val o = json.obj()
+            return GetEventsResponseEventsItem(
+                id = o.field("id").string(),
+                topic = o.field("topic").string(),
+                orgId = o.field("orgId").string(),
+                livemode = o.field("livemode").bool(),
+                createdAt = o.field("createdAt").string(),
+                data = o.field("data").obj().mapValues { it.value },
+            )
+        }
+    }
+}
+
+data class GetEventsResponse(
+    val events: List<GetEventsResponseEventsItem>,
+    val hasMore: Boolean,
+    val nextCursor: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("events", JsonValue.Arr(this@GetEventsResponse.events.map { it.toJson() }))
+        put("hasMore", JsonValue.Bool(this@GetEventsResponse.hasMore))
+        put("nextCursor", (this@GetEventsResponse.nextCursor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetEventsResponse {
+            val o = json.obj()
+            return GetEventsResponse(
+                events = o.field("events").array().map { GetEventsResponseEventsItem.fromJson(it) },
+                hasMore = o.field("hasMore").bool(),
+                nextCursor = o.field("nextCursor").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetSupportContextResponsePartnerOption1(
+    val id: String,
+    val name: String,
+    val status: String,
+    val tier: String? = null,
+    val programs: List<String>,
+    val referralLink: String? = null,
+    val pendingMinor: Long,
+    val approvedMinor: Long,
+    val paidMinor: Long,
+    val currency: String,
+    val nextPayoutAt: String? = null,
+    val flags: List<String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetSupportContextResponsePartnerOption1.id))
+        put("name", JsonValue.Str(this@GetSupportContextResponsePartnerOption1.name))
+        put("status", JsonValue.Str(this@GetSupportContextResponsePartnerOption1.status))
+        put("tier", (this@GetSupportContextResponsePartnerOption1.tier?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("programs", JsonValue.Arr(this@GetSupportContextResponsePartnerOption1.programs.map { JsonValue.Str(it) }))
+        put("referralLink", (this@GetSupportContextResponsePartnerOption1.referralLink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("pendingMinor", JsonValue.Num(this@GetSupportContextResponsePartnerOption1.pendingMinor.toDouble()))
+        put("approvedMinor", JsonValue.Num(this@GetSupportContextResponsePartnerOption1.approvedMinor.toDouble()))
+        put("paidMinor", JsonValue.Num(this@GetSupportContextResponsePartnerOption1.paidMinor.toDouble()))
+        put("currency", JsonValue.Str(this@GetSupportContextResponsePartnerOption1.currency))
+        put("nextPayoutAt", (this@GetSupportContextResponsePartnerOption1.nextPayoutAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("flags", JsonValue.Arr(this@GetSupportContextResponsePartnerOption1.flags.map { JsonValue.Str(it) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportContextResponsePartnerOption1 {
+            val o = json.obj()
+            return GetSupportContextResponsePartnerOption1(
+                id = o.field("id").string(),
+                name = o.field("name").string(),
+                status = o.field("status").string(),
+                tier = o.field("tier").orNull()?.let { it.string() },
+                programs = o.field("programs").array().map { it.string() },
+                referralLink = o.field("referralLink").orNull()?.let { it.string() },
+                pendingMinor = o.field("pendingMinor").long(),
+                approvedMinor = o.field("approvedMinor").long(),
+                paidMinor = o.field("paidMinor").long(),
+                currency = o.field("currency").string(),
+                nextPayoutAt = o.field("nextPayoutAt").orNull()?.let { it.string() },
+                flags = o.field("flags").array().map { it.string() },
+            )
+        }
+    }
+}
+
+data class GetSupportContextResponseCustomerOption1ReferredByOption1(
+    val partnerId: String,
+    val name: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partnerId", JsonValue.Str(this@GetSupportContextResponseCustomerOption1ReferredByOption1.partnerId))
+        put("name", JsonValue.Str(this@GetSupportContextResponseCustomerOption1ReferredByOption1.name))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportContextResponseCustomerOption1ReferredByOption1 {
+            val o = json.obj()
+            return GetSupportContextResponseCustomerOption1ReferredByOption1(
+                partnerId = o.field("partnerId").string(),
+                name = o.field("name").string(),
+            )
+        }
+    }
+}
+
+data class GetSupportContextResponseCustomerOption1RewardStateOption1(
+    val kind: String,
+    val status: String,
+    val amountMinor: Long,
+    val currency: String,
+    val remainingMinor: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("kind", JsonValue.Str(this@GetSupportContextResponseCustomerOption1RewardStateOption1.kind))
+        put("status", JsonValue.Str(this@GetSupportContextResponseCustomerOption1RewardStateOption1.status))
+        put("amountMinor", JsonValue.Num(this@GetSupportContextResponseCustomerOption1RewardStateOption1.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@GetSupportContextResponseCustomerOption1RewardStateOption1.currency))
+        put("remainingMinor", JsonValue.Num(this@GetSupportContextResponseCustomerOption1RewardStateOption1.remainingMinor.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportContextResponseCustomerOption1RewardStateOption1 {
+            val o = json.obj()
+            return GetSupportContextResponseCustomerOption1RewardStateOption1(
+                kind = o.field("kind").string(),
+                status = o.field("status").string(),
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                remainingMinor = o.field("remainingMinor").long(),
+            )
+        }
+    }
+}
+
+data class GetSupportContextResponseCustomerOption1(
+    val referredBy: GetSupportContextResponseCustomerOption1ReferredByOption1? = null,
+    val attributedAt: String? = null,
+    val rewardState: GetSupportContextResponseCustomerOption1RewardStateOption1? = null,
+    val commissionsMinor: Long,
+    val currency: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("referredBy", (this@GetSupportContextResponseCustomerOption1.referredBy?.let { it.toJson() } ?: JsonValue.Null))
+        put("attributedAt", (this@GetSupportContextResponseCustomerOption1.attributedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("rewardState", (this@GetSupportContextResponseCustomerOption1.rewardState?.let { it.toJson() } ?: JsonValue.Null))
+        put("commissionsMinor", JsonValue.Num(this@GetSupportContextResponseCustomerOption1.commissionsMinor.toDouble()))
+        put("currency", (this@GetSupportContextResponseCustomerOption1.currency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportContextResponseCustomerOption1 {
+            val o = json.obj()
+            return GetSupportContextResponseCustomerOption1(
+                referredBy = o.field("referredBy").orNull()?.let { GetSupportContextResponseCustomerOption1ReferredByOption1.fromJson(it) },
+                attributedAt = o.field("attributedAt").orNull()?.let { it.string() },
+                rewardState = o.field("rewardState").orNull()?.let { GetSupportContextResponseCustomerOption1RewardStateOption1.fromJson(it) },
+                commissionsMinor = o.field("commissionsMinor").long(),
+                currency = o.field("currency").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetSupportContextResponseLinks(
+    val dashboard: String,
+    val partner: String? = null,
+    val referral: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("dashboard", JsonValue.Str(this@GetSupportContextResponseLinks.dashboard))
+        put("partner", (this@GetSupportContextResponseLinks.partner?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("referral", (this@GetSupportContextResponseLinks.referral?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportContextResponseLinks {
+            val o = json.obj()
+            return GetSupportContextResponseLinks(
+                dashboard = o.field("dashboard").string(),
+                partner = o.field("partner").orNull()?.let { it.string() },
+                referral = o.field("referral").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetSupportContextResponse(
+    val partner: GetSupportContextResponsePartnerOption1? = null,
+    val customer: GetSupportContextResponseCustomerOption1? = null,
+    val links: GetSupportContextResponseLinks,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partner", (this@GetSupportContextResponse.partner?.let { it.toJson() } ?: JsonValue.Null))
+        put("customer", (this@GetSupportContextResponse.customer?.let { it.toJson() } ?: JsonValue.Null))
+        put("links", this@GetSupportContextResponse.links.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportContextResponse {
+            val o = json.obj()
+            return GetSupportContextResponse(
+                partner = o.field("partner").orNull()?.let { GetSupportContextResponsePartnerOption1.fromJson(it) },
+                customer = o.field("customer").orNull()?.let { GetSupportContextResponseCustomerOption1.fromJson(it) },
+                links = GetSupportContextResponseLinks.fromJson(o.field("links")),
+            )
+        }
+    }
+}
+
+data class GetSupportAppsResponseValueItemInstall(
+    val kind: String? = null,
+    val steps: List<String>,
+    val manifestPath: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetSupportAppsResponseValueItemInstall.kind != null) put("kind", (this@GetSupportAppsResponseValueItemInstall.kind?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("steps", JsonValue.Arr(this@GetSupportAppsResponseValueItemInstall.steps.map { JsonValue.Str(it) }))
+        if (this@GetSupportAppsResponseValueItemInstall.manifestPath != null) put("manifestPath", (this@GetSupportAppsResponseValueItemInstall.manifestPath?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportAppsResponseValueItemInstall {
+            val o = json.obj()
+            return GetSupportAppsResponseValueItemInstall(
+                kind = o["kind"]?.orNull()?.let { it.string() },
+                steps = o.field("steps").array().map { it.string() },
+                manifestPath = o["manifestPath"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetSupportAppsResponseValueItemConfigOption1(
+    val subdomain: JsonValue,
+    val cardKey: JsonValue,
+    val hasPublicKey: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("subdomain", this@GetSupportAppsResponseValueItemConfigOption1.subdomain)
+        put("cardKey", this@GetSupportAppsResponseValueItemConfigOption1.cardKey)
+        put("hasPublicKey", JsonValue.Bool(this@GetSupportAppsResponseValueItemConfigOption1.hasPublicKey))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportAppsResponseValueItemConfigOption1 {
+            val o = json.obj()
+            return GetSupportAppsResponseValueItemConfigOption1(
+                subdomain = o.field("subdomain"),
+                cardKey = o.field("cardKey"),
+                hasPublicKey = o.field("hasPublicKey").bool(),
+            )
+        }
+    }
+}
+
+data class GetSupportAppsResponseValueItem(
+    val id: String,
+    val name: String,
+    val status: String,
+    val docsUrl: String,
+    val vendorDocsUrl: String,
+    val secretSource: String,
+    val install: GetSupportAppsResponseValueItemInstall,
+    val cardUrl: String,
+    val enabled: Boolean,
+    val configured: Boolean,
+    val config: GetSupportAppsResponseValueItemConfigOption1? = null,
+    val lastOkAt: String? = null,
+    val lastError: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetSupportAppsResponseValueItem.id))
+        put("name", JsonValue.Str(this@GetSupportAppsResponseValueItem.name))
+        put("status", JsonValue.Str(this@GetSupportAppsResponseValueItem.status))
+        put("docsUrl", JsonValue.Str(this@GetSupportAppsResponseValueItem.docsUrl))
+        put("vendorDocsUrl", JsonValue.Str(this@GetSupportAppsResponseValueItem.vendorDocsUrl))
+        put("secretSource", JsonValue.Str(this@GetSupportAppsResponseValueItem.secretSource))
+        put("install", this@GetSupportAppsResponseValueItem.install.toJson())
+        put("cardUrl", JsonValue.Str(this@GetSupportAppsResponseValueItem.cardUrl))
+        put("enabled", JsonValue.Bool(this@GetSupportAppsResponseValueItem.enabled))
+        put("configured", JsonValue.Bool(this@GetSupportAppsResponseValueItem.configured))
+        put("config", (this@GetSupportAppsResponseValueItem.config?.let { it.toJson() } ?: JsonValue.Null))
+        put("lastOkAt", (this@GetSupportAppsResponseValueItem.lastOkAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("lastError", (this@GetSupportAppsResponseValueItem.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSupportAppsResponseValueItem {
+            val o = json.obj()
+            return GetSupportAppsResponseValueItem(
+                id = o.field("id").string(),
+                name = o.field("name").string(),
+                status = o.field("status").string(),
+                docsUrl = o.field("docsUrl").string(),
+                vendorDocsUrl = o.field("vendorDocsUrl").string(),
+                secretSource = o.field("secretSource").string(),
+                install = GetSupportAppsResponseValueItemInstall.fromJson(o.field("install")),
+                cardUrl = o.field("cardUrl").string(),
+                enabled = o.field("enabled").bool(),
+                configured = o.field("configured").bool(),
+                config = o.field("config").orNull()?.let { GetSupportAppsResponseValueItemConfigOption1.fromJson(it) },
+                lastOkAt = o.field("lastOkAt").orNull()?.let { it.string() },
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+typealias GetSupportAppsResponse = List<GetSupportAppsResponseValueItem>
+
+data class PutSupportAppsAdapterResponse(
+    val adapter: String,
+    val enabled: Boolean,
+    val cardUrl: String,
+    val secret: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutSupportAppsAdapterResponse.adapter))
+        put("enabled", JsonValue.Bool(this@PutSupportAppsAdapterResponse.enabled))
+        put("cardUrl", JsonValue.Str(this@PutSupportAppsAdapterResponse.cardUrl))
+        if (this@PutSupportAppsAdapterResponse.secret != null) put("secret", (this@PutSupportAppsAdapterResponse.secret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutSupportAppsAdapterResponse {
+            val o = json.obj()
+            return PutSupportAppsAdapterResponse(
+                adapter = o.field("adapter").string(),
+                enabled = o.field("enabled").bool(),
+                cardUrl = o.field("cardUrl").string(),
+                secret = o["secret"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class DeleteSupportAppsAdapterResponse(
+    val ok: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@DeleteSupportAppsAdapterResponse.ok))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): DeleteSupportAppsAdapterResponse {
+            val o = json.obj()
+            return DeleteSupportAppsAdapterResponse(
+                ok = o.field("ok").bool(),
+            )
+        }
+    }
+}
+
+data class PostSupportAppsAdapterTestResponse(
+    val found: Boolean,
+    val context: GetSupportContextResponse? = null,
+    val rendered: JsonValue,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("found", JsonValue.Bool(this@PostSupportAppsAdapterTestResponse.found))
+        put("context", (this@PostSupportAppsAdapterTestResponse.context?.let { it.toJson() } ?: JsonValue.Null))
+        put("rendered", this@PostSupportAppsAdapterTestResponse.rendered)
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostSupportAppsAdapterTestResponse {
+            val o = json.obj()
+            return PostSupportAppsAdapterTestResponse(
+                found = o.field("found").bool(),
+                context = o.field("context").orNull()?.let { GetSupportContextResponse.fromJson(it) },
+                rendered = o.field("rendered"),
+            )
+        }
+    }
+}
+
+typealias PostSupportCardsOrgIdAdapterResponse = Map<String, JsonValue>
+
+data class GetPrivacyExecutorsResponseValueItemInstall(
+    val kind: String? = null,
+    val steps: List<String>,
+    val manifestPath: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPrivacyExecutorsResponseValueItemInstall.kind != null) put("kind", (this@GetPrivacyExecutorsResponseValueItemInstall.kind?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("steps", JsonValue.Arr(this@GetPrivacyExecutorsResponseValueItemInstall.steps.map { JsonValue.Str(it) }))
+        if (this@GetPrivacyExecutorsResponseValueItemInstall.manifestPath != null) put("manifestPath", (this@GetPrivacyExecutorsResponseValueItemInstall.manifestPath?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPrivacyExecutorsResponseValueItemInstall {
+            val o = json.obj()
+            return GetPrivacyExecutorsResponseValueItemInstall(
+                kind = o["kind"]?.orNull()?.let { it.string() },
+                steps = o.field("steps").array().map { it.string() },
+                manifestPath = o["manifestPath"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPrivacyExecutorsResponseValueItemConfigOption1(
+    val hasPublicKey: Boolean,
+    val algorithm: String? = null,
+    val sombraUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("hasPublicKey", JsonValue.Bool(this@GetPrivacyExecutorsResponseValueItemConfigOption1.hasPublicKey))
+        put("algorithm", (this@GetPrivacyExecutorsResponseValueItemConfigOption1.algorithm?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("sombraUrl", (this@GetPrivacyExecutorsResponseValueItemConfigOption1.sombraUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPrivacyExecutorsResponseValueItemConfigOption1 {
+            val o = json.obj()
+            return GetPrivacyExecutorsResponseValueItemConfigOption1(
+                hasPublicKey = o.field("hasPublicKey").bool(),
+                algorithm = o.field("algorithm").orNull()?.let { it.string() },
+                sombraUrl = o.field("sombraUrl").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPrivacyExecutorsResponseValueItemHealth(
+    val ok: Boolean,
+    val detail: String,
+    val fix: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@GetPrivacyExecutorsResponseValueItemHealth.ok))
+        put("detail", JsonValue.Str(this@GetPrivacyExecutorsResponseValueItemHealth.detail))
+        put("fix", (this@GetPrivacyExecutorsResponseValueItemHealth.fix?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPrivacyExecutorsResponseValueItemHealth {
+            val o = json.obj()
+            return GetPrivacyExecutorsResponseValueItemHealth(
+                ok = o.field("ok").bool(),
+                detail = o.field("detail").string(),
+                fix = o.field("fix").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPrivacyExecutorsResponseValueItem(
+    val id: String,
+    val name: String,
+    val status: String,
+    val docsUrl: String,
+    val vendorDocsUrl: String,
+    val keyKind: String,
+    val install: GetPrivacyExecutorsResponseValueItemInstall,
+    val url: String,
+    val enabled: Boolean,
+    val hasKey: Boolean,
+    val hasVendorSecret: Boolean,
+    val config: GetPrivacyExecutorsResponseValueItemConfigOption1? = null,
+    val health: GetPrivacyExecutorsResponseValueItemHealth,
+    val lastOkAt: String? = null,
+    val lastError: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetPrivacyExecutorsResponseValueItem.id))
+        put("name", JsonValue.Str(this@GetPrivacyExecutorsResponseValueItem.name))
+        put("status", JsonValue.Str(this@GetPrivacyExecutorsResponseValueItem.status))
+        put("docsUrl", JsonValue.Str(this@GetPrivacyExecutorsResponseValueItem.docsUrl))
+        put("vendorDocsUrl", JsonValue.Str(this@GetPrivacyExecutorsResponseValueItem.vendorDocsUrl))
+        put("keyKind", JsonValue.Str(this@GetPrivacyExecutorsResponseValueItem.keyKind))
+        put("install", this@GetPrivacyExecutorsResponseValueItem.install.toJson())
+        put("url", JsonValue.Str(this@GetPrivacyExecutorsResponseValueItem.url))
+        put("enabled", JsonValue.Bool(this@GetPrivacyExecutorsResponseValueItem.enabled))
+        put("hasKey", JsonValue.Bool(this@GetPrivacyExecutorsResponseValueItem.hasKey))
+        put("hasVendorSecret", JsonValue.Bool(this@GetPrivacyExecutorsResponseValueItem.hasVendorSecret))
+        put("config", (this@GetPrivacyExecutorsResponseValueItem.config?.let { it.toJson() } ?: JsonValue.Null))
+        put("health", this@GetPrivacyExecutorsResponseValueItem.health.toJson())
+        put("lastOkAt", (this@GetPrivacyExecutorsResponseValueItem.lastOkAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("lastError", (this@GetPrivacyExecutorsResponseValueItem.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPrivacyExecutorsResponseValueItem {
+            val o = json.obj()
+            return GetPrivacyExecutorsResponseValueItem(
+                id = o.field("id").string(),
+                name = o.field("name").string(),
+                status = o.field("status").string(),
+                docsUrl = o.field("docsUrl").string(),
+                vendorDocsUrl = o.field("vendorDocsUrl").string(),
+                keyKind = o.field("keyKind").string(),
+                install = GetPrivacyExecutorsResponseValueItemInstall.fromJson(o.field("install")),
+                url = o.field("url").string(),
+                enabled = o.field("enabled").bool(),
+                hasKey = o.field("hasKey").bool(),
+                hasVendorSecret = o.field("hasVendorSecret").bool(),
+                config = o.field("config").orNull()?.let { GetPrivacyExecutorsResponseValueItemConfigOption1.fromJson(it) },
+                health = GetPrivacyExecutorsResponseValueItemHealth.fromJson(o.field("health")),
+                lastOkAt = o.field("lastOkAt").orNull()?.let { it.string() },
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+typealias GetPrivacyExecutorsResponse = List<GetPrivacyExecutorsResponseValueItem>
+
+data class PostPrivacyExecutorKeysResponse(
+    val adapter: String,
+    val url: String,
+    val enabled: Boolean,
+    val key: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PostPrivacyExecutorKeysResponse.adapter))
+        put("url", JsonValue.Str(this@PostPrivacyExecutorKeysResponse.url))
+        put("enabled", JsonValue.Bool(this@PostPrivacyExecutorKeysResponse.enabled))
+        if (this@PostPrivacyExecutorKeysResponse.key != null) put("key", (this@PostPrivacyExecutorKeysResponse.key?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPrivacyExecutorKeysResponse {
+            val o = json.obj()
+            return PostPrivacyExecutorKeysResponse(
+                adapter = o.field("adapter").string(),
+                url = o.field("url").string(),
+                enabled = o.field("enabled").bool(),
+                key = o["key"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class DeletePrivacyExecutorsAdapterResponse(
+    val ok: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@DeletePrivacyExecutorsAdapterResponse.ok))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): DeletePrivacyExecutorsAdapterResponse {
+            val o = json.obj()
+            return DeletePrivacyExecutorsAdapterResponse(
+                ok = o.field("ok").bool(),
+            )
+        }
+    }
+}
+
+data class PostPrivacyExecutorsAdapterCheckResponse(
+    val adapter: String,
+    val ok: Boolean,
+    val detail: String,
+    val fix: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PostPrivacyExecutorsAdapterCheckResponse.adapter))
+        put("ok", JsonValue.Bool(this@PostPrivacyExecutorsAdapterCheckResponse.ok))
+        put("detail", JsonValue.Str(this@PostPrivacyExecutorsAdapterCheckResponse.detail))
+        put("fix", (this@PostPrivacyExecutorsAdapterCheckResponse.fix?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPrivacyExecutorsAdapterCheckResponse {
+            val o = json.obj()
+            return PostPrivacyExecutorsAdapterCheckResponse(
+                adapter = o.field("adapter").string(),
+                ok = o.field("ok").bool(),
+                detail = o.field("detail").string(),
+                fix = o.field("fix").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPrivacyExecutorRequestsResponseValueItem(
+    val id: String,
+    val adapter: String,
+    val vendorRequestId: String? = null,
+    val op: String,
+    val status: String,
+    val createdAt: String,
+    val completedAt: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetPrivacyExecutorRequestsResponseValueItem.id))
+        put("adapter", JsonValue.Str(this@GetPrivacyExecutorRequestsResponseValueItem.adapter))
+        put("vendorRequestId", (this@GetPrivacyExecutorRequestsResponseValueItem.vendorRequestId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("op", JsonValue.Str(this@GetPrivacyExecutorRequestsResponseValueItem.op))
+        put("status", JsonValue.Str(this@GetPrivacyExecutorRequestsResponseValueItem.status))
+        put("createdAt", JsonValue.Str(this@GetPrivacyExecutorRequestsResponseValueItem.createdAt))
+        put("completedAt", (this@GetPrivacyExecutorRequestsResponseValueItem.completedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPrivacyExecutorRequestsResponseValueItem {
+            val o = json.obj()
+            return GetPrivacyExecutorRequestsResponseValueItem(
+                id = o.field("id").string(),
+                adapter = o.field("adapter").string(),
+                vendorRequestId = o.field("vendorRequestId").orNull()?.let { it.string() },
+                op = o.field("op").string(),
+                status = o.field("status").string(),
+                createdAt = o.field("createdAt").string(),
+                completedAt = o.field("completedAt").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+typealias GetPrivacyExecutorRequestsResponse = List<GetPrivacyExecutorRequestsResponseValueItem>
+
+data class PostAccountCloseResponse(
+    val closed: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("closed", JsonValue.Bool(this@PostAccountCloseResponse.closed))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAccountCloseResponse {
+            val o = json.obj()
+            return PostAccountCloseResponse(
+                closed = o.field("closed").bool(),
+            )
+        }
+    }
+}
+
+data class GetClicksConsentCoverageResponse(
+    val days: Long,
+    val since: String,
+    val attributed: Long,
+    val withEvidence: Long,
+    val share: Double? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("days", JsonValue.Num(this@GetClicksConsentCoverageResponse.days.toDouble()))
+        put("since", JsonValue.Str(this@GetClicksConsentCoverageResponse.since))
+        put("attributed", JsonValue.Num(this@GetClicksConsentCoverageResponse.attributed.toDouble()))
+        put("withEvidence", JsonValue.Num(this@GetClicksConsentCoverageResponse.withEvidence.toDouble()))
+        put("share", (this@GetClicksConsentCoverageResponse.share?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetClicksConsentCoverageResponse {
+            val o = json.obj()
+            return GetClicksConsentCoverageResponse(
+                days = o.field("days").long(),
+                since = o.field("since").string(),
+                attributed = o.field("attributed").long(),
+                withEvidence = o.field("withEvidence").long(),
+                share = o.field("share").orNull()?.let { it.double() },
+            )
+        }
+    }
+}
+
+data class GetClicksIdResponseConsentOption1(
+    val provider: String,
+    val state: String,
+    val at: String? = null,
+    val stamp: String? = null,
+    val tcString: String? = null,
+    val gppString: String? = null,
+    val purposes: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("provider", JsonValue.Str(this@GetClicksIdResponseConsentOption1.provider))
+        put("state", JsonValue.Str(this@GetClicksIdResponseConsentOption1.state))
+        if (this@GetClicksIdResponseConsentOption1.at != null) put("at", (this@GetClicksIdResponseConsentOption1.at?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetClicksIdResponseConsentOption1.stamp != null) put("stamp", (this@GetClicksIdResponseConsentOption1.stamp?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetClicksIdResponseConsentOption1.tcString != null) put("tcString", (this@GetClicksIdResponseConsentOption1.tcString?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetClicksIdResponseConsentOption1.gppString != null) put("gppString", (this@GetClicksIdResponseConsentOption1.gppString?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetClicksIdResponseConsentOption1.purposes != null) put("purposes", (this@GetClicksIdResponseConsentOption1.purposes?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetClicksIdResponseConsentOption1 {
+            val o = json.obj()
+            return GetClicksIdResponseConsentOption1(
+                provider = o.field("provider").string(),
+                state = o.field("state").string(),
+                at = o["at"]?.orNull()?.let { it.string() },
+                stamp = o["stamp"]?.orNull()?.let { it.string() },
+                tcString = o["tcString"]?.orNull()?.let { it.string() },
+                gppString = o["gppString"]?.orNull()?.let { it.string() },
+                purposes = o["purposes"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
+data class GetClicksIdResponse(
+    val id: String,
+    val programId: String,
+    val partnerId: String,
+    val linkId: String? = null,
+    val ts: String,
+    val source: String,
+    val eligible: Boolean,
+    val fraudScore: Long,
+    val anonId: String? = null,
+    val consent: GetClicksIdResponseConsentOption1? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetClicksIdResponse.id))
+        put("programId", JsonValue.Str(this@GetClicksIdResponse.programId))
+        put("partnerId", JsonValue.Str(this@GetClicksIdResponse.partnerId))
+        put("linkId", (this@GetClicksIdResponse.linkId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("ts", JsonValue.Str(this@GetClicksIdResponse.ts))
+        put("source", JsonValue.Str(this@GetClicksIdResponse.source))
+        put("eligible", JsonValue.Bool(this@GetClicksIdResponse.eligible))
+        put("fraudScore", JsonValue.Num(this@GetClicksIdResponse.fraudScore.toDouble()))
+        put("anonId", (this@GetClicksIdResponse.anonId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("consent", (this@GetClicksIdResponse.consent?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetClicksIdResponse {
+            val o = json.obj()
+            return GetClicksIdResponse(
+                id = o.field("id").string(),
+                programId = o.field("programId").string(),
+                partnerId = o.field("partnerId").string(),
+                linkId = o.field("linkId").orNull()?.let { it.string() },
+                ts = o.field("ts").string(),
+                source = o.field("source").string(),
+                eligible = o.field("eligible").bool(),
+                fraudScore = o.field("fraudScore").long(),
+                anonId = o.field("anonId").orNull()?.let { it.string() },
+                consent = o.field("consent").orNull()?.let { GetClicksIdResponseConsentOption1.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetOrgTrackingConsentResponseAdaptersItem(
+    val id: String,
+    val name: String,
+    val defaultCategory: String? = null,
+    val status: String,
+    val docsUrl: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetOrgTrackingConsentResponseAdaptersItem.id))
+        put("name", JsonValue.Str(this@GetOrgTrackingConsentResponseAdaptersItem.name))
+        put("defaultCategory", (this@GetOrgTrackingConsentResponseAdaptersItem.defaultCategory?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@GetOrgTrackingConsentResponseAdaptersItem.status))
+        put("docsUrl", JsonValue.Str(this@GetOrgTrackingConsentResponseAdaptersItem.docsUrl))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgTrackingConsentResponseAdaptersItem {
+            val o = json.obj()
+            return GetOrgTrackingConsentResponseAdaptersItem(
+                id = o.field("id").string(),
+                name = o.field("name").string(),
+                defaultCategory = o.field("defaultCategory").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+                docsUrl = o.field("docsUrl").string(),
+            )
+        }
+    }
+}
+
+data class GetOrgTrackingConsentResponse(
+    val mode: String,
+    val noCmp: String? = null,
+    val category: String? = null,
+    val tcfVendorId: Long? = null,
+    val gcmSignal: String? = null,
+    val configured: Boolean,
+    val adapters: List<GetOrgTrackingConsentResponseAdaptersItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("mode", JsonValue.Str(this@GetOrgTrackingConsentResponse.mode))
+        if (this@GetOrgTrackingConsentResponse.noCmp != null) put("noCmp", (this@GetOrgTrackingConsentResponse.noCmp?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetOrgTrackingConsentResponse.category != null) put("category", (this@GetOrgTrackingConsentResponse.category?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetOrgTrackingConsentResponse.tcfVendorId != null) put("tcfVendorId", (this@GetOrgTrackingConsentResponse.tcfVendorId?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetOrgTrackingConsentResponse.gcmSignal != null) put("gcmSignal", (this@GetOrgTrackingConsentResponse.gcmSignal?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("configured", JsonValue.Bool(this@GetOrgTrackingConsentResponse.configured))
+        put("adapters", JsonValue.Arr(this@GetOrgTrackingConsentResponse.adapters.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgTrackingConsentResponse {
+            val o = json.obj()
+            return GetOrgTrackingConsentResponse(
+                mode = o.field("mode").string(),
+                noCmp = o["noCmp"]?.orNull()?.let { it.string() },
+                category = o["category"]?.orNull()?.let { it.string() },
+                tcfVendorId = o["tcfVendorId"]?.orNull()?.let { it.long() },
+                gcmSignal = o["gcmSignal"]?.orNull()?.let { it.string() },
+                configured = o.field("configured").bool(),
+                adapters = o.field("adapters").array().map { GetOrgTrackingConsentResponseAdaptersItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseConsent(
+    val adapter: String,
+    val config: Map<String, JsonValue>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@GetOrgHostedPagesResponseConsent.adapter))
+        put("config", JsonValue.Obj(this@GetOrgHostedPagesResponseConsent.config.mapValues { it.value }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseConsent {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseConsent(
+                adapter = o.field("adapter").string(),
+                config = o.field("config").obj().mapValues { it.value },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseChatOption1(
+    val adapter: String,
+    val config: Map<String, JsonValue>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@GetOrgHostedPagesResponseChatOption1.adapter))
+        put("config", JsonValue.Obj(this@GetOrgHostedPagesResponseChatOption1.config.mapValues { it.value }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseChatOption1 {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseChatOption1(
+                adapter = o.field("adapter").string(),
+                config = o.field("config").obj().mapValues { it.value },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseServedConsentTagsItem(
+    val tag: String,
+    val attrs: Map<String, JsonValue>,
+    val inline: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("tag", JsonValue.Str(this@GetOrgHostedPagesResponseServedConsentTagsItem.tag))
+        put("attrs", JsonValue.Obj(this@GetOrgHostedPagesResponseServedConsentTagsItem.attrs.mapValues { it.value }))
+        if (this@GetOrgHostedPagesResponseServedConsentTagsItem.inline != null) put("inline", (this@GetOrgHostedPagesResponseServedConsentTagsItem.inline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseServedConsentTagsItem {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseServedConsentTagsItem(
+                tag = o.field("tag").string(),
+                attrs = o.field("attrs").obj().mapValues { it.value },
+                inline = o["inline"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseServedConsentSettingsLinkOption1(
+    val call: String? = null,
+    val attrs: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetOrgHostedPagesResponseServedConsentSettingsLinkOption1.call != null) put("call", (this@GetOrgHostedPagesResponseServedConsentSettingsLinkOption1.call?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetOrgHostedPagesResponseServedConsentSettingsLinkOption1.attrs != null) put("attrs", (this@GetOrgHostedPagesResponseServedConsentSettingsLinkOption1.attrs?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseServedConsentSettingsLinkOption1 {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseServedConsentSettingsLinkOption1(
+                call = o["call"]?.orNull()?.let { it.string() },
+                attrs = o["attrs"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseServedConsentBuiltin(
+    val policyUrl: String,
+    val text: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("policyUrl", JsonValue.Str(this@GetOrgHostedPagesResponseServedConsentBuiltin.policyUrl))
+        if (this@GetOrgHostedPagesResponseServedConsentBuiltin.text != null) put("text", (this@GetOrgHostedPagesResponseServedConsentBuiltin.text?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseServedConsentBuiltin {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseServedConsentBuiltin(
+                policyUrl = o.field("policyUrl").string(),
+                text = o["text"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseServedConsent(
+    val mode: String,
+    val provider: String,
+    val tags: List<GetOrgHostedPagesResponseServedConsentTagsItem>,
+    val settingsLink: GetOrgHostedPagesResponseServedConsentSettingsLinkOption1? = null,
+    val builtin: GetOrgHostedPagesResponseServedConsentBuiltin? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("mode", JsonValue.Str(this@GetOrgHostedPagesResponseServedConsent.mode))
+        put("provider", JsonValue.Str(this@GetOrgHostedPagesResponseServedConsent.provider))
+        put("tags", JsonValue.Arr(this@GetOrgHostedPagesResponseServedConsent.tags.map { it.toJson() }))
+        put("settingsLink", (this@GetOrgHostedPagesResponseServedConsent.settingsLink?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetOrgHostedPagesResponseServedConsent.builtin != null) put("builtin", (this@GetOrgHostedPagesResponseServedConsent.builtin?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseServedConsent {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseServedConsent(
+                mode = o.field("mode").string(),
+                provider = o.field("provider").string(),
+                tags = o.field("tags").array().map { GetOrgHostedPagesResponseServedConsentTagsItem.fromJson(it) },
+                settingsLink = o.field("settingsLink").orNull()?.let { GetOrgHostedPagesResponseServedConsentSettingsLinkOption1.fromJson(it) },
+                builtin = o["builtin"]?.orNull()?.let { GetOrgHostedPagesResponseServedConsentBuiltin.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseServedChatOption1TagsItem(
+    val tag: String,
+    val attrs: Map<String, JsonValue>,
+    val inline: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("tag", JsonValue.Str(this@GetOrgHostedPagesResponseServedChatOption1TagsItem.tag))
+        put("attrs", JsonValue.Obj(this@GetOrgHostedPagesResponseServedChatOption1TagsItem.attrs.mapValues { it.value }))
+        if (this@GetOrgHostedPagesResponseServedChatOption1TagsItem.inline != null) put("inline", (this@GetOrgHostedPagesResponseServedChatOption1TagsItem.inline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseServedChatOption1TagsItem {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseServedChatOption1TagsItem(
+                tag = o.field("tag").string(),
+                attrs = o.field("attrs").obj().mapValues { it.value },
+                inline = o["inline"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseServedChatOption1(
+    val provider: String,
+    val tags: List<GetOrgHostedPagesResponseServedChatOption1TagsItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("provider", JsonValue.Str(this@GetOrgHostedPagesResponseServedChatOption1.provider))
+        put("tags", JsonValue.Arr(this@GetOrgHostedPagesResponseServedChatOption1.tags.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseServedChatOption1 {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseServedChatOption1(
+                provider = o.field("provider").string(),
+                tags = o.field("tags").array().map { GetOrgHostedPagesResponseServedChatOption1TagsItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseServed(
+    val consent: GetOrgHostedPagesResponseServedConsent,
+    val chat: GetOrgHostedPagesResponseServedChatOption1? = null,
+    val csp: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("consent", this@GetOrgHostedPagesResponseServed.consent.toJson())
+        put("chat", (this@GetOrgHostedPagesResponseServed.chat?.let { it.toJson() } ?: JsonValue.Null))
+        put("csp", JsonValue.Str(this@GetOrgHostedPagesResponseServed.csp))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseServed {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseServed(
+                consent = GetOrgHostedPagesResponseServedConsent.fromJson(o.field("consent")),
+                chat = o.field("chat").orNull()?.let { GetOrgHostedPagesResponseServedChatOption1.fromJson(it) },
+                csp = o.field("csp").string(),
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseAdaptersConsentItem(
+    val id: String,
+    val name: String,
+    val status: String,
+    val docsUrl: String,
+    val vendorDocsUrl: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersConsentItem.id))
+        put("name", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersConsentItem.name))
+        put("status", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersConsentItem.status))
+        put("docsUrl", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersConsentItem.docsUrl))
+        put("vendorDocsUrl", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersConsentItem.vendorDocsUrl))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseAdaptersConsentItem {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseAdaptersConsentItem(
+                id = o.field("id").string(),
+                name = o.field("name").string(),
+                status = o.field("status").string(),
+                docsUrl = o.field("docsUrl").string(),
+                vendorDocsUrl = o.field("vendorDocsUrl").string(),
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseAdaptersChatItem(
+    val id: String,
+    val name: String,
+    val status: String,
+    val docsUrl: String,
+    val vendorDocsUrl: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersChatItem.id))
+        put("name", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersChatItem.name))
+        put("status", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersChatItem.status))
+        put("docsUrl", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersChatItem.docsUrl))
+        put("vendorDocsUrl", JsonValue.Str(this@GetOrgHostedPagesResponseAdaptersChatItem.vendorDocsUrl))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseAdaptersChatItem {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseAdaptersChatItem(
+                id = o.field("id").string(),
+                name = o.field("name").string(),
+                status = o.field("status").string(),
+                docsUrl = o.field("docsUrl").string(),
+                vendorDocsUrl = o.field("vendorDocsUrl").string(),
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponseAdapters(
+    val consent: List<GetOrgHostedPagesResponseAdaptersConsentItem>,
+    val chat: List<GetOrgHostedPagesResponseAdaptersChatItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("consent", JsonValue.Arr(this@GetOrgHostedPagesResponseAdapters.consent.map { it.toJson() }))
+        put("chat", JsonValue.Arr(this@GetOrgHostedPagesResponseAdapters.chat.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponseAdapters {
+            val o = json.obj()
+            return GetOrgHostedPagesResponseAdapters(
+                consent = o.field("consent").array().map { GetOrgHostedPagesResponseAdaptersConsentItem.fromJson(it) },
+                chat = o.field("chat").array().map { GetOrgHostedPagesResponseAdaptersChatItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetOrgHostedPagesResponse(
+    val consent: GetOrgHostedPagesResponseConsent,
+    val chat: GetOrgHostedPagesResponseChatOption1? = null,
+    val customOrigins: Map<String, List<String>>,
+    val status: String,
+    val lastOkAt: String? = null,
+    val lastError: String? = null,
+    val served: GetOrgHostedPagesResponseServed,
+    val adapters: GetOrgHostedPagesResponseAdapters,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("consent", this@GetOrgHostedPagesResponse.consent.toJson())
+        put("chat", (this@GetOrgHostedPagesResponse.chat?.let { it.toJson() } ?: JsonValue.Null))
+        put("customOrigins", JsonValue.Obj(this@GetOrgHostedPagesResponse.customOrigins.mapValues { JsonValue.Arr(it.value.map { JsonValue.Str(it) }) }))
+        put("status", JsonValue.Str(this@GetOrgHostedPagesResponse.status))
+        put("lastOkAt", (this@GetOrgHostedPagesResponse.lastOkAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("lastError", (this@GetOrgHostedPagesResponse.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("served", this@GetOrgHostedPagesResponse.served.toJson())
+        put("adapters", this@GetOrgHostedPagesResponse.adapters.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgHostedPagesResponse {
+            val o = json.obj()
+            return GetOrgHostedPagesResponse(
+                consent = GetOrgHostedPagesResponseConsent.fromJson(o.field("consent")),
+                chat = o.field("chat").orNull()?.let { GetOrgHostedPagesResponseChatOption1.fromJson(it) },
+                customOrigins = o.field("customOrigins").obj().mapValues { it.value.array().map { it.string() } },
+                status = o.field("status").string(),
+                lastOkAt = o.field("lastOkAt").orNull()?.let { it.string() },
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+                served = GetOrgHostedPagesResponseServed.fromJson(o.field("served")),
+                adapters = GetOrgHostedPagesResponseAdapters.fromJson(o.field("adapters")),
+            )
+        }
+    }
+}
+
+data class PostOrgHostedPagesCheckResponseChecksItem(
+    val id: String,
+    val ok: Boolean,
+    val detail: String,
+    val fix: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostOrgHostedPagesCheckResponseChecksItem.id))
+        put("ok", JsonValue.Bool(this@PostOrgHostedPagesCheckResponseChecksItem.ok))
+        put("detail", JsonValue.Str(this@PostOrgHostedPagesCheckResponseChecksItem.detail))
+        if (this@PostOrgHostedPagesCheckResponseChecksItem.fix != null) put("fix", (this@PostOrgHostedPagesCheckResponseChecksItem.fix?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOrgHostedPagesCheckResponseChecksItem {
+            val o = json.obj()
+            return PostOrgHostedPagesCheckResponseChecksItem(
+                id = o.field("id").string(),
+                ok = o.field("ok").bool(),
+                detail = o.field("detail").string(),
+                fix = o["fix"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostOrgHostedPagesCheckResponse(
+    val ok: Boolean,
+    val checks: List<PostOrgHostedPagesCheckResponseChecksItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@PostOrgHostedPagesCheckResponse.ok))
+        put("checks", JsonValue.Arr(this@PostOrgHostedPagesCheckResponse.checks.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOrgHostedPagesCheckResponse {
+            val o = json.obj()
+            return PostOrgHostedPagesCheckResponse(
+                ok = o.field("ok").bool(),
+                checks = o.field("checks").array().map { PostOrgHostedPagesCheckResponseChecksItem.fromJson(it) },
+            )
+        }
+    }
+}
+
 data class PostWebhooksBillingConnectionIdResponseResultsItem(
     val duplicate: Boolean,
     val billingEventId: String? = null,
     val conversions: Long,
     val linesCreated: Long,
     val reversals: Long,
+    val ignored: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("duplicate", JsonValue.Bool(this@PostWebhooksBillingConnectionIdResponseResultsItem.duplicate))
@@ -16949,6 +19749,7 @@ data class PostWebhooksBillingConnectionIdResponseResultsItem(
         put("conversions", JsonValue.Num(this@PostWebhooksBillingConnectionIdResponseResultsItem.conversions.toDouble()))
         put("linesCreated", JsonValue.Num(this@PostWebhooksBillingConnectionIdResponseResultsItem.linesCreated.toDouble()))
         put("reversals", JsonValue.Num(this@PostWebhooksBillingConnectionIdResponseResultsItem.reversals.toDouble()))
+        if (this@PostWebhooksBillingConnectionIdResponseResultsItem.ignored != null) put("ignored", (this@PostWebhooksBillingConnectionIdResponseResultsItem.ignored?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -16960,6 +19761,7 @@ data class PostWebhooksBillingConnectionIdResponseResultsItem(
                 conversions = o.field("conversions").long(),
                 linesCreated = o.field("linesCreated").long(),
                 reversals = o.field("reversals").long(),
+                ignored = o["ignored"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -17173,6 +19975,156 @@ data class PostWebhooksStripeBillingResponse(
     }
 }
 
+data class PostApiPrivacyLookupResponse(
+    val subjectId: String? = null,
+    val status: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("subjectId", (this@PostApiPrivacyLookupResponse.subjectId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@PostApiPrivacyLookupResponse.status))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostApiPrivacyLookupResponse {
+            val o = json.obj()
+            return PostApiPrivacyLookupResponse(
+                subjectId = o.field("subjectId").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+            )
+        }
+    }
+}
+
+data class PostApiPrivacyRequestsResponse(
+    val id: String,
+    val status: String,
+    val eta: String? = null,
+    val detail: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostApiPrivacyRequestsResponse.id))
+        put("status", JsonValue.Str(this@PostApiPrivacyRequestsResponse.status))
+        if (this@PostApiPrivacyRequestsResponse.eta != null) put("eta", (this@PostApiPrivacyRequestsResponse.eta?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostApiPrivacyRequestsResponse.detail != null) put("detail", (this@PostApiPrivacyRequestsResponse.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostApiPrivacyRequestsResponse {
+            val o = json.obj()
+            return PostApiPrivacyRequestsResponse(
+                id = o.field("id").string(),
+                status = o.field("status").string(),
+                eta = o["eta"]?.orNull()?.let { it.string() },
+                detail = o["detail"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetApiPrivacyRequestsIdResponse(
+    val id: String,
+    val type: String,
+    val status: String,
+    val eta: String? = null,
+    val detail: String? = null,
+    val result: GetOpenapiJsonResponse? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetApiPrivacyRequestsIdResponse.id))
+        put("type", JsonValue.Str(this@GetApiPrivacyRequestsIdResponse.type))
+        put("status", JsonValue.Str(this@GetApiPrivacyRequestsIdResponse.status))
+        if (this@GetApiPrivacyRequestsIdResponse.eta != null) put("eta", (this@GetApiPrivacyRequestsIdResponse.eta?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetApiPrivacyRequestsIdResponse.detail != null) put("detail", (this@GetApiPrivacyRequestsIdResponse.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetApiPrivacyRequestsIdResponse.result != null) put("result", (this@GetApiPrivacyRequestsIdResponse.result?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetApiPrivacyRequestsIdResponse {
+            val o = json.obj()
+            return GetApiPrivacyRequestsIdResponse(
+                id = o.field("id").string(),
+                type = o.field("type").string(),
+                status = o.field("status").string(),
+                eta = o["eta"]?.orNull()?.let { it.string() },
+                detail = o["detail"]?.orNull()?.let { it.string() },
+                result = o["result"]?.orNull()?.let { it.obj().mapValues { it.value } },
+            )
+        }
+    }
+}
+
+data class PostApiPrivacyOrgsOrgIdLookupResponse(
+    val subjectId: String? = null,
+    val status: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("subjectId", (this@PostApiPrivacyOrgsOrgIdLookupResponse.subjectId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@PostApiPrivacyOrgsOrgIdLookupResponse.status))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostApiPrivacyOrgsOrgIdLookupResponse {
+            val o = json.obj()
+            return PostApiPrivacyOrgsOrgIdLookupResponse(
+                subjectId = o.field("subjectId").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+            )
+        }
+    }
+}
+
+data class PostApiPrivacyOrgsOrgIdRequestsResponse(
+    val id: String,
+    val status: String,
+    val detail: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostApiPrivacyOrgsOrgIdRequestsResponse.id))
+        put("status", JsonValue.Str(this@PostApiPrivacyOrgsOrgIdRequestsResponse.status))
+        if (this@PostApiPrivacyOrgsOrgIdRequestsResponse.detail != null) put("detail", (this@PostApiPrivacyOrgsOrgIdRequestsResponse.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostApiPrivacyOrgsOrgIdRequestsResponse {
+            val o = json.obj()
+            return PostApiPrivacyOrgsOrgIdRequestsResponse(
+                id = o.field("id").string(),
+                status = o.field("status").string(),
+                detail = o["detail"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetApiPrivacyOrgsOrgIdRequestsIdResponse(
+    val id: String,
+    val type: String,
+    val status: String,
+    val detail: String? = null,
+    val result: PostSupportCardsOrgIdAdapterResponse? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetApiPrivacyOrgsOrgIdRequestsIdResponse.id))
+        put("type", JsonValue.Str(this@GetApiPrivacyOrgsOrgIdRequestsIdResponse.type))
+        put("status", JsonValue.Str(this@GetApiPrivacyOrgsOrgIdRequestsIdResponse.status))
+        if (this@GetApiPrivacyOrgsOrgIdRequestsIdResponse.detail != null) put("detail", (this@GetApiPrivacyOrgsOrgIdRequestsIdResponse.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetApiPrivacyOrgsOrgIdRequestsIdResponse.result != null) put("result", (this@GetApiPrivacyOrgsOrgIdRequestsIdResponse.result?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetApiPrivacyOrgsOrgIdRequestsIdResponse {
+            val o = json.obj()
+            return GetApiPrivacyOrgsOrgIdRequestsIdResponse(
+                id = o.field("id").string(),
+                type = o.field("type").string(),
+                status = o.field("status").string(),
+                detail = o["detail"]?.orNull()?.let { it.string() },
+                result = o["result"]?.orNull()?.let { it.obj().mapValues { it.value } },
+            )
+        }
+    }
+}
+
 data class GetGraphqlResponse(
     val data: GetOpenapiJsonResponse? = null,
     val errors: List<GetOpenapiJsonResponse>? = null,
@@ -17248,6 +20200,23 @@ data class PostAgentsRegisterBody(
     }
 }
 
+data class PostAuthBackchannelLogoutBody(
+    val logoutToken: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("logout_token", JsonValue.Str(this@PostAuthBackchannelLogoutBody.logoutToken))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthBackchannelLogoutBody {
+            val o = json.obj()
+            return PostAuthBackchannelLogoutBody(
+                logoutToken = o.field("logout_token").string(),
+            )
+        }
+    }
+}
+
 data class PostOrgsBody(
     val name: String,
 ) {
@@ -17260,6 +20229,96 @@ data class PostOrgsBody(
             val o = json.obj()
             return PostOrgsBody(
                 name = o.field("name").string(),
+            )
+        }
+    }
+}
+
+data class PutOrgPortalAuthBodyOption1(
+    val adapter: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgPortalAuthBodyOption1.adapter))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgPortalAuthBodyOption1 {
+            val o = json.obj()
+            return PutOrgPortalAuthBodyOption1(
+                adapter = o.field("adapter").string(),
+            )
+        }
+    }
+}
+
+data class PutOrgPortalAuthBodyOption2(
+    val issuer: String,
+    val clientId: String,
+    val clientSecret: String? = null,
+    val scopes: String? = null,
+    val name: String? = null,
+    val trustEmailVerified: Boolean? = null,
+    val adapter: String,
+    val autoEnrollProgramId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("issuer", JsonValue.Str(this@PutOrgPortalAuthBodyOption2.issuer))
+        put("clientId", JsonValue.Str(this@PutOrgPortalAuthBodyOption2.clientId))
+        if (this@PutOrgPortalAuthBodyOption2.clientSecret != null) put("clientSecret", (this@PutOrgPortalAuthBodyOption2.clientSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption2.scopes != null) put("scopes", (this@PutOrgPortalAuthBodyOption2.scopes?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption2.name != null) put("name", (this@PutOrgPortalAuthBodyOption2.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption2.trustEmailVerified != null) put("trustEmailVerified", (this@PutOrgPortalAuthBodyOption2.trustEmailVerified?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        put("adapter", JsonValue.Str(this@PutOrgPortalAuthBodyOption2.adapter))
+        if (this@PutOrgPortalAuthBodyOption2.autoEnrollProgramId != null) put("autoEnrollProgramId", (this@PutOrgPortalAuthBodyOption2.autoEnrollProgramId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgPortalAuthBodyOption2 {
+            val o = json.obj()
+            return PutOrgPortalAuthBodyOption2(
+                issuer = o.field("issuer").string(),
+                clientId = o.field("clientId").string(),
+                clientSecret = o["clientSecret"]?.orNull()?.let { it.string() },
+                scopes = o["scopes"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+                trustEmailVerified = o["trustEmailVerified"]?.orNull()?.let { it.bool() },
+                adapter = o.field("adapter").string(),
+                autoEnrollProgramId = o["autoEnrollProgramId"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PutOrgPortalAuthBodyOption3(
+    val adapter: String,
+    val issuer: String,
+    val jwksUrl: String,
+    val trustEmailVerified: Boolean? = null,
+    val autoEnrollProgramId: String? = null,
+    val name: String? = null,
+    val loginUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgPortalAuthBodyOption3.adapter))
+        put("issuer", JsonValue.Str(this@PutOrgPortalAuthBodyOption3.issuer))
+        put("jwksUrl", JsonValue.Str(this@PutOrgPortalAuthBodyOption3.jwksUrl))
+        if (this@PutOrgPortalAuthBodyOption3.trustEmailVerified != null) put("trustEmailVerified", (this@PutOrgPortalAuthBodyOption3.trustEmailVerified?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.autoEnrollProgramId != null) put("autoEnrollProgramId", (this@PutOrgPortalAuthBodyOption3.autoEnrollProgramId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.name != null) put("name", (this@PutOrgPortalAuthBodyOption3.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.loginUrl != null) put("loginUrl", (this@PutOrgPortalAuthBodyOption3.loginUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgPortalAuthBodyOption3 {
+            val o = json.obj()
+            return PutOrgPortalAuthBodyOption3(
+                adapter = o.field("adapter").string(),
+                issuer = o.field("issuer").string(),
+                jwksUrl = o.field("jwksUrl").string(),
+                trustEmailVerified = o["trustEmailVerified"]?.orNull()?.let { it.bool() },
+                autoEnrollProgramId = o["autoEnrollProgramId"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+                loginUrl = o["loginUrl"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -18587,6 +21646,41 @@ data class PostWidgetTokensBody(
     }
 }
 
+data class PostReferralsAssociateBodyConsent(
+    val provider: String,
+    val state: String,
+    val at: String? = null,
+    val stamp: String? = null,
+    val tcString: String? = null,
+    val gppString: String? = null,
+    val purposes: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("provider", JsonValue.Str(this@PostReferralsAssociateBodyConsent.provider))
+        put("state", JsonValue.Str(this@PostReferralsAssociateBodyConsent.state))
+        if (this@PostReferralsAssociateBodyConsent.at != null) put("at", (this@PostReferralsAssociateBodyConsent.at?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostReferralsAssociateBodyConsent.stamp != null) put("stamp", (this@PostReferralsAssociateBodyConsent.stamp?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostReferralsAssociateBodyConsent.tcString != null) put("tcString", (this@PostReferralsAssociateBodyConsent.tcString?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostReferralsAssociateBodyConsent.gppString != null) put("gppString", (this@PostReferralsAssociateBodyConsent.gppString?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostReferralsAssociateBodyConsent.purposes != null) put("purposes", (this@PostReferralsAssociateBodyConsent.purposes?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostReferralsAssociateBodyConsent {
+            val o = json.obj()
+            return PostReferralsAssociateBodyConsent(
+                provider = o.field("provider").string(),
+                state = o.field("state").string(),
+                at = o["at"]?.orNull()?.let { it.string() },
+                stamp = o["stamp"]?.orNull()?.let { it.string() },
+                tcString = o["tcString"]?.orNull()?.let { it.string() },
+                gppString = o["gppString"]?.orNull()?.let { it.string() },
+                purposes = o["purposes"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
 data class PostReferralsAssociateBody(
     val programId: String,
     val customerRef: String,
@@ -18599,6 +21693,7 @@ data class PostReferralsAssociateBody(
     val idempotencyKey: String? = null,
     val occurredAt: String? = null,
     val emailDomain: String? = null,
+    val consent: PostReferralsAssociateBodyConsent? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("programId", JsonValue.Str(this@PostReferralsAssociateBody.programId))
@@ -18612,6 +21707,7 @@ data class PostReferralsAssociateBody(
         if (this@PostReferralsAssociateBody.idempotencyKey != null) put("idempotencyKey", (this@PostReferralsAssociateBody.idempotencyKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostReferralsAssociateBody.occurredAt != null) put("occurredAt", (this@PostReferralsAssociateBody.occurredAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostReferralsAssociateBody.emailDomain != null) put("emailDomain", (this@PostReferralsAssociateBody.emailDomain?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostReferralsAssociateBody.consent != null) put("consent", (this@PostReferralsAssociateBody.consent?.let { it.toJson() } ?: JsonValue.Null))
     })
 
     companion object {
@@ -18629,6 +21725,7 @@ data class PostReferralsAssociateBody(
                 idempotencyKey = o["idempotencyKey"]?.orNull()?.let { it.string() },
                 occurredAt = o["occurredAt"]?.orNull()?.let { it.string() },
                 emailDomain = o["emailDomain"]?.orNull()?.let { it.string() },
+                consent = o["consent"]?.orNull()?.let { PostReferralsAssociateBodyConsent.fromJson(it) },
             )
         }
     }
@@ -19247,15 +22344,43 @@ data class PostCommissionsIdSettleBody(
     }
 }
 
+data class PostBillingConnectionsBodyFilter(
+    val metadata: Map<String, String>? = null,
+    val productIds: List<String>? = null,
+    val priceIds: List<String>? = null,
+    val skus: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostBillingConnectionsBodyFilter.metadata != null) put("metadata", (this@PostBillingConnectionsBodyFilter.metadata?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyFilter.productIds != null) put("productIds", (this@PostBillingConnectionsBodyFilter.productIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyFilter.priceIds != null) put("priceIds", (this@PostBillingConnectionsBodyFilter.priceIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyFilter.skus != null) put("skus", (this@PostBillingConnectionsBodyFilter.skus?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostBillingConnectionsBodyFilter {
+            val o = json.obj()
+            return PostBillingConnectionsBodyFilter(
+                metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                productIds = o["productIds"]?.orNull()?.let { it.array().map { it.string() } },
+                priceIds = o["priceIds"]?.orNull()?.let { it.array().map { it.string() } },
+                skus = o["skus"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
 data class PostBillingConnectionsBody(
     val provider: String,
     val name: String? = null,
     val webhookSecret: String? = null,
+    val filter: PostBillingConnectionsBodyFilter? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("provider", JsonValue.Str(this@PostBillingConnectionsBody.provider))
         if (this@PostBillingConnectionsBody.name != null) put("name", (this@PostBillingConnectionsBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostBillingConnectionsBody.webhookSecret != null) put("webhookSecret", (this@PostBillingConnectionsBody.webhookSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBody.filter != null) put("filter", (this@PostBillingConnectionsBody.filter?.let { it.toJson() } ?: JsonValue.Null))
     })
 
     companion object {
@@ -19265,6 +22390,7 @@ data class PostBillingConnectionsBody(
                 provider = o.field("provider").string(),
                 name = o["name"]?.orNull()?.let { it.string() },
                 webhookSecret = o["webhookSecret"]?.orNull()?.let { it.string() },
+                filter = o["filter"]?.orNull()?.let { PostBillingConnectionsBodyFilter.fromJson(it) },
             )
         }
     }
@@ -19313,13 +22439,41 @@ data class PutBillingConnectionsIdCredentialsBody(
     }
 }
 
+data class PatchBillingConnectionsIdBodyFilterOption1(
+    val metadata: Map<String, String>? = null,
+    val productIds: List<String>? = null,
+    val priceIds: List<String>? = null,
+    val skus: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PatchBillingConnectionsIdBodyFilterOption1.metadata != null) put("metadata", (this@PatchBillingConnectionsIdBodyFilterOption1.metadata?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@PatchBillingConnectionsIdBodyFilterOption1.productIds != null) put("productIds", (this@PatchBillingConnectionsIdBodyFilterOption1.productIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PatchBillingConnectionsIdBodyFilterOption1.priceIds != null) put("priceIds", (this@PatchBillingConnectionsIdBodyFilterOption1.priceIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PatchBillingConnectionsIdBodyFilterOption1.skus != null) put("skus", (this@PatchBillingConnectionsIdBodyFilterOption1.skus?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchBillingConnectionsIdBodyFilterOption1 {
+            val o = json.obj()
+            return PatchBillingConnectionsIdBodyFilterOption1(
+                metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                productIds = o["productIds"]?.orNull()?.let { it.array().map { it.string() } },
+                priceIds = o["priceIds"]?.orNull()?.let { it.array().map { it.string() } },
+                skus = o["skus"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
 data class PatchBillingConnectionsIdBody(
     val status: String? = null,
     val name: String? = null,
+    val filter: PatchBillingConnectionsIdBodyFilterOption1? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PatchBillingConnectionsIdBody.status != null) put("status", (this@PatchBillingConnectionsIdBody.status?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchBillingConnectionsIdBody.name != null) put("name", (this@PatchBillingConnectionsIdBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchBillingConnectionsIdBody.filter != null) put("filter", (this@PatchBillingConnectionsIdBody.filter?.let { it.toJson() } ?: JsonValue.Null))
     })
 
     companion object {
@@ -19328,6 +22482,7 @@ data class PatchBillingConnectionsIdBody(
             return PatchBillingConnectionsIdBody(
                 status = o["status"]?.orNull()?.let { it.string() },
                 name = o["name"]?.orNull()?.let { it.string() },
+                filter = o["filter"]?.orNull()?.let { PatchBillingConnectionsIdBodyFilterOption1.fromJson(it) },
             )
         }
     }
@@ -19415,6 +22570,26 @@ data class PostBillingConnectionsIdValueMappingPreviewBody(
                 payload = o.field("payload"),
                 currency = o["currency"]?.orNull()?.let { it.string() },
                 mapping = o["mapping"]?.orNull()?.let { PostBillingConnectionsIdValueMappingPreviewBodyMapping.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostBillingInternalCustomersBody(
+    val customerRef: String,
+    val note: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("customerRef", JsonValue.Str(this@PostBillingInternalCustomersBody.customerRef))
+        if (this@PostBillingInternalCustomersBody.note != null) put("note", (this@PostBillingInternalCustomersBody.note?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostBillingInternalCustomersBody {
+            val o = json.obj()
+            return PostBillingInternalCustomersBody(
+                customerRef = o.field("customerRef").string(),
+                note = o["note"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -19826,19 +23001,99 @@ data class PostRoiPatternsPatternReviewBody(
     }
 }
 
-/** Up to 500 value events; each is validated and recorded on its own. */
-data class PostValueEventsBody(
-    val events: List<JsonValue>,
+data class PostValueEventsBodyEventsItem(
+    val kind: String,
+    val customerRef: String? = null,
+    val partnerId: String? = null,
+    val partnerExternalRef: String? = null,
+    val creditGrantId: String? = null,
+    val referralId: String? = null,
+    val programId: String? = null,
+    val productRef: String? = null,
+    val currency: String,
+    val cashMinor: Long? = null,
+    val creditAppliedMinor: Long? = null,
+    val discountMinor: Long? = null,
+    val taxMinor: Long? = null,
+    val feesMinor: Long? = null,
+    val costMinor: Long? = null,
+    val faceMinor: Long? = null,
+    val externalId: String,
+    val invoiceRef: String? = null,
+    val provider: String? = null,
+    val occurredAt: String,
+    val role: String? = null,
+    val metadata: Map<String, JsonValue>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("events", JsonValue.Arr(this@PostValueEventsBody.events.map { it }))
+        put("kind", JsonValue.Str(this@PostValueEventsBodyEventsItem.kind))
+        if (this@PostValueEventsBodyEventsItem.customerRef != null) put("customerRef", (this@PostValueEventsBodyEventsItem.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.partnerId != null) put("partnerId", (this@PostValueEventsBodyEventsItem.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.partnerExternalRef != null) put("partnerExternalRef", (this@PostValueEventsBodyEventsItem.partnerExternalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.creditGrantId != null) put("creditGrantId", (this@PostValueEventsBodyEventsItem.creditGrantId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.referralId != null) put("referralId", (this@PostValueEventsBodyEventsItem.referralId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.programId != null) put("programId", (this@PostValueEventsBodyEventsItem.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.productRef != null) put("productRef", (this@PostValueEventsBodyEventsItem.productRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("currency", JsonValue.Str(this@PostValueEventsBodyEventsItem.currency))
+        if (this@PostValueEventsBodyEventsItem.cashMinor != null) put("cashMinor", (this@PostValueEventsBodyEventsItem.cashMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.creditAppliedMinor != null) put("creditAppliedMinor", (this@PostValueEventsBodyEventsItem.creditAppliedMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.discountMinor != null) put("discountMinor", (this@PostValueEventsBodyEventsItem.discountMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.taxMinor != null) put("taxMinor", (this@PostValueEventsBodyEventsItem.taxMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.feesMinor != null) put("feesMinor", (this@PostValueEventsBodyEventsItem.feesMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.costMinor != null) put("costMinor", (this@PostValueEventsBodyEventsItem.costMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.faceMinor != null) put("faceMinor", (this@PostValueEventsBodyEventsItem.faceMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("externalId", JsonValue.Str(this@PostValueEventsBodyEventsItem.externalId))
+        if (this@PostValueEventsBodyEventsItem.invoiceRef != null) put("invoiceRef", (this@PostValueEventsBodyEventsItem.invoiceRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.provider != null) put("provider", (this@PostValueEventsBodyEventsItem.provider?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("occurredAt", JsonValue.Str(this@PostValueEventsBodyEventsItem.occurredAt))
+        if (this@PostValueEventsBodyEventsItem.role != null) put("role", (this@PostValueEventsBodyEventsItem.role?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostValueEventsBodyEventsItem.metadata != null) put("metadata", (this@PostValueEventsBodyEventsItem.metadata?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostValueEventsBodyEventsItem {
+            val o = json.obj()
+            return PostValueEventsBodyEventsItem(
+                kind = o.field("kind").string(),
+                customerRef = o["customerRef"]?.orNull()?.let { it.string() },
+                partnerId = o["partnerId"]?.orNull()?.let { it.string() },
+                partnerExternalRef = o["partnerExternalRef"]?.orNull()?.let { it.string() },
+                creditGrantId = o["creditGrantId"]?.orNull()?.let { it.string() },
+                referralId = o["referralId"]?.orNull()?.let { it.string() },
+                programId = o["programId"]?.orNull()?.let { it.string() },
+                productRef = o["productRef"]?.orNull()?.let { it.string() },
+                currency = o.field("currency").string(),
+                cashMinor = o["cashMinor"]?.orNull()?.let { it.long() },
+                creditAppliedMinor = o["creditAppliedMinor"]?.orNull()?.let { it.long() },
+                discountMinor = o["discountMinor"]?.orNull()?.let { it.long() },
+                taxMinor = o["taxMinor"]?.orNull()?.let { it.long() },
+                feesMinor = o["feesMinor"]?.orNull()?.let { it.long() },
+                costMinor = o["costMinor"]?.orNull()?.let { it.long() },
+                faceMinor = o["faceMinor"]?.orNull()?.let { it.long() },
+                externalId = o.field("externalId").string(),
+                invoiceRef = o["invoiceRef"]?.orNull()?.let { it.string() },
+                provider = o["provider"]?.orNull()?.let { it.string() },
+                occurredAt = o.field("occurredAt").string(),
+                role = o["role"]?.orNull()?.let { it.string() },
+                metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value } },
+            )
+        }
+    }
+}
+
+/** Up to 500 value events; each is validated and recorded on its own, so one bad event is reported in `errors` and the rest are recorded. */
+data class PostValueEventsBody(
+    val events: List<PostValueEventsBodyEventsItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("events", JsonValue.Arr(this@PostValueEventsBody.events.map { it.toJson() }))
     })
 
     companion object {
         fun fromJson(json: JsonValue): PostValueEventsBody {
             val o = json.obj()
             return PostValueEventsBody(
-                events = o.field("events").array().map { it },
+                events = o.field("events").array().map { PostValueEventsBodyEventsItem.fromJson(it) },
             )
         }
     }
@@ -20003,12 +23258,14 @@ data class PostWebhookEndpointsBody(
     val topics: List<String>? = null,
     val legacySignature: Boolean? = null,
     val programIds: List<String>? = null,
+    val alertContacts: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("url", JsonValue.Str(this@PostWebhookEndpointsBody.url))
         if (this@PostWebhookEndpointsBody.topics != null) put("topics", (this@PostWebhookEndpointsBody.topics?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         if (this@PostWebhookEndpointsBody.legacySignature != null) put("legacySignature", (this@PostWebhookEndpointsBody.legacySignature?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PostWebhookEndpointsBody.programIds != null) put("programIds", (this@PostWebhookEndpointsBody.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostWebhookEndpointsBody.alertContacts != null) put("alertContacts", (this@PostWebhookEndpointsBody.alertContacts?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -20019,6 +23276,7 @@ data class PostWebhookEndpointsBody(
                 topics = o["topics"]?.orNull()?.let { it.array().map { it.string() } },
                 legacySignature = o["legacySignature"]?.orNull()?.let { it.bool() },
                 programIds = o["programIds"]?.orNull()?.let { it.array().map { it.string() } },
+                alertContacts = o["alertContacts"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -20030,6 +23288,7 @@ data class PatchWebhookEndpointsIdBody(
     val topics: List<String>? = null,
     val legacySignature: Boolean? = null,
     val programIds: List<String>? = null,
+    val alertContacts: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PatchWebhookEndpointsIdBody.status != null) put("status", (this@PatchWebhookEndpointsIdBody.status?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -20037,6 +23296,7 @@ data class PatchWebhookEndpointsIdBody(
         if (this@PatchWebhookEndpointsIdBody.topics != null) put("topics", (this@PatchWebhookEndpointsIdBody.topics?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         if (this@PatchWebhookEndpointsIdBody.legacySignature != null) put("legacySignature", (this@PatchWebhookEndpointsIdBody.legacySignature?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PatchWebhookEndpointsIdBody.programIds != null) put("programIds", (this@PatchWebhookEndpointsIdBody.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PatchWebhookEndpointsIdBody.alertContacts != null) put("alertContacts", (this@PatchWebhookEndpointsIdBody.alertContacts?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -20048,6 +23308,7 @@ data class PatchWebhookEndpointsIdBody(
                 topics = o["topics"]?.orNull()?.let { it.array().map { it.string() } },
                 legacySignature = o["legacySignature"]?.orNull()?.let { it.bool() },
                 programIds = o["programIds"]?.orNull()?.let { it.array().map { it.string() } },
+                alertContacts = o["alertContacts"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -20537,6 +23798,47 @@ data class PutProgramsIdRefereeRewardBody(
     }
 }
 
+data class PostRewardsBody(
+    val partnerId: String? = null,
+    val partnerExternalRef: String? = null,
+    val reason: String,
+    val amountMinor: Long? = null,
+    val currency: String? = null,
+    val ruleKey: String? = null,
+    val event: String? = null,
+    val programId: String? = null,
+    val idempotencyKey: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostRewardsBody.partnerId != null) put("partnerId", (this@PostRewardsBody.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostRewardsBody.partnerExternalRef != null) put("partnerExternalRef", (this@PostRewardsBody.partnerExternalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("reason", JsonValue.Str(this@PostRewardsBody.reason))
+        if (this@PostRewardsBody.amountMinor != null) put("amountMinor", (this@PostRewardsBody.amountMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostRewardsBody.currency != null) put("currency", (this@PostRewardsBody.currency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostRewardsBody.ruleKey != null) put("ruleKey", (this@PostRewardsBody.ruleKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostRewardsBody.event != null) put("event", (this@PostRewardsBody.event?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostRewardsBody.programId != null) put("programId", (this@PostRewardsBody.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("idempotencyKey", JsonValue.Str(this@PostRewardsBody.idempotencyKey))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostRewardsBody {
+            val o = json.obj()
+            return PostRewardsBody(
+                partnerId = o["partnerId"]?.orNull()?.let { it.string() },
+                partnerExternalRef = o["partnerExternalRef"]?.orNull()?.let { it.string() },
+                reason = o.field("reason").string(),
+                amountMinor = o["amountMinor"]?.orNull()?.let { it.long() },
+                currency = o["currency"]?.orNull()?.let { it.string() },
+                ruleKey = o["ruleKey"]?.orNull()?.let { it.string() },
+                event = o["event"]?.orNull()?.let { it.string() },
+                programId = o["programId"]?.orNull()?.let { it.string() },
+                idempotencyKey = o.field("idempotencyKey").string(),
+            )
+        }
+    }
+}
+
 data class PostRewardsRedeemByCodeBody(
     val amountMinor: Long? = null,
     val billingEventId: String? = null,
@@ -20593,6 +23895,38 @@ data class PostRewardsIdRedeemBody(
                 invoiceRef = o["invoiceRef"]?.orNull()?.let { it.string() },
                 externalId = o["externalId"]?.orNull()?.let { it.string() },
                 occurredAt = o["occurredAt"]?.orNull()?.let { it },
+            )
+        }
+    }
+}
+
+data class PutRewardsRulesKeyBody(
+    val event: String? = null,
+    val programId: String? = null,
+    val amountMinor: Long,
+    val currency: String? = null,
+    val reason: String,
+    val enabled: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PutRewardsRulesKeyBody.event != null) put("event", (this@PutRewardsRulesKeyBody.event?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutRewardsRulesKeyBody.programId != null) put("programId", (this@PutRewardsRulesKeyBody.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@PutRewardsRulesKeyBody.amountMinor.toDouble()))
+        if (this@PutRewardsRulesKeyBody.currency != null) put("currency", (this@PutRewardsRulesKeyBody.currency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("reason", JsonValue.Str(this@PutRewardsRulesKeyBody.reason))
+        if (this@PutRewardsRulesKeyBody.enabled != null) put("enabled", (this@PutRewardsRulesKeyBody.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutRewardsRulesKeyBody {
+            val o = json.obj()
+            return PutRewardsRulesKeyBody(
+                event = o["event"]?.orNull()?.let { it.string() },
+                programId = o["programId"]?.orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o["currency"]?.orNull()?.let { it.string() },
+                reason = o.field("reason").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
             )
         }
     }
@@ -21748,6 +25082,23 @@ data class PostAuthConnectionsBody(
     }
 }
 
+data class PutAuthConnectionsIdSecretBody(
+    val secret: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("secret", JsonValue.Str(this@PutAuthConnectionsIdSecretBody.secret))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutAuthConnectionsIdSecretBody {
+            val o = json.obj()
+            return PutAuthConnectionsIdSecretBody(
+                secret = o.field("secret").string(),
+            )
+        }
+    }
+}
+
 data class PatchAuthConnectionsIdBody(
     val status: String? = null,
     val name: String? = null,
@@ -21900,6 +25251,32 @@ data class PostAuthConnectionsIdSignupsBody(
     }
 }
 
+data class PostAuthConnectionsIdPartnersBody(
+    val customerRef: String,
+    val email: String,
+    val name: String? = null,
+    val code: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("customerRef", JsonValue.Str(this@PostAuthConnectionsIdPartnersBody.customerRef))
+        put("email", JsonValue.Str(this@PostAuthConnectionsIdPartnersBody.email))
+        if (this@PostAuthConnectionsIdPartnersBody.name != null) put("name", (this@PostAuthConnectionsIdPartnersBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsIdPartnersBody.code != null) put("code", (this@PostAuthConnectionsIdPartnersBody.code?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsIdPartnersBody {
+            val o = json.obj()
+            return PostAuthConnectionsIdPartnersBody(
+                customerRef = o.field("customerRef").string(),
+                email = o.field("email").string(),
+                name = o["name"]?.orNull()?.let { it.string() },
+                code = o["code"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
 data class PostAuthConnectionsIdEraseBody(
     val customerRef: String,
 ) {
@@ -21989,6 +25366,73 @@ data class PostAuthConnectionsIdSignalsBody(
     }
 }
 
+data class PostAuthConnectionsInstallBody(
+    val clientId: String,
+    val scope: String,
+    val redirectUri: String,
+    val state: String? = null,
+    val codeChallenge: String,
+    val instanceId: String,
+    val programId: String? = null,
+    val decision: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("clientId", JsonValue.Str(this@PostAuthConnectionsInstallBody.clientId))
+        put("scope", JsonValue.Str(this@PostAuthConnectionsInstallBody.scope))
+        put("redirectUri", JsonValue.Str(this@PostAuthConnectionsInstallBody.redirectUri))
+        if (this@PostAuthConnectionsInstallBody.state != null) put("state", (this@PostAuthConnectionsInstallBody.state?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("codeChallenge", JsonValue.Str(this@PostAuthConnectionsInstallBody.codeChallenge))
+        put("instanceId", JsonValue.Str(this@PostAuthConnectionsInstallBody.instanceId))
+        if (this@PostAuthConnectionsInstallBody.programId != null) put("programId", (this@PostAuthConnectionsInstallBody.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("decision", JsonValue.Str(this@PostAuthConnectionsInstallBody.decision))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsInstallBody {
+            val o = json.obj()
+            return PostAuthConnectionsInstallBody(
+                clientId = o.field("clientId").string(),
+                scope = o.field("scope").string(),
+                redirectUri = o.field("redirectUri").string(),
+                state = o["state"]?.orNull()?.let { it.string() },
+                codeChallenge = o.field("codeChallenge").string(),
+                instanceId = o.field("instanceId").string(),
+                programId = o["programId"]?.orNull()?.let { it.string() },
+                decision = o.field("decision").string(),
+            )
+        }
+    }
+}
+
+data class PostOauthTokenBody(
+    val grantType: String,
+    val code: String,
+    val codeVerifier: String,
+    val clientId: String,
+    val redirectUri: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("grant_type", JsonValue.Str(this@PostOauthTokenBody.grantType))
+        put("code", JsonValue.Str(this@PostOauthTokenBody.code))
+        put("code_verifier", JsonValue.Str(this@PostOauthTokenBody.codeVerifier))
+        put("client_id", JsonValue.Str(this@PostOauthTokenBody.clientId))
+        put("redirect_uri", JsonValue.Str(this@PostOauthTokenBody.redirectUri))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOauthTokenBody {
+            val o = json.obj()
+            return PostOauthTokenBody(
+                grantType = o.field("grant_type").string(),
+                code = o.field("code").string(),
+                codeVerifier = o.field("code_verifier").string(),
+                clientId = o.field("client_id").string(),
+                redirectUri = o.field("redirect_uri").string(),
+            )
+        }
+    }
+}
+
 data class PatchOrgSsoBody(
     val requireSso: Boolean? = null,
     val roleMapping: Map<String, String>? = null,
@@ -22021,6 +25465,91 @@ data class PostOrgSsoTicketsBody(
             val o = json.obj()
             return PostOrgSsoTicketsBody(
                 expiresInDays = o["expiresInDays"]?.orNull()?.let { it.long() },
+            )
+        }
+    }
+}
+
+data class PutOrgSsoDirectBodyOption1(
+    val adapter: String,
+    val issuer: String,
+    val clientId: String,
+    val clientSecret: String? = null,
+    val scopes: String? = null,
+    val roleClaim: String? = null,
+    val name: String? = null,
+    val domains: List<String>? = null,
+    val roleMapping: Map<String, String>? = null,
+    val defaultRole: String? = null,
+    val trustEmailVerified: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgSsoDirectBodyOption1.adapter))
+        put("issuer", JsonValue.Str(this@PutOrgSsoDirectBodyOption1.issuer))
+        put("clientId", JsonValue.Str(this@PutOrgSsoDirectBodyOption1.clientId))
+        if (this@PutOrgSsoDirectBodyOption1.clientSecret != null) put("clientSecret", (this@PutOrgSsoDirectBodyOption1.clientSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption1.scopes != null) put("scopes", (this@PutOrgSsoDirectBodyOption1.scopes?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption1.roleClaim != null) put("roleClaim", (this@PutOrgSsoDirectBodyOption1.roleClaim?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption1.name != null) put("name", (this@PutOrgSsoDirectBodyOption1.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption1.domains != null) put("domains", (this@PutOrgSsoDirectBodyOption1.domains?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption1.roleMapping != null) put("roleMapping", (this@PutOrgSsoDirectBodyOption1.roleMapping?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption1.defaultRole != null) put("defaultRole", (this@PutOrgSsoDirectBodyOption1.defaultRole?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption1.trustEmailVerified != null) put("trustEmailVerified", (this@PutOrgSsoDirectBodyOption1.trustEmailVerified?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgSsoDirectBodyOption1 {
+            val o = json.obj()
+            return PutOrgSsoDirectBodyOption1(
+                adapter = o.field("adapter").string(),
+                issuer = o.field("issuer").string(),
+                clientId = o.field("clientId").string(),
+                clientSecret = o["clientSecret"]?.orNull()?.let { it.string() },
+                scopes = o["scopes"]?.orNull()?.let { it.string() },
+                roleClaim = o["roleClaim"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+                domains = o["domains"]?.orNull()?.let { it.array().map { it.string() } },
+                roleMapping = o["roleMapping"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                defaultRole = o["defaultRole"]?.orNull()?.let { it.string() },
+                trustEmailVerified = o["trustEmailVerified"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PutOrgSsoDirectBodyOption2(
+    val adapter: String,
+    val clientId: String,
+    val apiKey: String? = null,
+    val organizationId: String,
+    val domains: List<String>? = null,
+    val roleMapping: Map<String, String>? = null,
+    val defaultRole: String? = null,
+    val trustEmailVerified: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgSsoDirectBodyOption2.adapter))
+        put("clientId", JsonValue.Str(this@PutOrgSsoDirectBodyOption2.clientId))
+        if (this@PutOrgSsoDirectBodyOption2.apiKey != null) put("apiKey", (this@PutOrgSsoDirectBodyOption2.apiKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("organizationId", JsonValue.Str(this@PutOrgSsoDirectBodyOption2.organizationId))
+        if (this@PutOrgSsoDirectBodyOption2.domains != null) put("domains", (this@PutOrgSsoDirectBodyOption2.domains?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption2.roleMapping != null) put("roleMapping", (this@PutOrgSsoDirectBodyOption2.roleMapping?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption2.defaultRole != null) put("defaultRole", (this@PutOrgSsoDirectBodyOption2.defaultRole?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgSsoDirectBodyOption2.trustEmailVerified != null) put("trustEmailVerified", (this@PutOrgSsoDirectBodyOption2.trustEmailVerified?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgSsoDirectBodyOption2 {
+            val o = json.obj()
+            return PutOrgSsoDirectBodyOption2(
+                adapter = o.field("adapter").string(),
+                clientId = o.field("clientId").string(),
+                apiKey = o["apiKey"]?.orNull()?.let { it.string() },
+                organizationId = o.field("organizationId").string(),
+                domains = o["domains"]?.orNull()?.let { it.array().map { it.string() } },
+                roleMapping = o["roleMapping"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                defaultRole = o["defaultRole"]?.orNull()?.let { it.string() },
+                trustEmailVerified = o["trustEmailVerified"]?.orNull()?.let { it.bool() },
             )
         }
     }
@@ -22107,6 +25636,242 @@ data class PostPublicProgramsHandleJoinBody(
             val o = json.obj()
             return PostPublicProgramsHandleJoinBody(
                 destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PutSupportAppsAdapterBodyConfig(
+    val publicKeyPem: String? = null,
+    val subdomain: String? = null,
+    val cardKey: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PutSupportAppsAdapterBodyConfig.publicKeyPem != null) put("publicKeyPem", (this@PutSupportAppsAdapterBodyConfig.publicKeyPem?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutSupportAppsAdapterBodyConfig.subdomain != null) put("subdomain", (this@PutSupportAppsAdapterBodyConfig.subdomain?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutSupportAppsAdapterBodyConfig.cardKey != null) put("cardKey", (this@PutSupportAppsAdapterBodyConfig.cardKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutSupportAppsAdapterBodyConfig {
+            val o = json.obj()
+            return PutSupportAppsAdapterBodyConfig(
+                publicKeyPem = o["publicKeyPem"]?.orNull()?.let { it.string() },
+                subdomain = o["subdomain"]?.orNull()?.let { it.string() },
+                cardKey = o["cardKey"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PutSupportAppsAdapterBody(
+    val enabled: Boolean? = null,
+    val secret: String? = null,
+    val rotate: Boolean? = null,
+    val config: PutSupportAppsAdapterBodyConfig? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PutSupportAppsAdapterBody.enabled != null) put("enabled", (this@PutSupportAppsAdapterBody.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PutSupportAppsAdapterBody.secret != null) put("secret", (this@PutSupportAppsAdapterBody.secret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutSupportAppsAdapterBody.rotate != null) put("rotate", (this@PutSupportAppsAdapterBody.rotate?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PutSupportAppsAdapterBody.config != null) put("config", (this@PutSupportAppsAdapterBody.config?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutSupportAppsAdapterBody {
+            val o = json.obj()
+            return PutSupportAppsAdapterBody(
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                secret = o["secret"]?.orNull()?.let { it.string() },
+                rotate = o["rotate"]?.orNull()?.let { it.bool() },
+                config = o["config"]?.orNull()?.let { PutSupportAppsAdapterBodyConfig.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostSupportAppsAdapterTestBody(
+    val email: String? = null,
+    val customerRef: String? = null,
+    val partnerExternalRef: String? = null,
+    val ext: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostSupportAppsAdapterTestBody.email != null) put("email", (this@PostSupportAppsAdapterTestBody.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSupportAppsAdapterTestBody.customerRef != null) put("customerRef", (this@PostSupportAppsAdapterTestBody.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSupportAppsAdapterTestBody.partnerExternalRef != null) put("partnerExternalRef", (this@PostSupportAppsAdapterTestBody.partnerExternalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSupportAppsAdapterTestBody.ext != null) put("ext", (this@PostSupportAppsAdapterTestBody.ext?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostSupportAppsAdapterTestBody {
+            val o = json.obj()
+            return PostSupportAppsAdapterTestBody(
+                email = o["email"]?.orNull()?.let { it.string() },
+                customerRef = o["customerRef"]?.orNull()?.let { it.string() },
+                partnerExternalRef = o["partnerExternalRef"]?.orNull()?.let { it.string() },
+                ext = o["ext"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPrivacyExecutorKeysBodyConfig(
+    val publicKeyPem: String? = null,
+    val algorithm: String? = null,
+    val sombraUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPrivacyExecutorKeysBodyConfig.publicKeyPem != null) put("publicKeyPem", (this@PostPrivacyExecutorKeysBodyConfig.publicKeyPem?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPrivacyExecutorKeysBodyConfig.algorithm != null) put("algorithm", (this@PostPrivacyExecutorKeysBodyConfig.algorithm?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPrivacyExecutorKeysBodyConfig.sombraUrl != null) put("sombraUrl", (this@PostPrivacyExecutorKeysBodyConfig.sombraUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPrivacyExecutorKeysBodyConfig {
+            val o = json.obj()
+            return PostPrivacyExecutorKeysBodyConfig(
+                publicKeyPem = o["publicKeyPem"]?.orNull()?.let { it.string() },
+                algorithm = o["algorithm"]?.orNull()?.let { it.string() },
+                sombraUrl = o["sombraUrl"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPrivacyExecutorKeysBody(
+    val adapter: String,
+    val vendorSecret: String? = null,
+    val config: PostPrivacyExecutorKeysBodyConfig? = null,
+    val rotate: Boolean? = null,
+    val enabled: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PostPrivacyExecutorKeysBody.adapter))
+        if (this@PostPrivacyExecutorKeysBody.vendorSecret != null) put("vendorSecret", (this@PostPrivacyExecutorKeysBody.vendorSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPrivacyExecutorKeysBody.config != null) put("config", (this@PostPrivacyExecutorKeysBody.config?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPrivacyExecutorKeysBody.rotate != null) put("rotate", (this@PostPrivacyExecutorKeysBody.rotate?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPrivacyExecutorKeysBody.enabled != null) put("enabled", (this@PostPrivacyExecutorKeysBody.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPrivacyExecutorKeysBody {
+            val o = json.obj()
+            return PostPrivacyExecutorKeysBody(
+                adapter = o.field("adapter").string(),
+                vendorSecret = o["vendorSecret"]?.orNull()?.let { it.string() },
+                config = o["config"]?.orNull()?.let { PostPrivacyExecutorKeysBodyConfig.fromJson(it) },
+                rotate = o["rotate"]?.orNull()?.let { it.bool() },
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostAccountCloseBody(
+    val confirm: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("confirm", JsonValue.Str(this@PostAccountCloseBody.confirm))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAccountCloseBody {
+            val o = json.obj()
+            return PostAccountCloseBody(
+                confirm = o.field("confirm").string(),
+            )
+        }
+    }
+}
+
+data class PutOrgTrackingConsentBody(
+    val mode: String,
+    val category: String? = null,
+    val tcfVendorId: Long? = null,
+    val gcmSignal: String? = null,
+    val noCmp: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("mode", JsonValue.Str(this@PutOrgTrackingConsentBody.mode))
+        if (this@PutOrgTrackingConsentBody.category != null) put("category", (this@PutOrgTrackingConsentBody.category?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgTrackingConsentBody.tcfVendorId != null) put("tcfVendorId", (this@PutOrgTrackingConsentBody.tcfVendorId?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PutOrgTrackingConsentBody.gcmSignal != null) put("gcmSignal", (this@PutOrgTrackingConsentBody.gcmSignal?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgTrackingConsentBody.noCmp != null) put("noCmp", (this@PutOrgTrackingConsentBody.noCmp?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgTrackingConsentBody {
+            val o = json.obj()
+            return PutOrgTrackingConsentBody(
+                mode = o.field("mode").string(),
+                category = o["category"]?.orNull()?.let { it.string() },
+                tcfVendorId = o["tcfVendorId"]?.orNull()?.let { it.long() },
+                gcmSignal = o["gcmSignal"]?.orNull()?.let { it.string() },
+                noCmp = o["noCmp"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PutOrgHostedPagesBodyConsent(
+    val adapter: String,
+    val config: Map<String, JsonValue>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgHostedPagesBodyConsent.adapter))
+        if (this@PutOrgHostedPagesBodyConsent.config != null) put("config", (this@PutOrgHostedPagesBodyConsent.config?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgHostedPagesBodyConsent {
+            val o = json.obj()
+            return PutOrgHostedPagesBodyConsent(
+                adapter = o.field("adapter").string(),
+                config = o["config"]?.orNull()?.let { it.obj().mapValues { it.value } },
+            )
+        }
+    }
+}
+
+data class PutOrgHostedPagesBodyChatOption1(
+    val adapter: String,
+    val config: Map<String, JsonValue>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgHostedPagesBodyChatOption1.adapter))
+        if (this@PutOrgHostedPagesBodyChatOption1.config != null) put("config", (this@PutOrgHostedPagesBodyChatOption1.config?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgHostedPagesBodyChatOption1 {
+            val o = json.obj()
+            return PutOrgHostedPagesBodyChatOption1(
+                adapter = o.field("adapter").string(),
+                config = o["config"]?.orNull()?.let { it.obj().mapValues { it.value } },
+            )
+        }
+    }
+}
+
+data class PutOrgHostedPagesBody(
+    val consent: PutOrgHostedPagesBodyConsent,
+    val chat: PutOrgHostedPagesBodyChatOption1? = null,
+    val customOrigins: Map<String, List<String>>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("consent", this@PutOrgHostedPagesBody.consent.toJson())
+        if (this@PutOrgHostedPagesBody.chat != null) put("chat", (this@PutOrgHostedPagesBody.chat?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PutOrgHostedPagesBody.customOrigins != null) put("customOrigins", (this@PutOrgHostedPagesBody.customOrigins?.let { JsonValue.Obj(it.mapValues { JsonValue.Arr(it.value.map { JsonValue.Str(it) }) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgHostedPagesBody {
+            val o = json.obj()
+            return PutOrgHostedPagesBody(
+                consent = PutOrgHostedPagesBodyConsent.fromJson(o.field("consent")),
+                chat = o["chat"]?.orNull()?.let { PutOrgHostedPagesBodyChatOption1.fromJson(it) },
+                customOrigins = o["customOrigins"]?.orNull()?.let { it.obj().mapValues { it.value.array().map { it.string() } } },
             )
         }
     }

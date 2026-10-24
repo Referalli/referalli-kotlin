@@ -71,9 +71,13 @@ object WebhookTopic {
     const val TAX_FORM_DELIVERED = "tax.form_delivered"
     /** `webhook_endpoint.disabled`: A failing webhook endpoint was disabled */
     const val WEBHOOK_ENDPOINT_DISABLED = "webhook_endpoint.disabled"
+    /** `webhook_endpoint.failing`: A webhook endpoint keeps failing */
+    const val WEBHOOK_ENDPOINT_FAILING = "webhook_endpoint.failing"
+    /** `webhook_endpoint.recovered`: A failing webhook endpoint recovered */
+    const val WEBHOOK_ENDPOINT_RECOVERED = "webhook_endpoint.recovered"
 
     /** Every topic. */
-    val ALL: List<String> = listOf("billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "tax.form_delivered", "webhook_endpoint.disabled")
+    val ALL: List<String> = listOf("billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
 }
 
 /** A webhook event's payload, typed by topic. [Unknown] is a topic this SDK predates. */
@@ -144,6 +148,10 @@ sealed class WebhookPayload {
     data class TaxFormDelivered(val data: TaxFormDeliveredEventData) : WebhookPayload()
     /** `webhook_endpoint.disabled` */
     data class WebhookEndpointDisabled(val data: WebhookEndpointDisabledEventData) : WebhookPayload()
+    /** `webhook_endpoint.failing` */
+    data class WebhookEndpointFailing(val data: WebhookEndpointFailingEventData) : WebhookPayload()
+    /** `webhook_endpoint.recovered` */
+    data class WebhookEndpointRecovered(val data: WebhookEndpointRecoveredEventData) : WebhookPayload()
     data class Unknown(val topic: String, val data: JsonValue) : WebhookPayload()
 
     companion object {
@@ -182,6 +190,8 @@ sealed class WebhookPayload {
                 "roi.payback_reached" -> RoiPaybackReached(RoiPaybackReachedEventData.fromJson(data))
                 "tax.form_delivered" -> TaxFormDelivered(TaxFormDeliveredEventData.fromJson(data))
                 "webhook_endpoint.disabled" -> WebhookEndpointDisabled(WebhookEndpointDisabledEventData.fromJson(data))
+                "webhook_endpoint.failing" -> WebhookEndpointFailing(WebhookEndpointFailingEventData.fromJson(data))
+                "webhook_endpoint.recovered" -> WebhookEndpointRecovered(WebhookEndpointRecoveredEventData.fromJson(data))
                 else -> Unknown(topic, data)
             }
     }
