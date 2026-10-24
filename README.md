@@ -12,11 +12,22 @@ Docs: <https://referalli.com/docs>. For Android apps, use `com.referalli:referal
 ## Install
 
 ```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven("https://jitpack.io") // until the SDK is on Maven Central
+    }
+}
+
 // build.gradle.kts
 dependencies {
-    implementation("com.referalli:referalli-kotlin:0.1.0")
+    implementation("com.github.Referalli:referalli-kotlin:0.2.0")
 }
 ```
+
+Built by [JitPack](https://jitpack.io/#Referalli/referalli-kotlin) from the `0.2.0` tag. Once it is on Maven Central the coordinate becomes `com.referalli:referalli-kotlin`.
 
 ## Quickstart
 
