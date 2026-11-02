@@ -5,6 +5,12 @@ package com.referalli
 
 /** Every webhook topic the API publishes. */
 object WebhookTopic {
+    /** `account_credit.applied`: An account credit was applied in your billing system */
+    const val ACCOUNT_CREDIT_APPLIED = "account_credit.applied"
+    /** `account_credit.failed`: An account credit or debit gave up */
+    const val ACCOUNT_CREDIT_FAILED = "account_credit.failed"
+    /** `account_credit.reversed`: An account credit was debited back after a reversal */
+    const val ACCOUNT_CREDIT_REVERSED = "account_credit.reversed"
     /** `api_key.expiring`: An API key expires soon */
     const val API_KEY_EXPIRING = "api_key.expiring"
     /** `billing_event.recorded`: A billing event was recorded */
@@ -85,11 +91,17 @@ object WebhookTopic {
     const val WEBHOOK_ENDPOINT_RECOVERED = "webhook_endpoint.recovered"
 
     /** Every topic. */
-    val ALL: List<String> = listOf("api_key.expiring", "billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "fx.rates_updated", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "stripe_credit.applied", "stripe_credit.failed", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
+    val ALL: List<String> = listOf("account_credit.applied", "account_credit.failed", "account_credit.reversed", "api_key.expiring", "billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "fx.rates_updated", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "stripe_credit.applied", "stripe_credit.failed", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
 }
 
 /** A webhook event's payload, typed by topic. [Unknown] is a topic this SDK predates. */
 sealed class WebhookPayload {
+    /** `account_credit.applied` */
+    data class AccountCreditApplied(val data: AccountCreditAppliedEventData) : WebhookPayload()
+    /** `account_credit.failed` */
+    data class AccountCreditFailed(val data: AccountCreditFailedEventData) : WebhookPayload()
+    /** `account_credit.reversed` */
+    data class AccountCreditReversed(val data: AccountCreditReversedEventData) : WebhookPayload()
     /** `api_key.expiring` */
     data class ApiKeyExpiring(val data: ApiKeyExpiringEventData) : WebhookPayload()
     /** `billing_event.recorded` */
@@ -173,6 +185,9 @@ sealed class WebhookPayload {
     companion object {
         fun decode(topic: String, data: JsonValue): WebhookPayload =
             when (topic) {
+                "account_credit.applied" -> AccountCreditApplied(AccountCreditAppliedEventData.fromJson(data))
+                "account_credit.failed" -> AccountCreditFailed(AccountCreditFailedEventData.fromJson(data))
+                "account_credit.reversed" -> AccountCreditReversed(AccountCreditReversedEventData.fromJson(data))
                 "api_key.expiring" -> ApiKeyExpiring(ApiKeyExpiringEventData.fromJson(data))
                 "billing_event.recorded" -> BillingEventRecorded(BillingEventRecordedEventData.fromJson(data))
                 "click.recorded" -> ClickRecorded(ClickRecordedEventData.fromJson(data))

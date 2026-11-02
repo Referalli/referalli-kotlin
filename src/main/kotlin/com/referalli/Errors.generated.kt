@@ -59,6 +59,10 @@ class RestrictedSessionError(status: Int, code: String, apiMessage: String, requ
 class NotFoundError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
 
+/** `not_enrolled` (HTTP 404). */
+class NotEnrolledError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
 /** `conflict` (HTTP 409). */
 class ConflictError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
@@ -69,6 +73,10 @@ class IdempotencyInProgressError(status: Int, code: String, apiMessage: String, 
 
 /** `stripe_key_required` (HTTP 409). */
 class StripeKeyRequiredError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
+/** `credit_credentials_required` (HTTP 409). */
+class CreditCredentialsRequiredError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
 
 /** `api_key_expired` (HTTP 409). */
@@ -111,6 +119,18 @@ class StripeKeyWrongModeError(status: Int, code: String, apiMessage: String, req
 class StripeKeyPermissionError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
 
+/** `provider_credentials_invalid` (HTTP 422). */
+class ProviderCredentialsInvalidError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
+/** `provider_credentials_wrong_mode` (HTTP 422). */
+class ProviderCredentialsWrongModeError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
+/** `provider_permission` (HTTP 422). */
+class ProviderPermissionError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
 /** `payload_too_large` (HTTP 413). */
 class PayloadTooLargeError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
@@ -133,6 +153,10 @@ class AtlasError(status: Int, code: String, apiMessage: String, requestId: Strin
 
 /** `stripe_unavailable` (HTTP 502). */
 class StripeUnavailableError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
+/** `provider_unavailable` (HTTP 502). */
+class ProviderUnavailableError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
 
 /** `sso_provider_error` (HTTP 502). */
@@ -159,9 +183,11 @@ internal fun apiException(status: Int, code: String, apiMessage: String, request
         "program_scoped_key" -> ProgramScopedKeyError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "restricted_session" -> RestrictedSessionError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "not_found" -> NotFoundError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "not_enrolled" -> NotEnrolledError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "conflict" -> ConflictError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "idempotency_in_progress" -> IdempotencyInProgressError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "stripe_key_required" -> StripeKeyRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "credit_credentials_required" -> CreditCredentialsRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "api_key_expired" -> ApiKeyExpiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "replay" -> ReplayError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "live_mode_only" -> LiveModeOnlyError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
@@ -172,12 +198,16 @@ internal fun apiException(status: Int, code: String, apiMessage: String, request
         "stripe_key_invalid" -> StripeKeyInvalidError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "stripe_key_wrong_mode" -> StripeKeyWrongModeError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "stripe_key_permission" -> StripeKeyPermissionError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "provider_credentials_invalid" -> ProviderCredentialsInvalidError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "provider_credentials_wrong_mode" -> ProviderCredentialsWrongModeError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "provider_permission" -> ProviderPermissionError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "payload_too_large" -> PayloadTooLargeError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "connection_paused" -> ConnectionPausedError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "rate_limited" -> RateLimitedError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "internal_error" -> InternalServerError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "atlas_error" -> AtlasError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "stripe_unavailable" -> StripeUnavailableError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "provider_unavailable" -> ProviderUnavailableError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "sso_provider_error" -> SsoProviderError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "sso_not_configured" -> SsoNotConfiguredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         else -> ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)

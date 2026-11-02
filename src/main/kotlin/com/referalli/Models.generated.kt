@@ -1509,6 +1509,7 @@ data class BillingConnection(
     val filter: BillingFilter? = null,
     val customerRefMetadataKey: String? = null,
     val stripeWebhookEndpointId: String? = null,
+    val providerWebhookIds: List<String>? = null,
     val rotation: BillingConnectionRotation,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -1525,6 +1526,7 @@ data class BillingConnection(
         put("filter", (this@BillingConnection.filter?.let { it.toJson() } ?: JsonValue.Null))
         if (this@BillingConnection.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@BillingConnection.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@BillingConnection.stripeWebhookEndpointId != null) put("stripeWebhookEndpointId", (this@BillingConnection.stripeWebhookEndpointId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@BillingConnection.providerWebhookIds != null) put("providerWebhookIds", (this@BillingConnection.providerWebhookIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         put("rotation", this@BillingConnection.rotation.toJson())
     })
 
@@ -1545,6 +1547,7 @@ data class BillingConnection(
                 filter = o.field("filter").orNull()?.let { BillingFilter.fromJson(it) },
                 customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
                 stripeWebhookEndpointId = o["stripeWebhookEndpointId"]?.orNull()?.let { it.string() },
+                providerWebhookIds = o["providerWebhookIds"]?.orNull()?.let { it.array().map { it.string() } },
                 rotation = BillingConnectionRotation.fromJson(o.field("rotation")),
             )
         }
@@ -1561,6 +1564,8 @@ data class CreatedBillingConnection(
     val customerRefMetadataKey: String? = null,
     val programIds: List<String>? = null,
     val stripeWebhookEndpointId: String? = null,
+    val providerWebhookIds: List<String>? = null,
+    val skippedEvents: List<String>? = null,
     val reused: Boolean? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -1573,6 +1578,8 @@ data class CreatedBillingConnection(
         if (this@CreatedBillingConnection.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@CreatedBillingConnection.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("programIds", (this@CreatedBillingConnection.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         if (this@CreatedBillingConnection.stripeWebhookEndpointId != null) put("stripeWebhookEndpointId", (this@CreatedBillingConnection.stripeWebhookEndpointId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@CreatedBillingConnection.providerWebhookIds != null) put("providerWebhookIds", (this@CreatedBillingConnection.providerWebhookIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@CreatedBillingConnection.skippedEvents != null) put("skippedEvents", (this@CreatedBillingConnection.skippedEvents?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         if (this@CreatedBillingConnection.reused != null) put("reused", (this@CreatedBillingConnection.reused?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
     })
 
@@ -1589,6 +1596,8 @@ data class CreatedBillingConnection(
                 customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
                 programIds = o.field("programIds").orNull()?.let { it.array().map { it.string() } },
                 stripeWebhookEndpointId = o["stripeWebhookEndpointId"]?.orNull()?.let { it.string() },
+                providerWebhookIds = o["providerWebhookIds"]?.orNull()?.let { it.array().map { it.string() } },
+                skippedEvents = o["skippedEvents"]?.orNull()?.let { it.array().map { it.string() } },
                 reused = o["reused"]?.orNull()?.let { it.bool() },
             )
         }
@@ -2732,6 +2741,119 @@ data class ApiKey(
     }
 }
 
+data class TokenVerificationValueOption1Claims(
+    val customerRef: String? = null,
+    val email: String? = null,
+    val emailVerified: String? = null,
+    val name: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@TokenVerificationValueOption1Claims.customerRef != null) put("customerRef", (this@TokenVerificationValueOption1Claims.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@TokenVerificationValueOption1Claims.email != null) put("email", (this@TokenVerificationValueOption1Claims.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@TokenVerificationValueOption1Claims.emailVerified != null) put("emailVerified", (this@TokenVerificationValueOption1Claims.emailVerified?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@TokenVerificationValueOption1Claims.name != null) put("name", (this@TokenVerificationValueOption1Claims.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): TokenVerificationValueOption1Claims {
+            val o = json.obj()
+            return TokenVerificationValueOption1Claims(
+                customerRef = o["customerRef"]?.orNull()?.let { it.string() },
+                email = o["email"]?.orNull()?.let { it.string() },
+                emailVerified = o["emailVerified"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class TokenVerificationValueOption1(
+    val preset: String? = null,
+    val tenant: String? = null,
+    val issuer: String,
+    val keyType: String,
+    val jwksUrl: String? = null,
+    val audience: String? = null,
+    val maxAgeS: Long? = null,
+    val claims: TokenVerificationValueOption1Claims? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@TokenVerificationValueOption1.preset != null) put("preset", (this@TokenVerificationValueOption1.preset?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@TokenVerificationValueOption1.tenant != null) put("tenant", (this@TokenVerificationValueOption1.tenant?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("issuer", JsonValue.Str(this@TokenVerificationValueOption1.issuer))
+        put("keyType", JsonValue.Str(this@TokenVerificationValueOption1.keyType))
+        if (this@TokenVerificationValueOption1.jwksUrl != null) put("jwksUrl", (this@TokenVerificationValueOption1.jwksUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@TokenVerificationValueOption1.audience != null) put("audience", (this@TokenVerificationValueOption1.audience?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@TokenVerificationValueOption1.maxAgeS != null) put("maxAgeS", (this@TokenVerificationValueOption1.maxAgeS?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@TokenVerificationValueOption1.claims != null) put("claims", (this@TokenVerificationValueOption1.claims?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): TokenVerificationValueOption1 {
+            val o = json.obj()
+            return TokenVerificationValueOption1(
+                preset = o["preset"]?.orNull()?.let { it.string() },
+                tenant = o["tenant"]?.orNull()?.let { it.string() },
+                issuer = o.field("issuer").string(),
+                keyType = o.field("keyType").string(),
+                jwksUrl = o["jwksUrl"]?.orNull()?.let { it.string() },
+                audience = o["audience"]?.orNull()?.let { it.string() },
+                maxAgeS = o["maxAgeS"]?.orNull()?.let { it.long() },
+                claims = o["claims"]?.orNull()?.let { TokenVerificationValueOption1Claims.fromJson(it) },
+            )
+        }
+    }
+}
+
+/** How POST /v1/widget/session verifies the end user's session JWT; null when not set. */
+typealias TokenVerification = TokenVerificationValueOption1?
+
+data class WidgetSessionPartner(
+    val id: String,
+    val code: String? = null,
+    val linkUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@WidgetSessionPartner.id))
+        put("code", (this@WidgetSessionPartner.code?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("linkUrl", (this@WidgetSessionPartner.linkUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): WidgetSessionPartner {
+            val o = json.obj()
+            return WidgetSessionPartner(
+                id = o.field("id").string(),
+                code = o.field("code").orNull()?.let { it.string() },
+                linkUrl = o.field("linkUrl").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class WidgetSession(
+    val token: String,
+    val expiresAt: String,
+    val partner: WidgetSessionPartner,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("token", JsonValue.Str(this@WidgetSession.token))
+        put("expiresAt", JsonValue.Str(this@WidgetSession.expiresAt))
+        put("partner", this@WidgetSession.partner.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): WidgetSession {
+            val o = json.obj()
+            return WidgetSession(
+                token = o.field("token").string(),
+                expiresAt = o.field("expiresAt").string(),
+                partner = WidgetSessionPartner.fromJson(o.field("partner")),
+            )
+        }
+    }
+}
+
 data class AuthConnectionRotation(
     val inProgress: Boolean,
     val previousSecretExpiresAt: String? = null,
@@ -2764,8 +2886,11 @@ data class AuthConnection(
     val appId: String? = null,
     val autoEnrollUsers: Boolean? = null,
     val destinationUrl: String? = null,
+    val resolveBillingCustomers: Boolean? = null,
     val signatureVersion: String? = null,
     val requiresV2: Boolean? = null,
+    val tokenVerification: TokenVerification? = null,
+    val allowedOrigins: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@AuthConnection.id))
@@ -2779,8 +2904,11 @@ data class AuthConnection(
         if (this@AuthConnection.appId != null) put("appId", (this@AuthConnection.appId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@AuthConnection.autoEnrollUsers != null) put("autoEnrollUsers", (this@AuthConnection.autoEnrollUsers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@AuthConnection.destinationUrl != null) put("destinationUrl", (this@AuthConnection.destinationUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@AuthConnection.resolveBillingCustomers != null) put("resolveBillingCustomers", (this@AuthConnection.resolveBillingCustomers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@AuthConnection.signatureVersion != null) put("signatureVersion", (this@AuthConnection.signatureVersion?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@AuthConnection.requiresV2 != null) put("requiresV2", (this@AuthConnection.requiresV2?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@AuthConnection.tokenVerification != null) put("tokenVerification", (this@AuthConnection.tokenVerification?.let { (it?.let { it.toJson() } ?: JsonValue.Null) } ?: JsonValue.Null))
+        if (this@AuthConnection.allowedOrigins != null) put("allowedOrigins", (this@AuthConnection.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -2798,8 +2926,11 @@ data class AuthConnection(
                 appId = o["appId"]?.orNull()?.let { it.string() },
                 autoEnrollUsers = o["autoEnrollUsers"]?.orNull()?.let { it.bool() },
                 destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
+                resolveBillingCustomers = o["resolveBillingCustomers"]?.orNull()?.let { it.bool() },
                 signatureVersion = o["signatureVersion"]?.orNull()?.let { it.string() },
                 requiresV2 = o["requiresV2"]?.orNull()?.let { it.bool() },
+                tokenVerification = o["tokenVerification"]?.orNull()?.let { it.orNull()?.let { TokenVerificationValueOption1.fromJson(it) } },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -2820,6 +2951,8 @@ data class CreatedAuthConnection(
     val signupsUrl: String? = null,
     val eraseUrl: String? = null,
     val exportUrl: String? = null,
+    val tokenVerification: TokenVerification? = null,
+    val allowedOrigins: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@CreatedAuthConnection.id))
@@ -2836,6 +2969,8 @@ data class CreatedAuthConnection(
         if (this@CreatedAuthConnection.signupsUrl != null) put("signupsUrl", (this@CreatedAuthConnection.signupsUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.eraseUrl != null) put("eraseUrl", (this@CreatedAuthConnection.eraseUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.exportUrl != null) put("exportUrl", (this@CreatedAuthConnection.exportUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@CreatedAuthConnection.tokenVerification != null) put("tokenVerification", (this@CreatedAuthConnection.tokenVerification?.let { (it?.let { it.toJson() } ?: JsonValue.Null) } ?: JsonValue.Null))
+        if (this@CreatedAuthConnection.allowedOrigins != null) put("allowedOrigins", (this@CreatedAuthConnection.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -2856,6 +2991,8 @@ data class CreatedAuthConnection(
                 signupsUrl = o["signupsUrl"]?.orNull()?.let { it.string() },
                 eraseUrl = o["eraseUrl"]?.orNull()?.let { it.string() },
                 exportUrl = o["exportUrl"]?.orNull()?.let { it.string() },
+                tokenVerification = o["tokenVerification"]?.orNull()?.let { it.orNull()?.let { TokenVerificationValueOption1.fromJson(it) } },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -7276,6 +7413,330 @@ data class StripeCreditFailedEvent(
     }
 }
 
+/** `data` of a `account_credit.applied` event: The account-credit rail credited a referrer (or a referee's store-credit reward) on their customer account in your billing system, with your credentials: a Stripe customer balance transaction or a Chargebee promotional credit. Sent for every provider; Stripe rows also send `stripe_credit.applied`. `transactionId` is the provider's record. */
+data class AccountCreditAppliedEventData(
+    val id: String,
+    val programId: String,
+    val sourceEventId: String,
+    val kind: String,
+    val commissionId: String? = null,
+    val partnerId: String? = null,
+    val customerRef: String? = null,
+    val amountMinor: Long,
+    val currency: String,
+    val appliedAmountMinor: Long? = null,
+    val appliedCurrency: String? = null,
+    val status: String,
+    val attempts: Long,
+    val lastError: String? = null,
+    val createdAt: String,
+    val updatedAt: String,
+    val provider: String,
+    val connectionId: String? = null,
+    val customerId: String? = null,
+    val transactionId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@AccountCreditAppliedEventData.id))
+        put("programId", JsonValue.Str(this@AccountCreditAppliedEventData.programId))
+        put("sourceEventId", JsonValue.Str(this@AccountCreditAppliedEventData.sourceEventId))
+        put("kind", JsonValue.Str(this@AccountCreditAppliedEventData.kind))
+        put("commissionId", (this@AccountCreditAppliedEventData.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("partnerId", (this@AccountCreditAppliedEventData.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerRef", (this@AccountCreditAppliedEventData.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@AccountCreditAppliedEventData.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@AccountCreditAppliedEventData.currency))
+        put("appliedAmountMinor", (this@AccountCreditAppliedEventData.appliedAmountMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("appliedCurrency", (this@AccountCreditAppliedEventData.appliedCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@AccountCreditAppliedEventData.status))
+        put("attempts", JsonValue.Num(this@AccountCreditAppliedEventData.attempts.toDouble()))
+        put("lastError", (this@AccountCreditAppliedEventData.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createdAt", JsonValue.Str(this@AccountCreditAppliedEventData.createdAt))
+        put("updatedAt", JsonValue.Str(this@AccountCreditAppliedEventData.updatedAt))
+        put("provider", JsonValue.Str(this@AccountCreditAppliedEventData.provider))
+        put("connectionId", (this@AccountCreditAppliedEventData.connectionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerId", (this@AccountCreditAppliedEventData.customerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("transactionId", (this@AccountCreditAppliedEventData.transactionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): AccountCreditAppliedEventData {
+            val o = json.obj()
+            return AccountCreditAppliedEventData(
+                id = o.field("id").string(),
+                programId = o.field("programId").string(),
+                sourceEventId = o.field("sourceEventId").string(),
+                kind = o.field("kind").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                partnerId = o.field("partnerId").orNull()?.let { it.string() },
+                customerRef = o.field("customerRef").orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                appliedAmountMinor = o.field("appliedAmountMinor").orNull()?.let { it.long() },
+                appliedCurrency = o.field("appliedCurrency").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+                attempts = o.field("attempts").long(),
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+                createdAt = o.field("createdAt").string(),
+                updatedAt = o.field("updatedAt").string(),
+                provider = o.field("provider").string(),
+                connectionId = o.field("connectionId").orNull()?.let { it.string() },
+                customerId = o.field("customerId").orNull()?.let { it.string() },
+                transactionId = o.field("transactionId").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+/** An account credit was applied in your billing system: the `account_credit.applied` delivery body. */
+data class AccountCreditAppliedEvent(
+    val id: String,
+    val topic: String,
+    val orgId: String,
+    val livemode: Boolean,
+    val createdAt: String,
+    val data: AccountCreditAppliedEventData,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@AccountCreditAppliedEvent.id))
+        put("topic", JsonValue.Str(this@AccountCreditAppliedEvent.topic))
+        put("orgId", JsonValue.Str(this@AccountCreditAppliedEvent.orgId))
+        put("livemode", JsonValue.Bool(this@AccountCreditAppliedEvent.livemode))
+        put("createdAt", JsonValue.Str(this@AccountCreditAppliedEvent.createdAt))
+        put("data", this@AccountCreditAppliedEvent.data.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): AccountCreditAppliedEvent {
+            val o = json.obj()
+            return AccountCreditAppliedEvent(
+                id = o.field("id").string(),
+                topic = o.field("topic").string(),
+                orgId = o.field("orgId").string(),
+                livemode = o.field("livemode").bool(),
+                createdAt = o.field("createdAt").string(),
+                data = AccountCreditAppliedEventData.fromJson(o.field("data")),
+            )
+        }
+    }
+}
+
+/** `data` of a `account_credit.reversed` event: The account-credit rail debited back (part of) an applied credit after `commission.reversed`, in the credit's currency and at its rate. Stripe rows also send `stripe_credit.applied`. */
+data class AccountCreditReversedEventData(
+    val id: String,
+    val programId: String,
+    val sourceEventId: String,
+    val kind: String,
+    val commissionId: String? = null,
+    val partnerId: String? = null,
+    val customerRef: String? = null,
+    val amountMinor: Long,
+    val currency: String,
+    val appliedAmountMinor: Long? = null,
+    val appliedCurrency: String? = null,
+    val status: String,
+    val attempts: Long,
+    val lastError: String? = null,
+    val createdAt: String,
+    val updatedAt: String,
+    val provider: String,
+    val connectionId: String? = null,
+    val customerId: String? = null,
+    val transactionId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@AccountCreditReversedEventData.id))
+        put("programId", JsonValue.Str(this@AccountCreditReversedEventData.programId))
+        put("sourceEventId", JsonValue.Str(this@AccountCreditReversedEventData.sourceEventId))
+        put("kind", JsonValue.Str(this@AccountCreditReversedEventData.kind))
+        put("commissionId", (this@AccountCreditReversedEventData.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("partnerId", (this@AccountCreditReversedEventData.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerRef", (this@AccountCreditReversedEventData.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@AccountCreditReversedEventData.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@AccountCreditReversedEventData.currency))
+        put("appliedAmountMinor", (this@AccountCreditReversedEventData.appliedAmountMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("appliedCurrency", (this@AccountCreditReversedEventData.appliedCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@AccountCreditReversedEventData.status))
+        put("attempts", JsonValue.Num(this@AccountCreditReversedEventData.attempts.toDouble()))
+        put("lastError", (this@AccountCreditReversedEventData.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createdAt", JsonValue.Str(this@AccountCreditReversedEventData.createdAt))
+        put("updatedAt", JsonValue.Str(this@AccountCreditReversedEventData.updatedAt))
+        put("provider", JsonValue.Str(this@AccountCreditReversedEventData.provider))
+        put("connectionId", (this@AccountCreditReversedEventData.connectionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerId", (this@AccountCreditReversedEventData.customerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("transactionId", (this@AccountCreditReversedEventData.transactionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): AccountCreditReversedEventData {
+            val o = json.obj()
+            return AccountCreditReversedEventData(
+                id = o.field("id").string(),
+                programId = o.field("programId").string(),
+                sourceEventId = o.field("sourceEventId").string(),
+                kind = o.field("kind").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                partnerId = o.field("partnerId").orNull()?.let { it.string() },
+                customerRef = o.field("customerRef").orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                appliedAmountMinor = o.field("appliedAmountMinor").orNull()?.let { it.long() },
+                appliedCurrency = o.field("appliedCurrency").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+                attempts = o.field("attempts").long(),
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+                createdAt = o.field("createdAt").string(),
+                updatedAt = o.field("updatedAt").string(),
+                provider = o.field("provider").string(),
+                connectionId = o.field("connectionId").orNull()?.let { it.string() },
+                customerId = o.field("customerId").orNull()?.let { it.string() },
+                transactionId = o.field("transactionId").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+/** An account credit was debited back after a reversal: the `account_credit.reversed` delivery body. */
+data class AccountCreditReversedEvent(
+    val id: String,
+    val topic: String,
+    val orgId: String,
+    val livemode: Boolean,
+    val createdAt: String,
+    val data: AccountCreditReversedEventData,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@AccountCreditReversedEvent.id))
+        put("topic", JsonValue.Str(this@AccountCreditReversedEvent.topic))
+        put("orgId", JsonValue.Str(this@AccountCreditReversedEvent.orgId))
+        put("livemode", JsonValue.Bool(this@AccountCreditReversedEvent.livemode))
+        put("createdAt", JsonValue.Str(this@AccountCreditReversedEvent.createdAt))
+        put("data", this@AccountCreditReversedEvent.data.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): AccountCreditReversedEvent {
+            val o = json.obj()
+            return AccountCreditReversedEvent(
+                id = o.field("id").string(),
+                topic = o.field("topic").string(),
+                orgId = o.field("orgId").string(),
+                livemode = o.field("livemode").bool(),
+                createdAt = o.field("createdAt").string(),
+                data = AccountCreditReversedEventData.fromJson(o.field("data")),
+            )
+        }
+    }
+}
+
+/** `data` of a `account_credit.failed` event: The account-credit rail stopped retrying a credit or debit after its last attempt: no customer matched (`no_customer`), several did (`ambiguous_customer`), no FX rate converts to the balance currency (`fx_rate_missing`) or the provider refused it (`failed`). `POST /v1/programs/{id}/credit-rail/requeue` gives the first three another round. Stripe rows also send `stripe_credit.failed`. */
+data class AccountCreditFailedEventData(
+    val id: String,
+    val programId: String,
+    val sourceEventId: String,
+    val kind: String,
+    val commissionId: String? = null,
+    val partnerId: String? = null,
+    val customerRef: String? = null,
+    val amountMinor: Long,
+    val currency: String,
+    val appliedAmountMinor: Long? = null,
+    val appliedCurrency: String? = null,
+    val status: String,
+    val attempts: Long,
+    val lastError: String? = null,
+    val createdAt: String,
+    val updatedAt: String,
+    val provider: String,
+    val connectionId: String? = null,
+    val customerId: String? = null,
+    val transactionId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@AccountCreditFailedEventData.id))
+        put("programId", JsonValue.Str(this@AccountCreditFailedEventData.programId))
+        put("sourceEventId", JsonValue.Str(this@AccountCreditFailedEventData.sourceEventId))
+        put("kind", JsonValue.Str(this@AccountCreditFailedEventData.kind))
+        put("commissionId", (this@AccountCreditFailedEventData.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("partnerId", (this@AccountCreditFailedEventData.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerRef", (this@AccountCreditFailedEventData.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@AccountCreditFailedEventData.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@AccountCreditFailedEventData.currency))
+        put("appliedAmountMinor", (this@AccountCreditFailedEventData.appliedAmountMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("appliedCurrency", (this@AccountCreditFailedEventData.appliedCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@AccountCreditFailedEventData.status))
+        put("attempts", JsonValue.Num(this@AccountCreditFailedEventData.attempts.toDouble()))
+        put("lastError", (this@AccountCreditFailedEventData.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createdAt", JsonValue.Str(this@AccountCreditFailedEventData.createdAt))
+        put("updatedAt", JsonValue.Str(this@AccountCreditFailedEventData.updatedAt))
+        put("provider", JsonValue.Str(this@AccountCreditFailedEventData.provider))
+        put("connectionId", (this@AccountCreditFailedEventData.connectionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerId", (this@AccountCreditFailedEventData.customerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("transactionId", (this@AccountCreditFailedEventData.transactionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): AccountCreditFailedEventData {
+            val o = json.obj()
+            return AccountCreditFailedEventData(
+                id = o.field("id").string(),
+                programId = o.field("programId").string(),
+                sourceEventId = o.field("sourceEventId").string(),
+                kind = o.field("kind").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                partnerId = o.field("partnerId").orNull()?.let { it.string() },
+                customerRef = o.field("customerRef").orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                appliedAmountMinor = o.field("appliedAmountMinor").orNull()?.let { it.long() },
+                appliedCurrency = o.field("appliedCurrency").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+                attempts = o.field("attempts").long(),
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+                createdAt = o.field("createdAt").string(),
+                updatedAt = o.field("updatedAt").string(),
+                provider = o.field("provider").string(),
+                connectionId = o.field("connectionId").orNull()?.let { it.string() },
+                customerId = o.field("customerId").orNull()?.let { it.string() },
+                transactionId = o.field("transactionId").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+/** An account credit or debit gave up: the `account_credit.failed` delivery body. */
+data class AccountCreditFailedEvent(
+    val id: String,
+    val topic: String,
+    val orgId: String,
+    val livemode: Boolean,
+    val createdAt: String,
+    val data: AccountCreditFailedEventData,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@AccountCreditFailedEvent.id))
+        put("topic", JsonValue.Str(this@AccountCreditFailedEvent.topic))
+        put("orgId", JsonValue.Str(this@AccountCreditFailedEvent.orgId))
+        put("livemode", JsonValue.Bool(this@AccountCreditFailedEvent.livemode))
+        put("createdAt", JsonValue.Str(this@AccountCreditFailedEvent.createdAt))
+        put("data", this@AccountCreditFailedEvent.data.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): AccountCreditFailedEvent {
+            val o = json.obj()
+            return AccountCreditFailedEvent(
+                id = o.field("id").string(),
+                topic = o.field("topic").string(),
+                orgId = o.field("orgId").string(),
+                livemode = o.field("livemode").bool(),
+                createdAt = o.field("createdAt").string(),
+                data = AccountCreditFailedEventData.fromJson(o.field("data")),
+            )
+        }
+    }
+}
+
 /** `data` of a `webhook_endpoint.recovered` event: Sent to your active endpoints, including the recovered one, when a delivery succeeds after the endpoint was failing. */
 data class WebhookEndpointRecoveredEventData(
     val endpointId: String,
@@ -10843,6 +11304,26 @@ data class PostBillingConnectionsIdRotateSecretResponse(
     }
 }
 
+data class DeleteBillingConnectionsIdResponse(
+    val ok: Boolean,
+    val providerWebhookRemoved: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("ok", JsonValue.Bool(this@DeleteBillingConnectionsIdResponse.ok))
+        put("providerWebhookRemoved", JsonValue.Bool(this@DeleteBillingConnectionsIdResponse.providerWebhookRemoved))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): DeleteBillingConnectionsIdResponse {
+            val o = json.obj()
+            return DeleteBillingConnectionsIdResponse(
+                ok = o.field("ok").bool(),
+                providerWebhookRemoved = o.field("providerWebhookRemoved").bool(),
+            )
+        }
+    }
+}
+
 data class GetBillingEventsResponse(
     val `object`: String,
     val data: List<BillingEvent>,
@@ -13653,6 +14134,151 @@ data class PostSandboxSimulateResponse(
     }
 }
 
+data class GetSandboxBillingFixturesResponseDataItem(
+    val provider: String,
+    val event: String,
+    val native: String,
+    val overrides: List<String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("provider", JsonValue.Str(this@GetSandboxBillingFixturesResponseDataItem.provider))
+        put("event", JsonValue.Str(this@GetSandboxBillingFixturesResponseDataItem.event))
+        put("native", JsonValue.Str(this@GetSandboxBillingFixturesResponseDataItem.native))
+        put("overrides", JsonValue.Arr(this@GetSandboxBillingFixturesResponseDataItem.overrides.map { JsonValue.Str(it) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSandboxBillingFixturesResponseDataItem {
+            val o = json.obj()
+            return GetSandboxBillingFixturesResponseDataItem(
+                provider = o.field("provider").string(),
+                event = o.field("event").string(),
+                native = o.field("native").string(),
+                overrides = o.field("overrides").array().map { it.string() },
+            )
+        }
+    }
+}
+
+data class GetSandboxBillingFixturesResponse(
+    val data: List<GetSandboxBillingFixturesResponseDataItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("data", JsonValue.Arr(this@GetSandboxBillingFixturesResponse.data.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetSandboxBillingFixturesResponse {
+            val o = json.obj()
+            return GetSandboxBillingFixturesResponse(
+                data = o.field("data").array().map { GetSandboxBillingFixturesResponseDataItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostSandboxBillingFixturesResponseResultsItem(
+    val duplicate: Boolean,
+    val billingEventId: String? = null,
+    val conversions: Long,
+    val linesCreated: Long,
+    val reversals: Long,
+    val ignored: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("duplicate", JsonValue.Bool(this@PostSandboxBillingFixturesResponseResultsItem.duplicate))
+        put("billingEventId", (this@PostSandboxBillingFixturesResponseResultsItem.billingEventId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("conversions", JsonValue.Num(this@PostSandboxBillingFixturesResponseResultsItem.conversions.toDouble()))
+        put("linesCreated", JsonValue.Num(this@PostSandboxBillingFixturesResponseResultsItem.linesCreated.toDouble()))
+        put("reversals", JsonValue.Num(this@PostSandboxBillingFixturesResponseResultsItem.reversals.toDouble()))
+        if (this@PostSandboxBillingFixturesResponseResultsItem.ignored != null) put("ignored", (this@PostSandboxBillingFixturesResponseResultsItem.ignored?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostSandboxBillingFixturesResponseResultsItem {
+            val o = json.obj()
+            return PostSandboxBillingFixturesResponseResultsItem(
+                duplicate = o.field("duplicate").bool(),
+                billingEventId = o.field("billingEventId").orNull()?.let { it.string() },
+                conversions = o.field("conversions").long(),
+                linesCreated = o.field("linesCreated").long(),
+                reversals = o.field("reversals").long(),
+                ignored = o["ignored"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostSandboxBillingFixturesResponseCommissionsItem(
+    val id: String,
+    val type: String,
+    val partnerId: String,
+    val amountMinor: Long,
+    val currency: String,
+    val relatedCommissionId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostSandboxBillingFixturesResponseCommissionsItem.id))
+        put("type", JsonValue.Str(this@PostSandboxBillingFixturesResponseCommissionsItem.type))
+        put("partnerId", JsonValue.Str(this@PostSandboxBillingFixturesResponseCommissionsItem.partnerId))
+        put("amountMinor", JsonValue.Num(this@PostSandboxBillingFixturesResponseCommissionsItem.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@PostSandboxBillingFixturesResponseCommissionsItem.currency))
+        put("relatedCommissionId", (this@PostSandboxBillingFixturesResponseCommissionsItem.relatedCommissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostSandboxBillingFixturesResponseCommissionsItem {
+            val o = json.obj()
+            return PostSandboxBillingFixturesResponseCommissionsItem(
+                id = o.field("id").string(),
+                type = o.field("type").string(),
+                partnerId = o.field("partnerId").string(),
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                relatedCommissionId = o.field("relatedCommissionId").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostSandboxBillingFixturesResponse(
+    val eventId: String,
+    val event: String,
+    val provider: String,
+    val nativeEvent: String,
+    val received: Long,
+    val results: List<PostSandboxBillingFixturesResponseResultsItem>,
+    val commissions: List<PostSandboxBillingFixturesResponseCommissionsItem>,
+    val payload: GetOpenapiJsonResponse,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("eventId", JsonValue.Str(this@PostSandboxBillingFixturesResponse.eventId))
+        put("event", JsonValue.Str(this@PostSandboxBillingFixturesResponse.event))
+        put("provider", JsonValue.Str(this@PostSandboxBillingFixturesResponse.provider))
+        put("nativeEvent", JsonValue.Str(this@PostSandboxBillingFixturesResponse.nativeEvent))
+        put("received", JsonValue.Num(this@PostSandboxBillingFixturesResponse.received.toDouble()))
+        put("results", JsonValue.Arr(this@PostSandboxBillingFixturesResponse.results.map { it.toJson() }))
+        put("commissions", JsonValue.Arr(this@PostSandboxBillingFixturesResponse.commissions.map { it.toJson() }))
+        put("payload", JsonValue.Obj(this@PostSandboxBillingFixturesResponse.payload.mapValues { it.value }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostSandboxBillingFixturesResponse {
+            val o = json.obj()
+            return PostSandboxBillingFixturesResponse(
+                eventId = o.field("eventId").string(),
+                event = o.field("event").string(),
+                provider = o.field("provider").string(),
+                nativeEvent = o.field("nativeEvent").string(),
+                received = o.field("received").long(),
+                results = o.field("results").array().map { PostSandboxBillingFixturesResponseResultsItem.fromJson(it) },
+                commissions = o.field("commissions").array().map { PostSandboxBillingFixturesResponseCommissionsItem.fromJson(it) },
+                payload = o.field("payload").obj().mapValues { it.value },
+            )
+        }
+    }
+}
+
 data class GetSandboxStripeFixturesResponseDataItem(
     val event: String,
     val overrides: List<String>,
@@ -13685,102 +14311,6 @@ data class GetSandboxStripeFixturesResponse(
             val o = json.obj()
             return GetSandboxStripeFixturesResponse(
                 data = o.field("data").array().map { GetSandboxStripeFixturesResponseDataItem.fromJson(it) },
-            )
-        }
-    }
-}
-
-data class PostSandboxStripeFixturesResponseResultsItem(
-    val duplicate: Boolean,
-    val billingEventId: String? = null,
-    val conversions: Long,
-    val linesCreated: Long,
-    val reversals: Long,
-    val ignored: String? = null,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("duplicate", JsonValue.Bool(this@PostSandboxStripeFixturesResponseResultsItem.duplicate))
-        put("billingEventId", (this@PostSandboxStripeFixturesResponseResultsItem.billingEventId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
-        put("conversions", JsonValue.Num(this@PostSandboxStripeFixturesResponseResultsItem.conversions.toDouble()))
-        put("linesCreated", JsonValue.Num(this@PostSandboxStripeFixturesResponseResultsItem.linesCreated.toDouble()))
-        put("reversals", JsonValue.Num(this@PostSandboxStripeFixturesResponseResultsItem.reversals.toDouble()))
-        if (this@PostSandboxStripeFixturesResponseResultsItem.ignored != null) put("ignored", (this@PostSandboxStripeFixturesResponseResultsItem.ignored?.let { JsonValue.Str(it) } ?: JsonValue.Null))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): PostSandboxStripeFixturesResponseResultsItem {
-            val o = json.obj()
-            return PostSandboxStripeFixturesResponseResultsItem(
-                duplicate = o.field("duplicate").bool(),
-                billingEventId = o.field("billingEventId").orNull()?.let { it.string() },
-                conversions = o.field("conversions").long(),
-                linesCreated = o.field("linesCreated").long(),
-                reversals = o.field("reversals").long(),
-                ignored = o["ignored"]?.orNull()?.let { it.string() },
-            )
-        }
-    }
-}
-
-data class PostSandboxStripeFixturesResponseCommissionsItem(
-    val id: String,
-    val type: String,
-    val partnerId: String,
-    val amountMinor: Long,
-    val currency: String,
-    val relatedCommissionId: String? = null,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("id", JsonValue.Str(this@PostSandboxStripeFixturesResponseCommissionsItem.id))
-        put("type", JsonValue.Str(this@PostSandboxStripeFixturesResponseCommissionsItem.type))
-        put("partnerId", JsonValue.Str(this@PostSandboxStripeFixturesResponseCommissionsItem.partnerId))
-        put("amountMinor", JsonValue.Num(this@PostSandboxStripeFixturesResponseCommissionsItem.amountMinor.toDouble()))
-        put("currency", JsonValue.Str(this@PostSandboxStripeFixturesResponseCommissionsItem.currency))
-        put("relatedCommissionId", (this@PostSandboxStripeFixturesResponseCommissionsItem.relatedCommissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): PostSandboxStripeFixturesResponseCommissionsItem {
-            val o = json.obj()
-            return PostSandboxStripeFixturesResponseCommissionsItem(
-                id = o.field("id").string(),
-                type = o.field("type").string(),
-                partnerId = o.field("partnerId").string(),
-                amountMinor = o.field("amountMinor").long(),
-                currency = o.field("currency").string(),
-                relatedCommissionId = o.field("relatedCommissionId").orNull()?.let { it.string() },
-            )
-        }
-    }
-}
-
-data class PostSandboxStripeFixturesResponse(
-    val eventId: String,
-    val event: String,
-    val received: Long,
-    val results: List<PostSandboxStripeFixturesResponseResultsItem>,
-    val commissions: List<PostSandboxStripeFixturesResponseCommissionsItem>,
-    val payload: GetOpenapiJsonResponse,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("eventId", JsonValue.Str(this@PostSandboxStripeFixturesResponse.eventId))
-        put("event", JsonValue.Str(this@PostSandboxStripeFixturesResponse.event))
-        put("received", JsonValue.Num(this@PostSandboxStripeFixturesResponse.received.toDouble()))
-        put("results", JsonValue.Arr(this@PostSandboxStripeFixturesResponse.results.map { it.toJson() }))
-        put("commissions", JsonValue.Arr(this@PostSandboxStripeFixturesResponse.commissions.map { it.toJson() }))
-        put("payload", JsonValue.Obj(this@PostSandboxStripeFixturesResponse.payload.mapValues { it.value }))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): PostSandboxStripeFixturesResponse {
-            val o = json.obj()
-            return PostSandboxStripeFixturesResponse(
-                eventId = o.field("eventId").string(),
-                event = o.field("event").string(),
-                received = o.field("received").long(),
-                results = o.field("results").array().map { PostSandboxStripeFixturesResponseResultsItem.fromJson(it) },
-                commissions = o.field("commissions").array().map { PostSandboxStripeFixturesResponseCommissionsItem.fromJson(it) },
-                payload = o.field("payload").obj().mapValues { it.value },
             )
         }
     }
@@ -18242,8 +18772,11 @@ data class PatchAuthConnectionsIdResponse(
     val status: String,
     val autoEnrollUsers: Boolean? = null,
     val destinationUrl: String? = null,
+    val resolveBillingCustomers: Boolean? = null,
     val signatureVersion: String? = null,
     val requiresV2: Boolean? = null,
+    val tokenVerification: TokenVerification? = null,
+    val allowedOrigins: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@PatchAuthConnectionsIdResponse.id))
@@ -18252,8 +18785,11 @@ data class PatchAuthConnectionsIdResponse(
         put("status", JsonValue.Str(this@PatchAuthConnectionsIdResponse.status))
         if (this@PatchAuthConnectionsIdResponse.autoEnrollUsers != null) put("autoEnrollUsers", (this@PatchAuthConnectionsIdResponse.autoEnrollUsers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PatchAuthConnectionsIdResponse.destinationUrl != null) put("destinationUrl", (this@PatchAuthConnectionsIdResponse.destinationUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdResponse.resolveBillingCustomers != null) put("resolveBillingCustomers", (this@PatchAuthConnectionsIdResponse.resolveBillingCustomers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PatchAuthConnectionsIdResponse.signatureVersion != null) put("signatureVersion", (this@PatchAuthConnectionsIdResponse.signatureVersion?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchAuthConnectionsIdResponse.requiresV2 != null) put("requiresV2", (this@PatchAuthConnectionsIdResponse.requiresV2?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdResponse.tokenVerification != null) put("tokenVerification", (this@PatchAuthConnectionsIdResponse.tokenVerification?.let { (it?.let { it.toJson() } ?: JsonValue.Null) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdResponse.allowedOrigins != null) put("allowedOrigins", (this@PatchAuthConnectionsIdResponse.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -18266,8 +18802,11 @@ data class PatchAuthConnectionsIdResponse(
                 status = o.field("status").string(),
                 autoEnrollUsers = o["autoEnrollUsers"]?.orNull()?.let { it.bool() },
                 destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
+                resolveBillingCustomers = o["resolveBillingCustomers"]?.orNull()?.let { it.bool() },
                 signatureVersion = o["signatureVersion"]?.orNull()?.let { it.string() },
                 requiresV2 = o["requiresV2"]?.orNull()?.let { it.bool() },
+                tokenVerification = o["tokenVerification"]?.orNull()?.let { it.orNull()?.let { TokenVerificationValueOption1.fromJson(it) } },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -18698,6 +19237,32 @@ data class PostAuthConnectionsIdUsersResponse(
                 partner = o.field("partner").orNull()?.let { it },
                 updated = o["updated"]?.orNull()?.let { it.array().map { it.string() } },
                 notes = o["notes"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
+data class GetAuthConnectionsIdUsersCustomerRefReferralResponse(
+    val partnerId: String,
+    val code: String? = null,
+    val linkUrl: String? = null,
+    val enrolledAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partnerId", JsonValue.Str(this@GetAuthConnectionsIdUsersCustomerRefReferralResponse.partnerId))
+        put("code", (this@GetAuthConnectionsIdUsersCustomerRefReferralResponse.code?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("linkUrl", (this@GetAuthConnectionsIdUsersCustomerRefReferralResponse.linkUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("enrolledAt", JsonValue.Str(this@GetAuthConnectionsIdUsersCustomerRefReferralResponse.enrolledAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetAuthConnectionsIdUsersCustomerRefReferralResponse {
+            val o = json.obj()
+            return GetAuthConnectionsIdUsersCustomerRefReferralResponse(
+                partnerId = o.field("partnerId").string(),
+                code = o.field("code").orNull()?.let { it.string() },
+                linkUrl = o.field("linkUrl").orNull()?.let { it.string() },
+                enrolledAt = o.field("enrolledAt").string(),
             )
         }
     }
@@ -25834,6 +26399,213 @@ data class GetProgramsIdStripeCreditsLogResponse(
     }
 }
 
+data class GetProgramsIdCreditRailResponseCreateCustomerIfMissingOption1(
+    val metadata: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetProgramsIdCreditRailResponseCreateCustomerIfMissingOption1.metadata != null) put("metadata", (this@GetProgramsIdCreditRailResponseCreateCustomerIfMissingOption1.metadata?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProgramsIdCreditRailResponseCreateCustomerIfMissingOption1 {
+            val o = json.obj()
+            return GetProgramsIdCreditRailResponseCreateCustomerIfMissingOption1(
+                metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetProgramsIdCreditRailResponseCapabilities(
+    val customerCurrency: Boolean,
+    val createCustomer: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("customerCurrency", JsonValue.Bool(this@GetProgramsIdCreditRailResponseCapabilities.customerCurrency))
+        put("createCustomer", JsonValue.Bool(this@GetProgramsIdCreditRailResponseCapabilities.createCustomer))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProgramsIdCreditRailResponseCapabilities {
+            val o = json.obj()
+            return GetProgramsIdCreditRailResponseCapabilities(
+                customerCurrency = o.field("customerCurrency").bool(),
+                createCustomer = o.field("createCustomer").bool(),
+            )
+        }
+    }
+}
+
+data class GetProgramsIdCreditRailResponse(
+    val programId: String,
+    val provider: String,
+    val connectionId: String? = null,
+    val enabled: Boolean,
+    val referrerMatch: String,
+    val metadataKey: String? = null,
+    val refereeRewards: Boolean,
+    val balanceCurrency: String? = null,
+    val createCustomerIfMissing: GetProgramsIdCreditRailResponseCreateCustomerIfMissingOption1? = null,
+    val waitForCustomer: Boolean,
+    val credentialsConnected: Boolean,
+    val capabilities: GetProgramsIdCreditRailResponseCapabilities,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("programId", JsonValue.Str(this@GetProgramsIdCreditRailResponse.programId))
+        put("provider", JsonValue.Str(this@GetProgramsIdCreditRailResponse.provider))
+        put("connectionId", (this@GetProgramsIdCreditRailResponse.connectionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("enabled", JsonValue.Bool(this@GetProgramsIdCreditRailResponse.enabled))
+        put("referrerMatch", JsonValue.Str(this@GetProgramsIdCreditRailResponse.referrerMatch))
+        put("metadataKey", (this@GetProgramsIdCreditRailResponse.metadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("refereeRewards", JsonValue.Bool(this@GetProgramsIdCreditRailResponse.refereeRewards))
+        put("balanceCurrency", (this@GetProgramsIdCreditRailResponse.balanceCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createCustomerIfMissing", (this@GetProgramsIdCreditRailResponse.createCustomerIfMissing?.let { it.toJson() } ?: JsonValue.Null))
+        put("waitForCustomer", JsonValue.Bool(this@GetProgramsIdCreditRailResponse.waitForCustomer))
+        put("credentialsConnected", JsonValue.Bool(this@GetProgramsIdCreditRailResponse.credentialsConnected))
+        put("capabilities", this@GetProgramsIdCreditRailResponse.capabilities.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProgramsIdCreditRailResponse {
+            val o = json.obj()
+            return GetProgramsIdCreditRailResponse(
+                programId = o.field("programId").string(),
+                provider = o.field("provider").string(),
+                connectionId = o.field("connectionId").orNull()?.let { it.string() },
+                enabled = o.field("enabled").bool(),
+                referrerMatch = o.field("referrerMatch").string(),
+                metadataKey = o.field("metadataKey").orNull()?.let { it.string() },
+                refereeRewards = o.field("refereeRewards").bool(),
+                balanceCurrency = o.field("balanceCurrency").orNull()?.let { it.string() },
+                createCustomerIfMissing = o.field("createCustomerIfMissing").orNull()?.let { GetProgramsIdCreditRailResponseCreateCustomerIfMissingOption1.fromJson(it) },
+                waitForCustomer = o.field("waitForCustomer").bool(),
+                credentialsConnected = o.field("credentialsConnected").bool(),
+                capabilities = GetProgramsIdCreditRailResponseCapabilities.fromJson(o.field("capabilities")),
+            )
+        }
+    }
+}
+
+data class PostProgramsIdCreditRailRequeueResponse(
+    val requeued: Long,
+    val creditIds: List<String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("requeued", JsonValue.Num(this@PostProgramsIdCreditRailRequeueResponse.requeued.toDouble()))
+        put("creditIds", JsonValue.Arr(this@PostProgramsIdCreditRailRequeueResponse.creditIds.map { JsonValue.Str(it) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostProgramsIdCreditRailRequeueResponse {
+            val o = json.obj()
+            return PostProgramsIdCreditRailRequeueResponse(
+                requeued = o.field("requeued").long(),
+                creditIds = o.field("creditIds").array().map { it.string() },
+            )
+        }
+    }
+}
+
+data class GetProgramsIdCreditRailLogResponseDataItem(
+    val id: String,
+    val programId: String,
+    val sourceEventId: String,
+    val kind: String,
+    val commissionId: String? = null,
+    val partnerId: String? = null,
+    val customerRef: String? = null,
+    val amountMinor: Long,
+    val currency: String,
+    val appliedAmountMinor: Long? = null,
+    val appliedCurrency: String? = null,
+    val status: String,
+    val attempts: Long,
+    val lastError: String? = null,
+    val createdAt: String,
+    val updatedAt: String,
+    val provider: String,
+    val connectionId: String? = null,
+    val customerId: String? = null,
+    val transactionId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.id))
+        put("programId", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.programId))
+        put("sourceEventId", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.sourceEventId))
+        put("kind", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.kind))
+        put("commissionId", (this@GetProgramsIdCreditRailLogResponseDataItem.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("partnerId", (this@GetProgramsIdCreditRailLogResponseDataItem.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerRef", (this@GetProgramsIdCreditRailLogResponseDataItem.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@GetProgramsIdCreditRailLogResponseDataItem.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.currency))
+        put("appliedAmountMinor", (this@GetProgramsIdCreditRailLogResponseDataItem.appliedAmountMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("appliedCurrency", (this@GetProgramsIdCreditRailLogResponseDataItem.appliedCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.status))
+        put("attempts", JsonValue.Num(this@GetProgramsIdCreditRailLogResponseDataItem.attempts.toDouble()))
+        put("lastError", (this@GetProgramsIdCreditRailLogResponseDataItem.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createdAt", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.createdAt))
+        put("updatedAt", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.updatedAt))
+        put("provider", JsonValue.Str(this@GetProgramsIdCreditRailLogResponseDataItem.provider))
+        put("connectionId", (this@GetProgramsIdCreditRailLogResponseDataItem.connectionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerId", (this@GetProgramsIdCreditRailLogResponseDataItem.customerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("transactionId", (this@GetProgramsIdCreditRailLogResponseDataItem.transactionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProgramsIdCreditRailLogResponseDataItem {
+            val o = json.obj()
+            return GetProgramsIdCreditRailLogResponseDataItem(
+                id = o.field("id").string(),
+                programId = o.field("programId").string(),
+                sourceEventId = o.field("sourceEventId").string(),
+                kind = o.field("kind").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                partnerId = o.field("partnerId").orNull()?.let { it.string() },
+                customerRef = o.field("customerRef").orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                appliedAmountMinor = o.field("appliedAmountMinor").orNull()?.let { it.long() },
+                appliedCurrency = o.field("appliedCurrency").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+                attempts = o.field("attempts").long(),
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+                createdAt = o.field("createdAt").string(),
+                updatedAt = o.field("updatedAt").string(),
+                provider = o.field("provider").string(),
+                connectionId = o.field("connectionId").orNull()?.let { it.string() },
+                customerId = o.field("customerId").orNull()?.let { it.string() },
+                transactionId = o.field("transactionId").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetProgramsIdCreditRailLogResponse(
+    val `object`: String,
+    val data: List<GetProgramsIdCreditRailLogResponseDataItem>,
+    val hasMore: Boolean,
+    val nextCursor: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("object", JsonValue.Str(this@GetProgramsIdCreditRailLogResponse.`object`))
+        put("data", JsonValue.Arr(this@GetProgramsIdCreditRailLogResponse.data.map { it.toJson() }))
+        put("has_more", JsonValue.Bool(this@GetProgramsIdCreditRailLogResponse.hasMore))
+        put("next_cursor", (this@GetProgramsIdCreditRailLogResponse.nextCursor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProgramsIdCreditRailLogResponse {
+            val o = json.obj()
+            return GetProgramsIdCreditRailLogResponse(
+                `object` = o.field("object").string(),
+                data = o.field("data").array().map { GetProgramsIdCreditRailLogResponseDataItem.fromJson(it) },
+                hasMore = o.field("has_more").bool(),
+                nextCursor = o.field("next_cursor").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
 data class PostWebhooksBillingConnectionIdResponseResultsItem(
     val duplicate: Boolean,
     val billingEventId: String? = null,
@@ -28201,6 +28973,23 @@ data class PostWidgetTokensBody(
     }
 }
 
+data class PostWidgetSessionBody(
+    val programId: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("programId", JsonValue.Str(this@PostWidgetSessionBody.programId))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostWidgetSessionBody {
+            val o = json.obj()
+            return PostWidgetSessionBody(
+                programId = o.field("programId").string(),
+            )
+        }
+    }
+}
+
 data class PostReferralsAssociateBodyConsent(
     val provider: String,
     val state: String,
@@ -28989,6 +29778,8 @@ data class PostBillingConnectionsBody(
     val programIds: List<String>? = null,
     val stripeKey: String? = null,
     val creditRail: PostBillingConnectionsBodyCreditRail? = null,
+    val autoRegister: Boolean? = null,
+    val credentials: Map<String, JsonValue>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("provider", JsonValue.Str(this@PostBillingConnectionsBody.provider))
@@ -28999,6 +29790,8 @@ data class PostBillingConnectionsBody(
         if (this@PostBillingConnectionsBody.programIds != null) put("programIds", (this@PostBillingConnectionsBody.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         if (this@PostBillingConnectionsBody.stripeKey != null) put("stripeKey", (this@PostBillingConnectionsBody.stripeKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostBillingConnectionsBody.creditRail != null) put("creditRail", (this@PostBillingConnectionsBody.creditRail?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBody.autoRegister != null) put("autoRegister", (this@PostBillingConnectionsBody.autoRegister?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBody.credentials != null) put("credentials", (this@PostBillingConnectionsBody.credentials?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -29013,6 +29806,8 @@ data class PostBillingConnectionsBody(
                 programIds = o["programIds"]?.orNull()?.let { it.array().map { it.string() } },
                 stripeKey = o["stripeKey"]?.orNull()?.let { it.string() },
                 creditRail = o["creditRail"]?.orNull()?.let { PostBillingConnectionsBodyCreditRail.fromJson(it) },
+                autoRegister = o["autoRegister"]?.orNull()?.let { it.bool() },
+                credentials = o["credentials"]?.orNull()?.let { it.obj().mapValues { it.value } },
             )
         }
     }
@@ -29040,12 +29835,14 @@ data class PutBillingConnectionsIdCredentialsBody(
     val apiToken: String? = null,
     val storeHash: String? = null,
     val region: String? = null,
+    val site: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PutBillingConnectionsIdCredentialsBody.apiKey != null) put("apiKey", (this@PutBillingConnectionsIdCredentialsBody.apiKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PutBillingConnectionsIdCredentialsBody.apiToken != null) put("apiToken", (this@PutBillingConnectionsIdCredentialsBody.apiToken?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PutBillingConnectionsIdCredentialsBody.storeHash != null) put("storeHash", (this@PutBillingConnectionsIdCredentialsBody.storeHash?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PutBillingConnectionsIdCredentialsBody.region != null) put("region", (this@PutBillingConnectionsIdCredentialsBody.region?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutBillingConnectionsIdCredentialsBody.site != null) put("site", (this@PutBillingConnectionsIdCredentialsBody.site?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -29056,6 +29853,7 @@ data class PutBillingConnectionsIdCredentialsBody(
                 apiToken = o["apiToken"]?.orNull()?.let { it.string() },
                 storeHash = o["storeHash"]?.orNull()?.let { it.string() },
                 region = o["region"]?.orNull()?.let { it.string() },
+                site = o["site"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -30017,13 +30815,79 @@ data class PostSandboxSimulateBody(
     }
 }
 
+data class PostSandboxBillingFixturesBodyOverrides(
+    val customerRef: String? = null,
+    val amountMinor: Long? = null,
+    val currency: String? = null,
+    val metadata: Map<String, String>? = null,
+    val invoiceId: String? = null,
+    val orderId: String? = null,
+    val chargeId: String? = null,
+    val subscriptionId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostSandboxBillingFixturesBodyOverrides.customerRef != null) put("customerRef", (this@PostSandboxBillingFixturesBodyOverrides.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSandboxBillingFixturesBodyOverrides.amountMinor != null) put("amountMinor", (this@PostSandboxBillingFixturesBodyOverrides.amountMinor?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostSandboxBillingFixturesBodyOverrides.currency != null) put("currency", (this@PostSandboxBillingFixturesBodyOverrides.currency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSandboxBillingFixturesBodyOverrides.metadata != null) put("metadata", (this@PostSandboxBillingFixturesBodyOverrides.metadata?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@PostSandboxBillingFixturesBodyOverrides.invoiceId != null) put("invoiceId", (this@PostSandboxBillingFixturesBodyOverrides.invoiceId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSandboxBillingFixturesBodyOverrides.orderId != null) put("orderId", (this@PostSandboxBillingFixturesBodyOverrides.orderId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSandboxBillingFixturesBodyOverrides.chargeId != null) put("chargeId", (this@PostSandboxBillingFixturesBodyOverrides.chargeId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSandboxBillingFixturesBodyOverrides.subscriptionId != null) put("subscriptionId", (this@PostSandboxBillingFixturesBodyOverrides.subscriptionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostSandboxBillingFixturesBodyOverrides {
+            val o = json.obj()
+            return PostSandboxBillingFixturesBodyOverrides(
+                customerRef = o["customerRef"]?.orNull()?.let { it.string() },
+                amountMinor = o["amountMinor"]?.orNull()?.let { it.long() },
+                currency = o["currency"]?.orNull()?.let { it.string() },
+                metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                invoiceId = o["invoiceId"]?.orNull()?.let { it.string() },
+                orderId = o["orderId"]?.orNull()?.let { it.string() },
+                chargeId = o["chargeId"]?.orNull()?.let { it.string() },
+                subscriptionId = o["subscriptionId"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostSandboxBillingFixturesBody(
+    val connectionId: String,
+    val eventId: String? = null,
+    val overrides: PostSandboxBillingFixturesBodyOverrides? = null,
+    val event: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("connectionId", JsonValue.Str(this@PostSandboxBillingFixturesBody.connectionId))
+        if (this@PostSandboxBillingFixturesBody.eventId != null) put("eventId", (this@PostSandboxBillingFixturesBody.eventId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSandboxBillingFixturesBody.overrides != null) put("overrides", (this@PostSandboxBillingFixturesBody.overrides?.let { it.toJson() } ?: JsonValue.Null))
+        put("event", JsonValue.Str(this@PostSandboxBillingFixturesBody.event))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostSandboxBillingFixturesBody {
+            val o = json.obj()
+            return PostSandboxBillingFixturesBody(
+                connectionId = o.field("connectionId").string(),
+                eventId = o["eventId"]?.orNull()?.let { it.string() },
+                overrides = o["overrides"]?.orNull()?.let { PostSandboxBillingFixturesBodyOverrides.fromJson(it) },
+                event = o.field("event").string(),
+            )
+        }
+    }
+}
+
 data class PostSandboxStripeFixturesBodyOverrides(
     val customerRef: String? = null,
     val amountMinor: Long? = null,
     val currency: String? = null,
     val metadata: Map<String, String>? = null,
     val invoiceId: String? = null,
+    val orderId: String? = null,
     val chargeId: String? = null,
+    val subscriptionId: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PostSandboxStripeFixturesBodyOverrides.customerRef != null) put("customerRef", (this@PostSandboxStripeFixturesBodyOverrides.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -30031,7 +30895,9 @@ data class PostSandboxStripeFixturesBodyOverrides(
         if (this@PostSandboxStripeFixturesBodyOverrides.currency != null) put("currency", (this@PostSandboxStripeFixturesBodyOverrides.currency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostSandboxStripeFixturesBodyOverrides.metadata != null) put("metadata", (this@PostSandboxStripeFixturesBodyOverrides.metadata?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
         if (this@PostSandboxStripeFixturesBodyOverrides.invoiceId != null) put("invoiceId", (this@PostSandboxStripeFixturesBodyOverrides.invoiceId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSandboxStripeFixturesBodyOverrides.orderId != null) put("orderId", (this@PostSandboxStripeFixturesBodyOverrides.orderId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostSandboxStripeFixturesBodyOverrides.chargeId != null) put("chargeId", (this@PostSandboxStripeFixturesBodyOverrides.chargeId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostSandboxStripeFixturesBodyOverrides.subscriptionId != null) put("subscriptionId", (this@PostSandboxStripeFixturesBodyOverrides.subscriptionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -30043,7 +30909,9 @@ data class PostSandboxStripeFixturesBodyOverrides(
                 currency = o["currency"]?.orNull()?.let { it.string() },
                 metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
                 invoiceId = o["invoiceId"]?.orNull()?.let { it.string() },
+                orderId = o["orderId"]?.orNull()?.let { it.string() },
                 chargeId = o["chargeId"]?.orNull()?.let { it.string() },
+                subscriptionId = o["subscriptionId"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -30051,15 +30919,15 @@ data class PostSandboxStripeFixturesBodyOverrides(
 
 data class PostSandboxStripeFixturesBody(
     val connectionId: String,
-    val event: String,
     val eventId: String? = null,
     val overrides: PostSandboxStripeFixturesBodyOverrides? = null,
+    val event: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("connectionId", JsonValue.Str(this@PostSandboxStripeFixturesBody.connectionId))
-        put("event", JsonValue.Str(this@PostSandboxStripeFixturesBody.event))
         if (this@PostSandboxStripeFixturesBody.eventId != null) put("eventId", (this@PostSandboxStripeFixturesBody.eventId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostSandboxStripeFixturesBody.overrides != null) put("overrides", (this@PostSandboxStripeFixturesBody.overrides?.let { it.toJson() } ?: JsonValue.Null))
+        put("event", JsonValue.Str(this@PostSandboxStripeFixturesBody.event))
     })
 
     companion object {
@@ -30067,9 +30935,9 @@ data class PostSandboxStripeFixturesBody(
             val o = json.obj()
             return PostSandboxStripeFixturesBody(
                 connectionId = o.field("connectionId").string(),
-                event = o.field("event").string(),
                 eventId = o["eventId"]?.orNull()?.let { it.string() },
                 overrides = o["overrides"]?.orNull()?.let { PostSandboxStripeFixturesBodyOverrides.fromJson(it) },
+                event = o.field("event").string(),
             )
         }
     }
@@ -31776,6 +32644,73 @@ data class PostAuthConnectionsBodyKeys(
     }
 }
 
+data class PostAuthConnectionsBodyTokenVerificationClaims(
+    val customerRef: String? = null,
+    val email: String? = null,
+    val emailVerified: String? = null,
+    val name: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostAuthConnectionsBodyTokenVerificationClaims.customerRef != null) put("customerRef", (this@PostAuthConnectionsBodyTokenVerificationClaims.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerificationClaims.email != null) put("email", (this@PostAuthConnectionsBodyTokenVerificationClaims.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerificationClaims.emailVerified != null) put("emailVerified", (this@PostAuthConnectionsBodyTokenVerificationClaims.emailVerified?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerificationClaims.name != null) put("name", (this@PostAuthConnectionsBodyTokenVerificationClaims.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsBodyTokenVerificationClaims {
+            val o = json.obj()
+            return PostAuthConnectionsBodyTokenVerificationClaims(
+                customerRef = o["customerRef"]?.orNull()?.let { it.string() },
+                email = o["email"]?.orNull()?.let { it.string() },
+                emailVerified = o["emailVerified"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostAuthConnectionsBodyTokenVerification(
+    val preset: String? = null,
+    val tenant: String? = null,
+    val issuer: String? = null,
+    val jwksUrl: String? = null,
+    val keyType: String? = null,
+    val sharedSecret: String? = null,
+    val audience: String? = null,
+    val maxAgeS: Long? = null,
+    val claims: PostAuthConnectionsBodyTokenVerificationClaims? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostAuthConnectionsBodyTokenVerification.preset != null) put("preset", (this@PostAuthConnectionsBodyTokenVerification.preset?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerification.tenant != null) put("tenant", (this@PostAuthConnectionsBodyTokenVerification.tenant?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerification.issuer != null) put("issuer", (this@PostAuthConnectionsBodyTokenVerification.issuer?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerification.jwksUrl != null) put("jwksUrl", (this@PostAuthConnectionsBodyTokenVerification.jwksUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerification.keyType != null) put("keyType", (this@PostAuthConnectionsBodyTokenVerification.keyType?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerification.sharedSecret != null) put("sharedSecret", (this@PostAuthConnectionsBodyTokenVerification.sharedSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerification.audience != null) put("audience", (this@PostAuthConnectionsBodyTokenVerification.audience?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerification.maxAgeS != null) put("maxAgeS", (this@PostAuthConnectionsBodyTokenVerification.maxAgeS?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBodyTokenVerification.claims != null) put("claims", (this@PostAuthConnectionsBodyTokenVerification.claims?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsBodyTokenVerification {
+            val o = json.obj()
+            return PostAuthConnectionsBodyTokenVerification(
+                preset = o["preset"]?.orNull()?.let { it.string() },
+                tenant = o["tenant"]?.orNull()?.let { it.string() },
+                issuer = o["issuer"]?.orNull()?.let { it.string() },
+                jwksUrl = o["jwksUrl"]?.orNull()?.let { it.string() },
+                keyType = o["keyType"]?.orNull()?.let { it.string() },
+                sharedSecret = o["sharedSecret"]?.orNull()?.let { it.string() },
+                audience = o["audience"]?.orNull()?.let { it.string() },
+                maxAgeS = o["maxAgeS"]?.orNull()?.let { it.long() },
+                claims = o["claims"]?.orNull()?.let { PostAuthConnectionsBodyTokenVerificationClaims.fromJson(it) },
+            )
+        }
+    }
+}
+
 data class PostAuthConnectionsBody(
     val provider: String,
     val programId: String,
@@ -31786,6 +32721,8 @@ data class PostAuthConnectionsBody(
     val name: String? = null,
     val secret: String? = null,
     val keys: PostAuthConnectionsBodyKeys? = null,
+    val tokenVerification: PostAuthConnectionsBodyTokenVerification? = null,
+    val allowedOrigins: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("provider", JsonValue.Str(this@PostAuthConnectionsBody.provider))
@@ -31797,6 +32734,8 @@ data class PostAuthConnectionsBody(
         if (this@PostAuthConnectionsBody.name != null) put("name", (this@PostAuthConnectionsBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsBody.secret != null) put("secret", (this@PostAuthConnectionsBody.secret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsBody.keys != null) put("keys", (this@PostAuthConnectionsBody.keys?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBody.tokenVerification != null) put("tokenVerification", (this@PostAuthConnectionsBody.tokenVerification?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBody.allowedOrigins != null) put("allowedOrigins", (this@PostAuthConnectionsBody.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -31812,6 +32751,8 @@ data class PostAuthConnectionsBody(
                 name = o["name"]?.orNull()?.let { it.string() },
                 secret = o["secret"]?.orNull()?.let { it.string() },
                 keys = o["keys"]?.orNull()?.let { PostAuthConnectionsBodyKeys.fromJson(it) },
+                tokenVerification = o["tokenVerification"]?.orNull()?.let { PostAuthConnectionsBodyTokenVerification.fromJson(it) },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -31834,19 +32775,92 @@ data class PutAuthConnectionsIdSecretBody(
     }
 }
 
+data class PatchAuthConnectionsIdBodyTokenVerificationOption1Claims(
+    val customerRef: String? = null,
+    val email: String? = null,
+    val emailVerified: String? = null,
+    val name: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.customerRef != null) put("customerRef", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.email != null) put("email", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.emailVerified != null) put("emailVerified", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.emailVerified?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.name != null) put("name", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchAuthConnectionsIdBodyTokenVerificationOption1Claims {
+            val o = json.obj()
+            return PatchAuthConnectionsIdBodyTokenVerificationOption1Claims(
+                customerRef = o["customerRef"]?.orNull()?.let { it.string() },
+                email = o["email"]?.orNull()?.let { it.string() },
+                emailVerified = o["emailVerified"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PatchAuthConnectionsIdBodyTokenVerificationOption1(
+    val preset: String? = null,
+    val tenant: String? = null,
+    val issuer: String? = null,
+    val jwksUrl: String? = null,
+    val keyType: String? = null,
+    val sharedSecret: String? = null,
+    val audience: String? = null,
+    val maxAgeS: Long? = null,
+    val claims: PatchAuthConnectionsIdBodyTokenVerificationOption1Claims? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.preset != null) put("preset", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.preset?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.tenant != null) put("tenant", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.tenant?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.issuer != null) put("issuer", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.issuer?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.jwksUrl != null) put("jwksUrl", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.jwksUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.keyType != null) put("keyType", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.keyType?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.sharedSecret != null) put("sharedSecret", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.sharedSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.audience != null) put("audience", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.audience?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.maxAgeS != null) put("maxAgeS", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.maxAgeS?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.claims != null) put("claims", (this@PatchAuthConnectionsIdBodyTokenVerificationOption1.claims?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchAuthConnectionsIdBodyTokenVerificationOption1 {
+            val o = json.obj()
+            return PatchAuthConnectionsIdBodyTokenVerificationOption1(
+                preset = o["preset"]?.orNull()?.let { it.string() },
+                tenant = o["tenant"]?.orNull()?.let { it.string() },
+                issuer = o["issuer"]?.orNull()?.let { it.string() },
+                jwksUrl = o["jwksUrl"]?.orNull()?.let { it.string() },
+                keyType = o["keyType"]?.orNull()?.let { it.string() },
+                sharedSecret = o["sharedSecret"]?.orNull()?.let { it.string() },
+                audience = o["audience"]?.orNull()?.let { it.string() },
+                maxAgeS = o["maxAgeS"]?.orNull()?.let { it.long() },
+                claims = o["claims"]?.orNull()?.let { PatchAuthConnectionsIdBodyTokenVerificationOption1Claims.fromJson(it) },
+            )
+        }
+    }
+}
+
 data class PatchAuthConnectionsIdBody(
     val status: String? = null,
     val name: String? = null,
     val autoEnrollUsers: Boolean? = null,
     val destinationUrl: String? = null,
+    val resolveBillingCustomers: Boolean? = null,
     val signatureVersion: String? = null,
+    val tokenVerification: PatchAuthConnectionsIdBodyTokenVerificationOption1? = null,
+    val allowedOrigins: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PatchAuthConnectionsIdBody.status != null) put("status", (this@PatchAuthConnectionsIdBody.status?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchAuthConnectionsIdBody.name != null) put("name", (this@PatchAuthConnectionsIdBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchAuthConnectionsIdBody.autoEnrollUsers != null) put("autoEnrollUsers", (this@PatchAuthConnectionsIdBody.autoEnrollUsers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PatchAuthConnectionsIdBody.destinationUrl != null) put("destinationUrl", (this@PatchAuthConnectionsIdBody.destinationUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBody.resolveBillingCustomers != null) put("resolveBillingCustomers", (this@PatchAuthConnectionsIdBody.resolveBillingCustomers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PatchAuthConnectionsIdBody.signatureVersion != null) put("signatureVersion", (this@PatchAuthConnectionsIdBody.signatureVersion?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBody.tokenVerification != null) put("tokenVerification", (this@PatchAuthConnectionsIdBody.tokenVerification?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PatchAuthConnectionsIdBody.allowedOrigins != null) put("allowedOrigins", (this@PatchAuthConnectionsIdBody.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -31857,7 +32871,10 @@ data class PatchAuthConnectionsIdBody(
                 name = o["name"]?.orNull()?.let { it.string() },
                 autoEnrollUsers = o["autoEnrollUsers"]?.orNull()?.let { it.bool() },
                 destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
+                resolveBillingCustomers = o["resolveBillingCustomers"]?.orNull()?.let { it.bool() },
                 signatureVersion = o["signatureVersion"]?.orNull()?.let { it.string() },
+                tokenVerification = o["tokenVerification"]?.orNull()?.let { PatchAuthConnectionsIdBodyTokenVerificationOption1.fromJson(it) },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -32055,12 +33072,14 @@ data class PostAuthConnectionsIdAliasesBody(
 data class PostAuthConnectionsIdUsersBody(
     val customerRef: String,
     val email: String? = null,
+    val emailVerified: Boolean? = null,
     val name: String? = null,
     val status: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("customerRef", JsonValue.Str(this@PostAuthConnectionsIdUsersBody.customerRef))
         if (this@PostAuthConnectionsIdUsersBody.email != null) put("email", (this@PostAuthConnectionsIdUsersBody.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsIdUsersBody.emailVerified != null) put("emailVerified", (this@PostAuthConnectionsIdUsersBody.emailVerified?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsIdUsersBody.name != null) put("name", (this@PostAuthConnectionsIdUsersBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsIdUsersBody.status != null) put("status", (this@PostAuthConnectionsIdUsersBody.status?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
@@ -32071,8 +33090,38 @@ data class PostAuthConnectionsIdUsersBody(
             return PostAuthConnectionsIdUsersBody(
                 customerRef = o.field("customerRef").string(),
                 email = o["email"]?.orNull()?.let { it.string() },
+                emailVerified = o["emailVerified"]?.orNull()?.let { it.bool() },
                 name = o["name"]?.orNull()?.let { it.string() },
                 status = o["status"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostAuthConnectionsIdWidgetTokensBody(
+    val customerRef: String,
+    val email: String? = null,
+    val emailVerified: Boolean? = null,
+    val displayName: String? = null,
+    val ttlSeconds: Long? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("customerRef", JsonValue.Str(this@PostAuthConnectionsIdWidgetTokensBody.customerRef))
+        if (this@PostAuthConnectionsIdWidgetTokensBody.email != null) put("email", (this@PostAuthConnectionsIdWidgetTokensBody.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsIdWidgetTokensBody.emailVerified != null) put("emailVerified", (this@PostAuthConnectionsIdWidgetTokensBody.emailVerified?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsIdWidgetTokensBody.displayName != null) put("displayName", (this@PostAuthConnectionsIdWidgetTokensBody.displayName?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsIdWidgetTokensBody.ttlSeconds != null) put("ttlSeconds", (this@PostAuthConnectionsIdWidgetTokensBody.ttlSeconds?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsIdWidgetTokensBody {
+            val o = json.obj()
+            return PostAuthConnectionsIdWidgetTokensBody(
+                customerRef = o.field("customerRef").string(),
+                email = o["email"]?.orNull()?.let { it.string() },
+                emailVerified = o["emailVerified"]?.orNull()?.let { it.bool() },
+                displayName = o["displayName"]?.orNull()?.let { it.string() },
+                ttlSeconds = o["ttlSeconds"]?.orNull()?.let { it.long() },
             )
         }
     }
@@ -32897,6 +33946,78 @@ data class PostProgramsIdStripeCreditsRequeueBody(
         fun fromJson(json: JsonValue): PostProgramsIdStripeCreditsRequeueBody {
             val o = json.obj()
             return PostProgramsIdStripeCreditsRequeueBody(
+                creditIds = o["creditIds"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
+data class PutProgramsIdCreditRailBodyCreateCustomerIfMissingOption1(
+    val metadata: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PutProgramsIdCreditRailBodyCreateCustomerIfMissingOption1.metadata != null) put("metadata", (this@PutProgramsIdCreditRailBodyCreateCustomerIfMissingOption1.metadata?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutProgramsIdCreditRailBodyCreateCustomerIfMissingOption1 {
+            val o = json.obj()
+            return PutProgramsIdCreditRailBodyCreateCustomerIfMissingOption1(
+                metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PutProgramsIdCreditRailBody(
+    val enabled: Boolean,
+    val referrerMatch: String? = null,
+    val metadataKey: String? = null,
+    val refereeRewards: Boolean? = null,
+    val balanceCurrency: String? = null,
+    val createCustomerIfMissing: PutProgramsIdCreditRailBodyCreateCustomerIfMissingOption1? = null,
+    val waitForCustomer: Boolean? = null,
+    val connectionId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("enabled", JsonValue.Bool(this@PutProgramsIdCreditRailBody.enabled))
+        if (this@PutProgramsIdCreditRailBody.referrerMatch != null) put("referrerMatch", (this@PutProgramsIdCreditRailBody.referrerMatch?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutProgramsIdCreditRailBody.metadataKey != null) put("metadataKey", (this@PutProgramsIdCreditRailBody.metadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutProgramsIdCreditRailBody.refereeRewards != null) put("refereeRewards", (this@PutProgramsIdCreditRailBody.refereeRewards?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PutProgramsIdCreditRailBody.balanceCurrency != null) put("balanceCurrency", (this@PutProgramsIdCreditRailBody.balanceCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutProgramsIdCreditRailBody.createCustomerIfMissing != null) put("createCustomerIfMissing", (this@PutProgramsIdCreditRailBody.createCustomerIfMissing?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PutProgramsIdCreditRailBody.waitForCustomer != null) put("waitForCustomer", (this@PutProgramsIdCreditRailBody.waitForCustomer?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PutProgramsIdCreditRailBody.connectionId != null) put("connectionId", (this@PutProgramsIdCreditRailBody.connectionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutProgramsIdCreditRailBody {
+            val o = json.obj()
+            return PutProgramsIdCreditRailBody(
+                enabled = o.field("enabled").bool(),
+                referrerMatch = o["referrerMatch"]?.orNull()?.let { it.string() },
+                metadataKey = o["metadataKey"]?.orNull()?.let { it.string() },
+                refereeRewards = o["refereeRewards"]?.orNull()?.let { it.bool() },
+                balanceCurrency = o["balanceCurrency"]?.orNull()?.let { it.string() },
+                createCustomerIfMissing = o["createCustomerIfMissing"]?.orNull()?.let { PutProgramsIdCreditRailBodyCreateCustomerIfMissingOption1.fromJson(it) },
+                waitForCustomer = o["waitForCustomer"]?.orNull()?.let { it.bool() },
+                connectionId = o["connectionId"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostProgramsIdCreditRailRequeueBody(
+    val creditIds: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostProgramsIdCreditRailRequeueBody.creditIds != null) put("creditIds", (this@PostProgramsIdCreditRailRequeueBody.creditIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostProgramsIdCreditRailRequeueBody {
+            val o = json.obj()
+            return PostProgramsIdCreditRailRequeueBody(
                 creditIds = o["creditIds"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }

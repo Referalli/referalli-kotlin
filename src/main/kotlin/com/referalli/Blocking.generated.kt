@@ -20,7 +20,7 @@ fun ReferalliBlockingClient.deleteAuthConnectionsId(id: String, idempotencyKey: 
     runBlocking { this@deleteAuthConnectionsId.client.deleteAuthConnectionsId(id = id, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.deleteBillingConnectionsId]: Delete a billing connection. DELETE /v1/billing/connections/{id} */
-fun ReferalliBlockingClient.deleteBillingConnectionsId(id: String, idempotencyKey: String? = null): Ok =
+fun ReferalliBlockingClient.deleteBillingConnectionsId(id: String, idempotencyKey: String? = null): DeleteBillingConnectionsIdResponse =
     runBlocking { this@deleteBillingConnectionsId.client.deleteBillingConnectionsId(id = id, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.deleteBillingInternalCustomersCustomerRef]: Remove an internal customer. DELETE /v1/billing/internal-customers/{customerRef} */
@@ -230,6 +230,10 @@ fun ReferalliBlockingClient.getAuthConnectionsEach(limit: Long? = null, endingBe
 /** Blocking [ReferalliClient.getAuthConnectionsIdExport]: Export a user (signed protocol). GET /v1/auth/connections/{id}/export */
 fun ReferalliBlockingClient.getAuthConnectionsIdExport(id: String, customerRef: String, idempotencyKey: String? = null): GetAuthConnectionsIdExportResponse =
     runBlocking { this@getAuthConnectionsIdExport.client.getAuthConnectionsIdExport(id = id, customerRef = customerRef, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.getAuthConnectionsIdUsersCustomerRefReferral]: Get a user's referral link (signed protocol). GET /v1/auth/connections/{id}/users/{customerRef}/referral */
+fun ReferalliBlockingClient.getAuthConnectionsIdUsersCustomerRefReferral(id: String, customerRef: String, idempotencyKey: String? = null): GetAuthConnectionsIdUsersCustomerRefReferralResponse =
+    runBlocking { this@getAuthConnectionsIdUsersCustomerRefReferral.client.getAuthConnectionsIdUsersCustomerRefReferral(id = id, customerRef = customerRef, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getAuthConnectionsProviders]: List identity connectors. GET /v1/auth/connections/providers */
 fun ReferalliBlockingClient.getAuthConnectionsProviders(idempotencyKey: String? = null): GetAuthConnectionsProvidersResponse =
@@ -955,6 +959,18 @@ fun ReferalliBlockingClient.getProgramsId(id: String, idempotencyKey: String? = 
 fun ReferalliBlockingClient.getProgramsIdAutopricing(id: String, idempotencyKey: String? = null): GetProgramsIdAutopricingResponse =
     runBlocking { this@getProgramsIdAutopricing.client.getProgramsIdAutopricing(id = id, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.getProgramsIdCreditRail]: Get a program's account-credit rail settings. GET /v1/programs/{id}/credit-rail */
+fun ReferalliBlockingClient.getProgramsIdCreditRail(id: String, idempotencyKey: String? = null): GetProgramsIdCreditRailResponse =
+    runBlocking { this@getProgramsIdCreditRail.client.getProgramsIdCreditRail(id = id, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.getProgramsIdCreditRailLog]: List a program's account credits. GET /v1/programs/{id}/credit-rail/log */
+fun ReferalliBlockingClient.getProgramsIdCreditRailLog(id: String, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<GetProgramsIdCreditRailLogResponseDataItem> =
+    runBlocking { this@getProgramsIdCreditRailLog.client.getProgramsIdCreditRailLog(id = id, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+
+/** Every item of [getProgramsIdCreditRailLog], following the pages (lazily, one request per page). */
+fun ReferalliBlockingClient.getProgramsIdCreditRailLogEach(id: String, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<GetProgramsIdCreditRailLogResponseDataItem> =
+    paginate { cursor -> getProgramsIdCreditRailLog(id = id, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.getProgramsIdEnrollments]: List program enrollments. GET /v1/programs/{id}/enrollments */
 fun ReferalliBlockingClient.getProgramsIdEnrollments(id: String, status: String? = null, partnerId: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<GetProgramsIdEnrollmentsResponseDataItem> =
     runBlocking { this@getProgramsIdEnrollments.client.getProgramsIdEnrollments(id = id, status = status, partnerId = partnerId, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
@@ -1118,6 +1134,10 @@ fun ReferalliBlockingClient.getRoiSummary(from: String? = null, to: String? = nu
 /** Blocking [ReferalliClient.getRoiTraceCustomerRef]: Trace a customer's value. GET /v1/roi/trace/{customerRef} */
 fun ReferalliBlockingClient.getRoiTraceCustomerRef(customerRef: String, windowDays: Long? = null, format: String? = null, idempotencyKey: String? = null): RoiTrace =
     runBlocking { this@getRoiTraceCustomerRef.client.getRoiTraceCustomerRef(customerRef = customerRef, windowDays = windowDays, format = format, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.getSandboxBillingFixtures]: List billing event fixtures. GET /v1/sandbox/billing-fixtures */
+fun ReferalliBlockingClient.getSandboxBillingFixtures(provider: String? = null, idempotencyKey: String? = null): GetSandboxBillingFixturesResponse =
+    runBlocking { this@getSandboxBillingFixtures.client.getSandboxBillingFixtures(provider = provider, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getSandboxStripeFixtures]: List Stripe event fixtures. GET /v1/sandbox/stripe-fixtures */
 fun ReferalliBlockingClient.getSandboxStripeFixtures(idempotencyKey: String? = null): GetSandboxStripeFixturesResponse =
@@ -1410,6 +1430,10 @@ fun ReferalliBlockingClient.postAuthConnectionsIdSignups(id: String, body: PostA
 /** Blocking [ReferalliClient.postAuthConnectionsIdUsers]: Update a user (signed protocol). POST /v1/auth/connections/{id}/users */
 fun ReferalliBlockingClient.postAuthConnectionsIdUsers(id: String, body: PostAuthConnectionsIdUsersBody, idempotencyKey: String? = null): PostAuthConnectionsIdUsersResponse =
     runBlocking { this@postAuthConnectionsIdUsers.client.postAuthConnectionsIdUsers(id = id, body = body, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.postAuthConnectionsIdWidgetTokens]: Mint a widget token for a user (signed protocol). POST /v1/auth/connections/{id}/widget-tokens */
+fun ReferalliBlockingClient.postAuthConnectionsIdWidgetTokens(id: String, body: PostAuthConnectionsIdWidgetTokensBody, idempotencyKey: String? = null): WidgetSession =
+    runBlocking { this@postAuthConnectionsIdWidgetTokens.client.postAuthConnectionsIdWidgetTokens(id = id, body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postAuthConnectionsInstall]: Approve a one-click install. POST /v1/auth/connections/install */
 fun ReferalliBlockingClient.postAuthConnectionsInstall(body: PostAuthConnectionsInstallBody, idempotencyKey: String? = null): PostAuthConnectionsInstallResponse =
@@ -1847,6 +1871,10 @@ fun ReferalliBlockingClient.postProgramsIdApplyLeveling(id: String, idempotencyK
 fun ReferalliBlockingClient.postProgramsIdAutopriceRun(id: String, body: PostProgramsIdAutopriceRunBody, idempotencyKey: String? = null): PostProgramsIdAutopriceRunResponse =
     runBlocking { this@postProgramsIdAutopriceRun.client.postProgramsIdAutopriceRun(id = id, body = body, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.postProgramsIdCreditRailRequeue]: Requeue stuck account credits. POST /v1/programs/{id}/credit-rail/requeue */
+fun ReferalliBlockingClient.postProgramsIdCreditRailRequeue(id: String, body: PostProgramsIdCreditRailRequeueBody, idempotencyKey: String? = null): PostProgramsIdCreditRailRequeueResponse =
+    runBlocking { this@postProgramsIdCreditRailRequeue.client.postProgramsIdCreditRailRequeue(id = id, body = body, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.postProgramsIdEnrollments]: Enroll a partner. POST /v1/programs/{id}/enrollments */
 fun ReferalliBlockingClient.postProgramsIdEnrollments(id: String, body: PostProgramsIdEnrollmentsBody, idempotencyKey: String? = null): PostProgramsIdEnrollmentsResponse =
     runBlocking { this@postProgramsIdEnrollments.client.postProgramsIdEnrollments(id = id, body = body, idempotencyKey = idempotencyKey) }
@@ -1919,12 +1947,16 @@ fun ReferalliBlockingClient.postRewardsRedeemByCode(body: PostRewardsRedeemByCod
 fun ReferalliBlockingClient.postRoiPatternsPatternReview(pattern: String, body: PostRoiPatternsPatternReviewBody, idempotencyKey: String? = null): FraudCase =
     runBlocking { this@postRoiPatternsPatternReview.client.postRoiPatternsPatternReview(pattern = pattern, body = body, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.postSandboxBillingFixtures]: Send a billing event fixture. POST /v1/sandbox/billing-fixtures */
+fun ReferalliBlockingClient.postSandboxBillingFixtures(body: PostSandboxBillingFixturesBody, idempotencyKey: String? = null): PostSandboxBillingFixturesResponse =
+    runBlocking { this@postSandboxBillingFixtures.client.postSandboxBillingFixtures(body = body, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.postSandboxSimulate]: Simulate billing history. POST /v1/sandbox/simulate */
 fun ReferalliBlockingClient.postSandboxSimulate(body: PostSandboxSimulateBody, idempotencyKey: String? = null): PostSandboxSimulateResponse =
     runBlocking { this@postSandboxSimulate.client.postSandboxSimulate(body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postSandboxStripeFixtures]: Send a Stripe event fixture. POST /v1/sandbox/stripe-fixtures */
-fun ReferalliBlockingClient.postSandboxStripeFixtures(body: PostSandboxStripeFixturesBody, idempotencyKey: String? = null): PostSandboxStripeFixturesResponse =
+fun ReferalliBlockingClient.postSandboxStripeFixtures(body: PostSandboxStripeFixturesBody, idempotencyKey: String? = null): PostSandboxBillingFixturesResponse =
     runBlocking { this@postSandboxStripeFixtures.client.postSandboxStripeFixtures(body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postSupportAppsAdapterTest]: Preview a support card. POST /v1/support/apps/{adapter}/test */
@@ -1986,6 +2018,10 @@ fun ReferalliBlockingClient.postWebhookEndpointsIdReplay(id: String, since: Stri
 /** Blocking [ReferalliClient.postWebhookEndpointsIdRotateSecret]: Rotate an endpoint secret. POST /v1/webhook-endpoints/{id}/rotate-secret */
 fun ReferalliBlockingClient.postWebhookEndpointsIdRotateSecret(id: String, idempotencyKey: String? = null): PostWebhookEndpointsIdRotateSecretResponse =
     runBlocking { this@postWebhookEndpointsIdRotateSecret.client.postWebhookEndpointsIdRotateSecret(id = id, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.postWidgetSession]: Exchange a user session for a widget token. POST /v1/widget/session */
+fun ReferalliBlockingClient.postWidgetSession(body: PostWidgetSessionBody, idempotencyKey: String? = null): WidgetSession =
+    runBlocking { this@postWidgetSession.client.postWidgetSession(body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postWidgetTokens]: Mint a referral widget token. POST /v1/widget/tokens */
 fun ReferalliBlockingClient.postWidgetTokens(body: PostWidgetTokensBody, idempotencyKey: String? = null): PostWidgetTokensResponse =
@@ -2142,6 +2178,10 @@ fun ReferalliBlockingClient.putProfitabilitySettings(body: PutProfitabilitySetti
 /** Blocking [ReferalliClient.putProgramsIdAutopricing]: Configure autopricing. PUT /v1/programs/{id}/autopricing */
 fun ReferalliBlockingClient.putProgramsIdAutopricing(id: String, body: PutProgramsIdAutopricingBody, idempotencyKey: String? = null): PutProgramsIdAutopricingResponse =
     runBlocking { this@putProgramsIdAutopricing.client.putProgramsIdAutopricing(id = id, body = body, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.putProgramsIdCreditRail]: Set a program's account-credit rail settings. PUT /v1/programs/{id}/credit-rail */
+fun ReferalliBlockingClient.putProgramsIdCreditRail(id: String, body: PutProgramsIdCreditRailBody, idempotencyKey: String? = null): GetProgramsIdCreditRailResponse =
+    runBlocking { this@putProgramsIdCreditRail.client.putProgramsIdCreditRail(id = id, body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.putProgramsIdIncrementality]: Set the incrementality holdout. PUT /v1/programs/{id}/incrementality */
 fun ReferalliBlockingClient.putProgramsIdIncrementality(id: String, body: PutProgramsIdIncrementalityBody, idempotencyKey: String? = null): PutProgramsIdIncrementalityResponse =
