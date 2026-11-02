@@ -1003,6 +1003,10 @@ fun ReferalliBlockingClient.getProgramsIdStripeCreditsLog(id: String, limit: Lon
 fun ReferalliBlockingClient.getProgramsIdStripeCreditsLogEach(id: String, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<GetProgramsIdStripeCreditsLogResponseDataItem> =
     paginate { cursor -> getProgramsIdStripeCreditsLog(id = id, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.getProgramsIdTerms]: Get a program's terms. GET /v1/programs/{id}/terms */
+fun ReferalliBlockingClient.getProgramsIdTerms(id: String, idempotencyKey: String? = null): ProgramTerms =
+    runBlocking { this@getProgramsIdTerms.client.getProgramsIdTerms(id = id, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.getProgramsIdTermsAcceptances]: List terms acceptances. GET /v1/programs/{id}/terms-acceptances */
 fun ReferalliBlockingClient.getProgramsIdTermsAcceptances(id: String, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<GetProgramsIdTermsAcceptancesResponseDataItem> =
     runBlocking { this@getProgramsIdTermsAcceptances.client.getProgramsIdTermsAcceptances(id = id, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }

@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.Flow
  *
  * Revokes a key at once. `cascade=true` also revokes every key it minted (and theirs); `pair=true` also revokes its live/test twin. Returns the revoked ids. Needs an owner or admin session, or an API key with the `admin` scope. Audited.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:write`, or a session of any role.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  *
  * cascade: true: also revoke every key this key minted, and theirs.
  * pair: true: also revoke its live/test twin.
@@ -25,7 +27,9 @@ suspend fun ReferalliClient.deleteApiKeysId(id: String, cascade: String? = null,
  *
  * Removes a marketing asset.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteAssetsId(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/assets/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -35,7 +39,9 @@ suspend fun ReferalliClient.deleteAssetsId(id: String, idempotencyKey: String? =
  *
  * Removes the connection; its webhook URL and signed endpoints stop accepting calls. Referrals it filed stay.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `connections:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteAuthConnectionsId(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/auth/connections/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -45,7 +51,9 @@ suspend fun ReferalliClient.deleteAuthConnectionsId(id: String, idempotencyKey: 
  *
  * Deletes the connection: its secrets and credentials are wiped and its webhook URL stops accepting events. Recorded billing events stay. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteBillingConnectionsId(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/billing/connections/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -55,7 +63,9 @@ suspend fun ReferalliClient.deleteBillingConnectionsId(id: String, idempotencyKe
  *
  * Their payments earn again from now on (events already ignored stay ignored). Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteBillingInternalCustomersCustomerRef(customerRef: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/billing/internal-customers/${segment(customerRef)}", emptyList(), null, idempotencyKey, "json"))
@@ -65,7 +75,9 @@ suspend fun ReferalliClient.deleteBillingInternalCustomersCustomerRef(customerRe
  *
  * Stops serving the partner portal on the custom domain.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteBrandingDomain(idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/branding/domain", emptyList(), null, idempotencyKey, "json"))
@@ -75,7 +87,9 @@ suspend fun ReferalliClient.deleteBrandingDomain(idempotencyKey: String? = null)
  *
  * Stops using the custom link domain; links go back to the default host.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteBrandingLinkDomain(idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/branding/link-domain", emptyList(), null, idempotencyKey, "json"))
@@ -85,7 +99,9 @@ suspend fun ReferalliClient.deleteBrandingLinkDomain(idempotencyKey: String? = n
  *
  * Closes the listener; queued events are dropped.
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteCliListenersId(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/cli/listeners/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -95,7 +111,9 @@ suspend fun ReferalliClient.deleteCliListenersId(id: String, idempotencyKey: Str
  *
  * Removes the override; the default template is used again.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteEmailTemplatesEventLocale(event: String, locale: String, idempotencyKey: String? = null): DeleteEmailTemplatesEventLocaleResponse =
     DeleteEmailTemplatesEventLocaleResponse.fromJson(send("DELETE", "/v1/email/templates/${segment(event)}/${segment(locale)}", emptyList(), null, idempotencyKey, "json"))
@@ -105,7 +123,9 @@ suspend fun ReferalliClient.deleteEmailTemplatesEventLocale(event: String, local
  *
  * Removes the HubSpot or Segment connection and its stored credential.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteIntegrationsKind(kind: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/integrations/${segment(kind)}", emptyList(), null, idempotencyKey, "json"))
@@ -115,7 +135,9 @@ suspend fun ReferalliClient.deleteIntegrationsKind(kind: String, idempotencyKey:
  *
  * Removes a member. Members can remove themselves; otherwise owner or admin. The last owner stays (409). Audited. Live mode only.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:write`, or a session of any role.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteOrgMembersUserId(userId: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/org/members/${segment(userId)}", emptyList(), null, idempotencyKey, "json"))
@@ -125,7 +147,9 @@ suspend fun ReferalliClient.deleteOrgMembersUserId(userId: String, idempotencyKe
  *
  * Removes the org's own IdP configuration; team SSO and "require SSO" turn off, so nobody is locked out. Owner only.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteOrgSsoDirect(idempotencyKey: String? = null): DeleteOrgSsoDirectResponse =
     DeleteOrgSsoDirectResponse.fromJson(send("DELETE", "/v1/org/sso/direct", emptyList(), null, idempotencyKey, "json"))
@@ -145,7 +169,9 @@ suspend fun ReferalliClient.deletePartnerApiTokensId(id: String, idempotencyKey:
  *
  * Deletes a partner that never did anything, with its enrollments, links, coupons and payout profile. A partner with any clicks, referrals, commissions, payouts or other history is `409`: archive it instead (`status: "archived"`). Audited.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deletePartnersId(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/partners/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -155,7 +181,9 @@ suspend fun ReferalliClient.deletePartnersId(id: String, idempotencyKey: String?
  *
  * Removes the stored credentials for a provider. Payouts by that method are then simulated until you reconnect. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deletePayoutConnectionsProvider(provider: String, idempotencyKey: String? = null): DeletePayoutConnectionsProviderResponse =
     DeletePayoutConnectionsProviderResponse.fromJson(send("DELETE", "/v1/payout-connections/${segment(provider)}", emptyList(), null, idempotencyKey, "json"))
@@ -165,7 +193,9 @@ suspend fun ReferalliClient.deletePayoutConnectionsProvider(provider: String, id
  *
  * Drops the draft and its preview link. What partners see is unchanged. Owner or admin.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deletePortalThemeDraft(idempotencyKey: String? = null): GetPortalThemeResponse =
     GetPortalThemeResponse.fromJson(send("DELETE", "/v1/portal/theme/draft", emptyList(), null, idempotencyKey, "json"))
@@ -175,7 +205,9 @@ suspend fun ReferalliClient.deletePortalThemeDraft(idempotencyKey: String? = nul
  *
  * Removes the tool, its key and settings; its URL answers 404 from now on. The request log stays.
  *
- * **Auth:** an API key with `privacy:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deletePrivacyExecutorsAdapter(adapter: String, idempotencyKey: String? = null): DeletePrivacyExecutorsAdapterResponse =
     DeletePrivacyExecutorsAdapterResponse.fromJson(send("DELETE", "/v1/privacy/executors/${segment(adapter)}", emptyList(), null, idempotencyKey, "json"))
@@ -185,7 +217,9 @@ suspend fun ReferalliClient.deletePrivacyExecutorsAdapter(adapter: String, idemp
  *
  * The link and every token issued from it stop at once. A root action (see create).
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `team:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteProductLinksId(id: String, idempotencyKey: String? = null): DeleteProductLinksIdResponse =
     DeleteProductLinksIdResponse.fromJson(send("DELETE", "/v1/product-links/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -195,7 +229,9 @@ suspend fun ReferalliClient.deleteProductLinksId(id: String, idempotencyKey: Str
  *
  * Removes a product from the margin catalog; its payments fall back to the program or org margin. Audited.
  *
- * **Auth:** an API key with `analytics:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `analytics:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `analytics:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteProfitabilityProductsProductRef(productRef: String, idempotencyKey: String? = null): OkStatus =
     OkStatus.fromJson(send("DELETE", "/v1/profitability/products/${segment(productRef)}", emptyList(), null, idempotencyKey, "json"))
@@ -205,7 +241,9 @@ suspend fun ReferalliClient.deleteProfitabilityProductsProductRef(productRef: St
  *
  * Deletes the rule. Rewards already granted through it stay.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteRewardsRulesKey(key: String, idempotencyKey: String? = null): DeleteRewardsRulesKeyResponse =
     DeleteRewardsRulesKeyResponse.fromJson(send("DELETE", "/v1/rewards/rules/${segment(key)}", emptyList(), null, idempotencyKey, "json"))
@@ -215,7 +253,9 @@ suspend fun ReferalliClient.deleteRewardsRulesKey(key: String, idempotencyKey: S
  *
  * Deletes the rail's own key. A Stripe payout connection, if any, is then used instead; with neither, queued credits fail until a key is connected. Owner or admin. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteStripeCreditsConnection(idempotencyKey: String? = null): GetStripeCreditsConnectionResponse =
     GetStripeCreditsConnectionResponse.fromJson(send("DELETE", "/v1/stripe-credits/connection", emptyList(), null, idempotencyKey, "json"))
@@ -225,7 +265,9 @@ suspend fun ReferalliClient.deleteStripeCreditsConnection(idempotencyKey: String
  *
  * Removes the tool and its secret; its card URL answers 404 from now on.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteSupportAppsAdapter(adapter: String, idempotencyKey: String? = null): DeleteSupportAppsAdapterResponse =
     DeleteSupportAppsAdapterResponse.fromJson(send("DELETE", "/v1/support/apps/${segment(adapter)}", emptyList(), null, idempotencyKey, "json"))
@@ -235,7 +277,9 @@ suspend fun ReferalliClient.deleteSupportAppsAdapter(adapter: String, idempotenc
  *
  * Removes the endpoint and its delivery history. Audited.
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteWebhookEndpointsId(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/webhook-endpoints/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -245,7 +289,9 @@ suspend fun ReferalliClient.deleteWebhookEndpointsId(id: String, idempotencyKey:
  *
  * REST hook unsubscribe, called by Zapier when a Zap turns off.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.deleteZapierHooksId(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("DELETE", "/v1/zapier/hooks/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -305,7 +351,9 @@ fun ReferalliClient.getAdminPartnerAccountsEach(flagged: Boolean? = null, q: Str
  *
  * The AI agents partnered with this org, with their wallet, metadata and how many recommendations each has attributed, most active first.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session with role `owner`, `admin`, `analyst`.
+ * **Auth:** an API key with `growth:read`, or a session with role `owner`, `admin`, `analyst`.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -325,7 +373,9 @@ fun ReferalliClient.getAgentsEach(limit: Long? = null, endingBefore: String? = n
  *
  * Signed recommendations AI agents have attributed in this org, newest first.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session with role `owner`, `admin`, `analyst`.
+ * **Auth:** an API key with `growth:read`, or a session with role `owner`, `admin`, `analyst`.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -345,7 +395,9 @@ fun ReferalliClient.getAgentsRecommendationsEach(limit: Long? = null, endingBefo
  *
  * Referrals and referred revenue by how they were matched (`coupon`, `deterministic` click, `email_hash`, `probabilistic`, `manual`…).
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -365,7 +417,9 @@ fun ReferalliClient.getAnalyticsByChannelEach(limit: Long? = null, endingBefore:
  *
  * Referrals and referred revenue by the country of the winning click, highest revenue first.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -385,7 +439,9 @@ fun ReferalliClient.getAnalyticsByGeoEach(limit: Long? = null, endingBefore: Str
  *
  * Referred customers grouped by sign-up month over the last `months` (default 6), with net revenue (payments minus refunds) and revenue per customer.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -405,7 +461,9 @@ fun ReferalliClient.getAnalyticsCohortLtvEach(months: Long? = null, limit: Long?
  *
  * Referrals and revenue per coupon code, highest revenue first.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -425,7 +483,9 @@ fun ReferalliClient.getAnalyticsCouponPerformanceEach(limit: Long? = null, endin
  *
  * Over the last `days` (default 30), optionally for one program: clicks (and how many were filtered), visitors, sign-ups, payments, referred revenue, commission earned and reversed, active partners and the click-to-sign-up and sign-up-to-paid rates.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getAnalyticsOverview(programId: String? = null, days: Long? = null, idempotencyKey: String? = null): GetAnalyticsOverviewResponse =
     GetAnalyticsOverviewResponse.fromJson(send("GET", "/v1/analytics/overview", listOf("programId" to programId?.toString(), "days" to days?.toString()), null, idempotencyKey, "json"))
@@ -435,7 +495,9 @@ suspend fun ReferalliClient.getAnalyticsOverview(programId: String? = null, days
  *
  * One `metric` (`clicks`, `signups` or `revenue` in minor units) per day over the last `days`, optionally for one program.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -455,7 +517,9 @@ fun ReferalliClient.getAnalyticsTimeseriesEach(metric: String, days: Long? = nul
  *
  * Every key of the org, live and test (a test-mode caller sees test keys only), oldest first, with scopes, pinned version, owner, expiry and last use. Never returns the secret. Filter by `mode` (`live`, `test`, or `both`, the default) or `owner`.
  *
- * **Auth:** an API key with `team:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:read`, or a session of any role.
+ *
+ * **Scopes:** `team:read`, `team:write`, `read`, `full`, `admin`.
  *
  * mode: Only live or only test keys; `both` (the default) lists both.
  * owner: Only keys with this owner.
@@ -477,7 +541,9 @@ fun ReferalliClient.getApiKeysEach(mode: String? = null, owner: String? = null, 
  *
  * One key of the org, without its secret.
  *
- * **Auth:** an API key with `team:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:read`, or a session of any role.
+ *
+ * **Scopes:** `team:read`, `team:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getApiKeysId(id: String, idempotencyKey: String? = null): ApiKey =
     ApiKey.fromJson(send("GET", "/v1/api-keys/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -487,7 +553,9 @@ suspend fun ReferalliClient.getApiKeysId(id: String, idempotencyKey: String? = n
  *
  * Marketing assets, filtered by `programId`.
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `partners:read`, or a session of any role.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -507,7 +575,9 @@ fun ReferalliClient.getAssetsEach(programId: String? = null, limit: Long? = null
  *
  * Draft-only suggestions for running the program, each with a suggested action for a person to take: partners who never drove a click, links with clicks but no referrals, programs without a commission rule, the review queue, and credit ROI findings. It never changes anything.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -527,7 +597,9 @@ fun ReferalliClient.getAssistantSuggestionsEach(limit: Long? = null, endingBefor
  *
  * Every change recorded in the org, newest first: who did it (`actor`, `actorType`), what (`action`; a trailing `*` matches a prefix such as `payout.*`) and to what (`subjectType`, `subjectId`). Filter by any of those and by `created[gte]`/`created[lte]`.
  *
- * **Auth:** an API key with `audit:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `audit:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `audit:read`, `audit:write`, `read`, `full`, `admin`.
  *
  * actor: Actor id: a user, API key or connection id.
  * action: Exact action, or a prefix ending in * (e.g. payout.*).
@@ -546,7 +618,9 @@ fun ReferalliClient.getAuditLogsEach(actor: String? = null, actorType: String? =
  *
  * Auth-platform connections with provider, program, status, signature version and rotation state. Secrets are never returned.
  *
- * **Auth:** an API key with `integrations:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `integrations:read`, or a session of any role.
+ *
+ * **Scopes:** `integrations:read`, `integrations:write`, `connections:read`, `connections:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -576,7 +650,9 @@ suspend fun ReferalliClient.getAuthConnectionsIdExport(id: String, customerRef: 
  *
  * Every auth provider you can connect (Atlas, Clerk, Auth0, Supabase, Firebase, Cognito, Stytch, Kinde, WorkOS, generic, your own auth), with how it connects, who issues the secret, the setup steps, a copyable template where the vendor has no native webhook, and where the referral metadata lands.
  *
- * **Auth:** an API key with `integrations:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `integrations:read`, or a session of any role.
+ *
+ * **Scopes:** `integrations:read`, `integrations:write`, `connections:read`, `connections:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getAuthConnectionsProviders(idempotencyKey: String? = null): GetAuthConnectionsProvidersResponse =
     GetAuthConnectionsProvidersResponse.fromJson(send("GET", "/v1/auth/connections/providers", emptyList(), null, idempotencyKey, "json"))
@@ -594,9 +670,11 @@ suspend fun ReferalliClient.getAuthProviders(idempotencyKey: String? = null): Ge
 /**
  * List billing connections. GET /v1/billing/connections
  *
- * Billing connections (deleted ones excluded), with status, whether credentials are needed and set, the value mapping and secret-rotation state.
+ * Billing connections (deleted ones excluded), with status (`active`, `paused`, or `awaiting_secret` until a provider-issued secret is set), `programIds`, whether credentials are needed and set, the value mapping and secret-rotation state. A program-scoped API key sees only connections whose `programIds` are all within its own.
  *
- * **Auth:** an API key with `billing:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `billing:read`, or a session of any role.
+ *
+ * **Scopes:** `billing:read`, `billing:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -616,7 +694,9 @@ fun ReferalliClient.getBillingConnectionsEach(limit: Long? = null, endingBefore:
  *
  * One billing connection, without its secrets.
  *
- * **Auth:** an API key with `billing:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `billing:read`, or a session of any role.
+ *
+ * **Scopes:** `billing:read`, `billing:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getBillingConnectionsId(id: String, idempotencyKey: String? = null): BillingConnection =
     BillingConnection.fromJson(send("GET", "/v1/billing/connections/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -624,9 +704,11 @@ suspend fun ReferalliClient.getBillingConnectionsId(id: String, idempotencyKey: 
 /**
  * List billing events. GET /v1/billing/events
  *
- * Payments, refunds and other billing events received from every connection, newest first. Filter with `customerRef`, or `status=ignored_by_filter` for the events a product filter or the internal-customer list set aside (recorded, never processed).
+ * Payments, refunds and other billing events received from every connection, newest first. Filter with `customerRef`, or `status=ignored_by_filter` for the events a product filter or the internal-customer list set aside (recorded, never processed). `ignoredReason: "no_referral_in_scope"` (with `status: "processed"`) marks a payment on a connection limited to some programs from a customer referred only in other programs: it earned nothing.
  *
- * **Auth:** an API key with `billing:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `billing:read`, or a session of any role.
+ *
+ * **Scopes:** `billing:read`, `billing:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -646,7 +728,9 @@ fun ReferalliClient.getBillingEventsEach(customerRef: String? = null, status: St
  *
  * The org's own customers (staff, test accounts, your own plans) whose payments never earn on any connection. Metadata `planSource: "internal"` on the provider's customer does the same without a list.
  *
- * **Auth:** an API key with `billing:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `billing:read`, or a session of any role.
+ *
+ * **Scopes:** `billing:read`, `billing:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getBillingInternalCustomers(idempotencyKey: String? = null): List<InternalCustomer> =
     send("GET", "/v1/billing/internal-customers", emptyList(), null, idempotencyKey, "json").array().map { InternalCustomer.fromJson(it) }
@@ -656,7 +740,9 @@ suspend fun ReferalliClient.getBillingInternalCustomers(idempotencyKey: String? 
  *
  * The org's Referalli plan and status, its limits and current usage (programs, partners), the plan catalog, whether there is a subscription to manage and whether this caller may activate a plan without checkout.
  *
- * **Auth:** an API key with `billing:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `billing:read`, or a session of any role.
+ *
+ * **Scopes:** `billing:read`, `billing:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getBillingPlan(idempotencyKey: String? = null): GetBillingPlanResponse =
     GetBillingPlanResponse.fromJson(send("GET", "/v1/billing/plan", emptyList(), null, idempotencyKey, "json"))
@@ -666,7 +752,9 @@ suspend fun ReferalliClient.getBillingPlan(idempotencyKey: String? = null): GetB
  *
  * The org's logo, theme tokens, sender address, and its custom portal and link domains with their status (`none`, `pending` DNS, `provisioning` a certificate, `active`), and `warnings` for theme colour pairs below WCAG AA contrast.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getBranding(idempotencyKey: String? = null): GetBrandingResponse =
     GetBrandingResponse.fromJson(send("GET", "/v1/branding", emptyList(), null, idempotencyKey, "json"))
@@ -686,7 +774,9 @@ suspend fun ReferalliClient.getChatlyIdentity(idempotencyKey: String? = null): G
  *
  * A customer's recorded consent: whether granted, its purposes, the attributes they declared and when it changed. `consent: null` when none is recorded.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getCleanroomConsent(customerRef: String, idempotencyKey: String? = null): GetCleanroomConsentResponse =
     GetCleanroomConsentResponse.fromJson(send("GET", "/v1/cleanroom/consent", listOf("customerRef" to customerRef?.toString()), null, idempotencyKey, "json"))
@@ -696,7 +786,9 @@ suspend fun ReferalliClient.getCleanroomConsent(customerRef: String, idempotency
  *
  * Aggregates over consenting customers only, grouped by a zero-party attribute they declared (`dimension`): customers, converted customers and referred revenue per value. Cohorts smaller than 5 are suppressed (k-anonymity); individual rows never leave.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getCleanroomQuery(dimension: String, idempotencyKey: String? = null): GetCleanroomQueryResponse =
     GetCleanroomQueryResponse.fromJson(send("GET", "/v1/cleanroom/query", listOf("dimension" to dimension?.toString()), null, idempotencyKey, "json"))
@@ -706,7 +798,9 @@ suspend fun ReferalliClient.getCleanroomQuery(dimension: String, idempotencyKey:
  *
  * The share of attributed sign-ups in the last `days` (default 30) whose referral carries consent evidence, on its click or on the `associate` call. Low coverage means sign-ups are attributed from tags without a consent setting (`none`) or from server-side calls that don't pass `consent`.
  *
- * **Auth:** an API key with `links:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `links:read`, or a session of any role.
+ *
+ * **Scopes:** `links:read`, `links:write`, `read`, `full`, `admin`.
  *
  * days: Look-back window in days.
  */
@@ -718,7 +812,9 @@ suspend fun ReferalliClient.getClicksConsentCoverage(days: Long? = null, idempot
  *
  * One click with its consent evidence: what the visitor's CMP said when the tracker stored the referral (`consent.provider`, `state`, `stamp`, `tcString`…). A redirect click (`/go`) is recorded before the landing page reads the CMP, so its evidence comes from the first consented visit beacon naming it. `consent` is null when none arrived.
  *
- * **Auth:** an API key with `links:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `links:read`, or a session of any role.
+ *
+ * **Scopes:** `links:read`, `links:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getClicksId(id: String, idempotencyKey: String? = null): GetClicksIdResponse =
     GetClicksIdResponse.fromJson(send("GET", "/v1/clicks/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -728,7 +824,9 @@ suspend fun ReferalliClient.getClicksId(id: String, idempotencyKey: String? = nu
  *
  * For the approval page: the pending code, which CLI asked and when it expires. Needs a signed-in person (owner or admin). 404 when expired or used.
  *
- * **Auth:** an API key with `team:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `team:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `team:read`, `team:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getCliDeviceCodesUserCode(userCode: String, idempotencyKey: String? = null): GetCliDeviceCodesUserCodeResponse =
     GetCliDeviceCodesUserCodeResponse.fromJson(send("GET", "/v1/cli/device-codes/${segment(userCode)}", emptyList(), null, idempotencyKey, "json"))
@@ -738,7 +836,9 @@ suspend fun ReferalliClient.getCliDeviceCodesUserCode(userCode: String, idempote
  *
  * Up to 50 queued events for the listener, oldest first, each with its body and signed headers. `wait` long-polls up to 25 seconds for the first event. Polling keeps the listener alive.
  *
- * **Auth:** an API key with `webhooks:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:read`, `webhooks:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getCliListenersIdEvents(id: String, wait: Long? = null, idempotencyKey: String? = null): GetCliListenersIdEventsResponse =
     GetCliListenersIdEventsResponse.fromJson(send("GET", "/v1/cli/listeners/${segment(id)}/events", listOf("wait" to wait?.toString()), null, idempotencyKey, "json"))
@@ -748,7 +848,9 @@ suspend fun ReferalliClient.getCliListenersIdEvents(id: String, wait: Long? = nu
  *
  * The CLI's `logs tail` command: the org's recent API requests (method, path without query string, status, latency, actor). The first call returns the latest 20 and a `cursor`; pass it as `after` (with `wait` to long-poll up to 25 seconds) for newer entries. Kept for a day.
  *
- * **Auth:** an API key with `audit:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `audit:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `audit:read`, `audit:write`, `read`, `full`, `admin`.
  *
  * after: Return entries after this cursor.
  */
@@ -760,7 +862,9 @@ suspend fun ReferalliClient.getCliLogs(after: Long? = null, wait: Long? = null, 
  *
  * The event topics `POST /v1/cli/trigger` can send.
  *
- * **Auth:** an API key with `webhooks:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `webhooks:read`, or a session of any role.
+ *
+ * **Scopes:** `webhooks:read`, `webhooks:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getCliTopics(idempotencyKey: String? = null): GetCliTopicsResponse =
     GetCliTopicsResponse.fromJson(send("GET", "/v1/cli/topics", emptyList(), null, idempotencyKey, "json"))
@@ -770,7 +874,9 @@ suspend fun ReferalliClient.getCliTopics(idempotencyKey: String? = null): GetCli
  *
  * Every rule version, by program and newest version first. Filter with `programId`.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -790,7 +896,9 @@ fun ReferalliClient.getCommissionRulesEach(programId: String? = null, limit: Lon
  *
  * The append-only commission ledger, newest first: `earned` lines and the `approved`, `paid`, `reversed` and `adjusted` events recorded against them (`relatedCommissionId`). Filter by `partnerId`, `programId`, `type` or `referralId`.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -810,7 +918,9 @@ fun ReferalliClient.getCommissionsEach(partnerId: String? = null, programId: Str
  *
  * One ledger event. An `earned` line also carries its billing event, its net after reversals and adjustments, its state (`pending`, `approved` or `paid`) and every event recorded against it.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getCommissionsId(id: String, idempotencyKey: String? = null): CommissionLine =
     CommissionLine.fromJson(send("GET", "/v1/commissions/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -820,7 +930,9 @@ suspend fun ReferalliClient.getCommissionsId(id: String, idempotencyKey: String?
  *
  * The org's contracts and their status (`draft`, `sent`, `accepted`, `declined`, `void`).
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -840,7 +952,9 @@ fun ReferalliClient.getContractsEach(limit: Long? = null, endingBefore: String? 
  *
  * Coupon codes, filtered by `programId` and/or `partnerId`.
  *
- * **Auth:** an API key with `links:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `links:read`, or a session of any role.
+ *
+ * **Scopes:** `links:read`, `links:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -860,7 +974,9 @@ fun ReferalliClient.getCouponsEach(programId: String? = null, partnerId: String?
  *
  * Published creator profiles, most engaged first, filtered by text (`q`), `category`, `channel`, minimum audience, minimum engagement and audience country. Each carries verified stats and whether this org already invited them. Emails are never returned.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -880,7 +996,9 @@ fun ReferalliClient.getCreatorsEach(q: String? = null, category: String? = null,
  *
  * One published creator profile with verified stats. 404 when not listed.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getCreatorsAccountId(accountId: String, idempotencyKey: String? = null): CreatorProfile =
     CreatorProfile.fromJson(send("GET", "/v1/creators/${segment(accountId)}", emptyList(), null, idempotencyKey, "json"))
@@ -890,7 +1008,9 @@ suspend fun ReferalliClient.getCreatorsAccountId(accountId: String, idempotencyK
  *
  * Deals partners registered, newest first. Filter with `status` (`submitted`, `approved`, `rejected`, `won`, `lost`).
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -910,7 +1030,9 @@ fun ReferalliClient.getDealsEach(status: String? = null, limit: Long? = null, en
  *
  * Disputes partners filed with this org, newest first.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -930,7 +1052,9 @@ fun ReferalliClient.getDisputesEach(limit: Long? = null, endingBefore: String? =
  *
  * The org's own email provider (`resend`, `brevo` or `postmark`), sender identity, branding and sending-domain status. The API key is never returned.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getEmailSettings(idempotencyKey: String? = null): EmailSettings =
     EmailSettings.fromJson(send("GET", "/v1/email/settings", emptyList(), null, idempotencyKey, "json"))
@@ -940,7 +1064,9 @@ suspend fun ReferalliClient.getEmailSettings(idempotencyKey: String? = null): Em
  *
  * Every email event with its placeholders and, per locale, the default template and the org's override if any.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -970,7 +1096,9 @@ suspend fun ReferalliClient.getEmbedSummary(idempotencyKey: String? = null): Get
  *
  * The org's events, oldest first, in the shape webhook deliveries carry: filter with `since` and `topics`, page with `after` (the previous page's `nextCursor`). Every event is listed whether or not an endpoint subscribed to it. `referalli events tail --since 1h` uses it to backfill before tailing live.
  *
- * **Auth:** an API key with `webhooks:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `webhooks:read`, or a session of any role.
+ *
+ * **Scopes:** `webhooks:read`, `webhooks:write`, `read`, `full`, `admin`.
  *
  * since: Only events created at or after this time.
  * topics: Comma-separated topics (default: every topic).
@@ -984,7 +1112,9 @@ suspend fun ReferalliClient.getEvents(since: String? = null, topics: String? = n
  *
  * A year's sent payouts as a CSV that QuickBooks (`format=quickbooks`, the default) or Xero imports.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:read`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getExportAccounting(format: String? = null, year: Long, idempotencyKey: String? = null): String =
     (send("GET", "/v1/export/accounting", listOf("format" to format?.toString(), "year" to year?.toString()), null, idempotencyKey, "text") as JsonValue.Str).value
@@ -994,7 +1124,9 @@ suspend fun ReferalliClient.getExportAccounting(format: String? = null, year: Lo
  *
  * Every tenant table of the org as NDJSON (one JSON object per line, tagged with its table), streamed so any size works. Owner or admin.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `analytics:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getExportFull(idempotencyKey: String? = null): String =
     (send("GET", "/v1/export/full", emptyList(), null, idempotencyKey, "text") as JsonValue.Str).value
@@ -1004,7 +1136,9 @@ suspend fun ReferalliClient.getExportFull(idempotencyKey: String? = null): Strin
  *
  * The fraud case queue (self-referrals, quality, rings, value patterns, identity risk), newest first, with the evidence. Filter with `status`.
  *
- * **Auth:** an API key with `fraud:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `fraud:read`, or a session of any role.
+ *
+ * **Scopes:** `fraud:read`, `fraud:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1024,7 +1158,9 @@ fun ReferalliClient.getFraudCasesEach(status: String? = null, limit: Long? = nul
  *
  * The org's rates first, then the platform fallback, newest per pair first. A payout uses the org's latest rate at or before the run, else the platform's. Filter by `base`, `quote`, `effectiveAt[gte]` and `effectiveAt[lte]`. Live mode leaves out the `fixture` sample rows; test mode lists them.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:read`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  *
  * effectiveAt[gte]: Only rates effective at or after this time.
  * effectiveAt[lte]: Only rates effective at or before this time.
@@ -1046,7 +1182,9 @@ fun ReferalliClient.getFxRatesEach(base: String? = null, quote: String? = null, 
  *
  * A read-only GraphQL endpoint over the same org-scoped data as REST (programs, partners, referrals, analytics), with the same authentication. Mutations stay in REST.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getGraphql(idempotencyKey: String? = null): GetGraphqlResponse =
     GetGraphqlResponse.fromJson(send("GET", "/v1/graphql", emptyList(), null, idempotencyKey, "json"))
@@ -1076,7 +1214,9 @@ suspend fun ReferalliClient.getHostsCurrent(themePreview: String? = null, idempo
  *
  * On a merchant's portal domain, for the signed-in partner of that merchant: the head tags that tell the merchant's chat who they are (partner id, email, name) and, when the merchant saved its chat vendor's identity-verification secret, the vendor's proof (Intercom `user_hash`, a Zendesk messaging JWT, a HubSpot visitor token…). The secret itself never leaves the API. Elsewhere, or for someone who isn't this merchant's partner, `tags` is empty. Partner session; `private, no-store`.
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `partners:read`, or a session of any role.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getHostsCurrentChatIdentity(idempotencyKey: String? = null): GetHostsCurrentChatIdentityResponse =
     GetHostsCurrentChatIdentityResponse.fromJson(send("GET", "/v1/hosts/current/chat-identity", emptyList(), null, idempotencyKey, "json"))
@@ -1096,7 +1236,9 @@ suspend fun ReferalliClient.getHostsCurrentThemeCss(themePreview: String? = null
  *
  * For a program's active referrals: treatment and control counts, conversion rates and lift, overall and per partner.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getIncrementality(programId: String, idempotencyKey: String? = null): GetIncrementalityResponse =
     GetIncrementalityResponse.fromJson(send("GET", "/v1/incrementality", listOf("programId" to programId?.toString()), null, idempotencyKey, "json"))
@@ -1106,7 +1248,9 @@ suspend fun ReferalliClient.getIncrementality(programId: String, idempotencyKey:
  *
  * Every connection the org depends on, each with `ok`, a `detail`, and when it fails a `fix` and `docs` link: billing connections (and when each last received an event), sign-up connections, the tracking snippet (a visit in the last 30 days), payout connections, outbound webhook endpoints, and every adapter of a connected port. `hop` names the leg that failed on a path between systems. `ok` at the top is true only when every check is.
  *
- * **Auth:** an API key with `integrations:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `integrations:read`, or a session of any role.
+ *
+ * **Scopes:** `integrations:read`, `integrations:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getIntegrationHealth(idempotencyKey: String? = null): GetIntegrationHealthResponse =
     GetIntegrationHealthResponse.fromJson(send("GET", "/v1/integration-health", emptyList(), null, idempotencyKey, "json"))
@@ -1116,7 +1260,9 @@ suspend fun ReferalliClient.getIntegrationHealth(idempotencyKey: String? = null)
  *
  * The HubSpot and Segment connections with status, settings and the last test result. Credentials are never returned.
  *
- * **Auth:** an API key with `integrations:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:read`, `integrations:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getIntegrations(idempotencyKey: String? = null): GetIntegrationsResponse =
     GetIntegrationsResponse.fromJson(send("GET", "/v1/integrations", emptyList(), null, idempotencyKey, "json"))
@@ -1126,7 +1272,9 @@ suspend fun ReferalliClient.getIntegrations(idempotencyKey: String? = null): Get
  *
  * What was sent to Zapier, HubSpot and Segment, newest first, filtered by `kind` and `status`.
  *
- * **Auth:** an API key with `integrations:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:read`, `integrations:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1146,7 +1294,9 @@ fun ReferalliClient.getIntegrationsDeliveriesEach(kind: String? = null, status: 
  *
  * The org's creator invitations and their status (`pending`, `accepted`, `declined`, `withdrawn`).
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1166,7 +1316,9 @@ fun ReferalliClient.getInvitationsEach(limit: Long? = null, endingBefore: String
  *
  * Tracked links with their short URL and click count, filtered by `programId` and/or `partnerId`.
  *
- * **Auth:** an API key with `links:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `links:read`, or a session of any role.
+ *
+ * **Scopes:** `links:read`, `links:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1186,7 +1338,9 @@ fun ReferalliClient.getLinksEach(programId: String? = null, partnerId: String? =
  *
  * An SVG QR code for the link's short URL.
  *
- * **Auth:** an API key with `links:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `links:read`, or a session of any role.
+ *
+ * **Scopes:** `links:read`, `links:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getLinksIdQr(id: String, idempotencyKey: String? = null): String =
     (send("GET", "/v1/links/${segment(id)}/qr", emptyList(), null, idempotencyKey, "text") as JsonValue.Str).value
@@ -1196,7 +1350,9 @@ suspend fun ReferalliClient.getLinksIdQr(id: String, idempotencyKey: String? = n
  *
  * The org's listings with their platform-computed stats: eligible clicks, active referrals, earnings per click, conversion rate, payout reliability and approval latency.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1216,7 +1372,9 @@ fun ReferalliClient.getMarketplaceListingEach(limit: Long? = null, endingBefore:
  *
  * Who is calling. With a user session: the user and their org memberships (no `x-org-id` needed). With an API key: `{ user: null, memberships: [], apiKey, org: { id, name } }`, where `apiKey` holds the key (name, prefix, scopes, pinned `apiVersion`, `livemode`, owner, expiry, `programIds`). The mode is `apiKey.livemode`; there is no top-level `livemode`.
  *
- * **Auth:** an API key with `team:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:read`, or a session of any role.
+ *
+ * **Scopes:** `team:read`, `team:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getMe(idempotencyKey: String? = null): GetMeResponse =
     GetMeResponse.fromJson(send("GET", "/v1/me", emptyList(), null, idempotencyKey, "json"))
@@ -1226,7 +1384,9 @@ suspend fun ReferalliClient.getMe(idempotencyKey: String? = null): GetMeResponse
  *
  * Agent negotiation rounds and their decisions, newest first, optionally for one program.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1246,7 +1406,9 @@ fun ReferalliClient.getNegotiationsEach(programId: String? = null, limit: Long? 
  *
  * For a hashed customer email, the partner accounts that touched them at any opted-in merchant (never which merchant) and each one's credit under `model`. 403 unless the org has joined the network.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getNetworkJourney(emailHash: String, model: String? = null, idempotencyKey: String? = null): GetNetworkJourneyResponse =
     GetNetworkJourneyResponse.fromJson(send("GET", "/v1/network/journey", listOf("emailHash" to emailHash?.toString(), "model" to model?.toString()), null, idempotencyKey, "json"))
@@ -1256,7 +1418,9 @@ suspend fun ReferalliClient.getNetworkJourney(emailHash: String, model: String? 
  *
  * Whether the org contributes to (and can read) the attribution network.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getNetworkSettings(idempotencyKey: String? = null): GetNetworkSettingsResponse =
     GetNetworkSettingsResponse.fromJson(send("GET", "/v1/network/settings", emptyList(), null, idempotencyKey, "json"))
@@ -1266,7 +1430,9 @@ suspend fun ReferalliClient.getNetworkSettings(idempotencyKey: String? = null): 
  *
  * The org's in-app notifications (failing webhooks, anomalies, answered invitations…), newest first. `unread=true` for unread only.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  *
  * unread: true: unread notifications only.
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1287,7 +1453,9 @@ fun ReferalliClient.getNotificationsEach(unread: String? = null, limit: Long? = 
  *
  * The org's on-chain conversion connections.
  *
- * **Auth:** an API key with `billing:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `billing:read`, or a session of any role.
+ *
+ * **Scopes:** `billing:read`, `billing:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1327,7 +1495,9 @@ suspend fun ReferalliClient.getOpenapiYaml(idempotencyKey: String? = null): Stri
  *
  * The current org: `id`, name, plan, settings, public `trackingToken`, payout KYC requirement and mode (`livemode`; test orgs also carry `liveOrgId`).
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrg(idempotencyKey: String? = null): Org =
     Org.fromJson(send("GET", "/v1/org", emptyList(), null, idempotencyKey, "json"))
@@ -1337,7 +1507,9 @@ suspend fun ReferalliClient.getOrg(idempotencyKey: String? = null): Org =
  *
  * What to enter in Cookie Munch to send your site's consent events to Referalli: link partner `referalli` with `externalId` (your org id); deliveries go to `receiverUrl`. `sites` are the Cookie Munch sites (cbids) whose events this org accepts, and `grants` says, per site, whether its owner granted Referalli that site in Cookie Munch (`granted`, `waiting_on_partner`, `revoked`, `expired`, `none`, or `unknown` when Cookie Munch couldn't be asked; `grantCheck` says why). `stampCheck.status` is `live` when Referalli checks visitors' consent stamps with Cookie Munch, else `not_configured`.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgConsentPartnersCookiemunch(idempotencyKey: String? = null): GetOrgConsentPartnersCookiemunchResponse =
     GetOrgConsentPartnersCookiemunchResponse.fromJson(send("GET", "/v1/org/consent-partners/cookiemunch", emptyList(), null, idempotencyKey, "json"))
@@ -1347,7 +1519,9 @@ suspend fun ReferalliClient.getOrgConsentPartnersCookiemunch(idempotencyKey: Str
  *
  * Consent evidence from Cookie Munch, newest first: each `consent.recorded` and `consent.withdrawn` event for your registered sites, with the visitor's consent `stamp`, the `choices` (and for a withdrawal, the `withdrawn` categories), and the id of the key that signed it. Filter by `stamp` to see one visitor's history; with `stamp`, `checks` lists what Cookie Munch said about it (newest first, `credited` only for `consented`). Append-only.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  *
  * stamp: Only this visitor's consent stamp.
  */
@@ -1359,7 +1533,9 @@ suspend fun ReferalliClient.getOrgConsentPartnersCookiemunchEvents(stamp: String
  *
  * Whether the daily ECB reference-rate feed is on for this org, and the date of its latest rate.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `org:read`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgFxFeed(idempotencyKey: String? = null): GetOrgFxFeedResponse =
     GetOrgFxFeedResponse.fromJson(send("GET", "/v1/org/fx-feed", emptyList(), null, idempotencyKey, "json"))
@@ -1369,7 +1545,9 @@ suspend fun ReferalliClient.getOrgFxFeed(idempotencyKey: String? = null): GetOrg
  *
  * What runs on the pages Referalli hosts for you on your own portal domain (the partner portal and `/join`): your consent banner (Cookie Munch, OneTrust, Cookiebot, Usercentrics, Didomi, Osano, Termly, iubenda, CookieYes, TrustArc, Ketch, Transcend, CookieFirst, consentmanager, Cookie Information, CookieScript, CookieHub, Google Privacy & messaging, Axeptio, Sourcepoint, InMobi Choice, Securiti, Enzuzo, CookiePro, TrustCommander, Klaro, Civic Cookie Control, a custom CMP, a built-in necessary-only notice, or none) and your support chat (Chatly, Intercom, Crisp, Zendesk Messaging, HubSpot, Drift, LiveChat, Tawk.to, Freshchat, Tidio, Help Scout Beacon, Front, Chatwoot, Olark, Smartsupp, JivoChat, Gorgias, Pylon, Plain, Userlike, Zoho SalesIQ, Re:amaze, Chatra, Kustomer, Gladly, Brevo, Trengo, Dixa, Gist, Freshdesk, LiveAgent, Chatbase, Voiceflow, Botpress, Salesforce, Dynamics 365 or custom). `adapters.consent[].fields` are the `config.params` a CMP's inline snippet needs. `adapters.chat[].fields` lists each chat's config keys; `chat.hasIdentitySecret` says whether an identity-verification secret is saved (never the secret). `served` is exactly what visitors get: the head tags, the "Cookie settings" link and the Content-Security-Policy built from these adapters. Referalli's own banner and chat never run on your domain.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgHostedPages(idempotencyKey: String? = null): GetOrgHostedPagesResponse =
     GetOrgHostedPagesResponse.fromJson(send("GET", "/v1/org/hosted-pages", emptyList(), null, idempotencyKey, "json"))
@@ -1379,7 +1557,9 @@ suspend fun ReferalliClient.getOrgHostedPages(idempotencyKey: String? = null): G
  *
  * Members of the org with their role and email, oldest first.
  *
- * **Auth:** an API key with `team:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:read`, or a session of any role.
+ *
+ * **Scopes:** `team:read`, `team:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1399,7 +1579,9 @@ fun ReferalliClient.getOrgMembersEach(limit: Long? = null, endingBefore: String?
  *
  * The org schedule and its next run date, plus each program's override (`{ kind: 'off' }`, its own schedule, or `null` to follow the org) and next run date.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `payouts:read`, or a session of any role.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgPayoutSchedule(idempotencyKey: String? = null): GetOrgPayoutScheduleResponse =
     GetOrgPayoutScheduleResponse.fromJson(send("GET", "/v1/org/payout-schedule", emptyList(), null, idempotencyKey, "json"))
@@ -1409,7 +1591,9 @@ suspend fun ReferalliClient.getOrgPayoutSchedule(idempotencyKey: String? = null)
  *
  * How partners sign in to the org's portal: `referalli` (partner accounts, the default), `oidc` (the merchant's IdP) or `custom` (the merchant's own session, as a short-lived JWT). Includes the audience tokens must carry, the URL to send partners to, the redirect URI to register, and the last check. Never the secret.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgPortalAuth(idempotencyKey: String? = null): GetOrgPortalAuthResponse =
     GetOrgPortalAuthResponse.fromJson(send("GET", "/v1/org/portal-auth", emptyList(), null, idempotencyKey, "json"))
@@ -1419,7 +1603,9 @@ suspend fun ReferalliClient.getOrgPortalAuth(idempotencyKey: String? = null): Ge
  *
  * The query parameters aff.js reads a referral code from: the built-in ones (`via`, `ref`, `aff`) and the org's extra ones.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgReferralParams(idempotencyKey: String? = null): GetOrgReferralParamsResponse =
     GetOrgReferralParamsResponse.fromJson(send("GET", "/v1/org/referral-params", emptyList(), null, idempotencyKey, "json"))
@@ -1429,7 +1615,9 @@ suspend fun ReferalliClient.getOrgReferralParams(idempotencyKey: String? = null)
  *
  * How many days each kind of raw data is kept before the nightly purge, the allowed minimum and default per kind, and the last purge run.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgRetention(idempotencyKey: String? = null): Retention =
     Retention.fromJson(send("GET", "/v1/org/retention", emptyList(), null, idempotencyKey, "json"))
@@ -1439,7 +1627,9 @@ suspend fun ReferalliClient.getOrgRetention(idempotencyKey: String? = null): Ret
  *
  * Single sign-on for the org: whether SSO is configured on this deployment and linked to a directory tenant, its connections and domains, whether SSO is required, the role mapping, recent setup tickets and any provider error.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgSso(idempotencyKey: String? = null): GetOrgSsoResponse =
     GetOrgSsoResponse.fromJson(send("GET", "/v1/org/sso", emptyList(), null, idempotencyKey, "json"))
@@ -1449,7 +1639,9 @@ suspend fun ReferalliClient.getOrgSso(idempotencyKey: String? = null): GetOrgSso
  *
  * The SAML service-provider metadata for one of the org's SSO connections, to give the identity provider.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgSsoConnectionsIdSamlMetadata(id: String, idempotencyKey: String? = null): GetOrgSsoConnectionsIdSamlMetadataResponse =
     GetOrgSsoConnectionsIdSamlMetadataResponse.fromJson(send("GET", "/v1/org/sso/connections/${segment(id)}/saml-metadata", emptyList(), null, idempotencyKey, "json"))
@@ -1459,7 +1651,9 @@ suspend fun ReferalliClient.getOrgSsoConnectionsIdSamlMetadata(id: String, idemp
  *
  * The org's legal name, address, country, VAT id, EIN, domestic VAT rate, whether partner VAT ids are checked against EU VIES, and the 1099 filing provider.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `org:read`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgTaxProfile(idempotencyKey: String? = null): TaxProfile =
     TaxProfile.fromJson(send("GET", "/v1/org/tax-profile", emptyList(), null, idempotencyKey, "json"))
@@ -1469,7 +1663,9 @@ suspend fun ReferalliClient.getOrgTaxProfile(idempotencyKey: String? = null): Ta
  *
  * How `aff.js` reads visitor consent unless the tag says otherwise (`data-consent`): `auto` detects the site's CMP (Cookie Munch, OneTrust, Cookiebot, Usercentrics, Didomi, Osano, Termly, IAB TCF and GPP, Google Consent Mode, or `window.referalliConsent`), an adapter id pins one, `pending` waits for `aff.consent(true|false)`, and `none` always stores. Until consent is granted nothing is stored or sent; the referral stays in memory for the sign-up. `noCmp` is what `auto` does on a site without a CMP. `configured: false` is an org that never chose: it serves `none`, so existing tags behave as before. Lists the adapters with their default category.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getOrgTrackingConsent(idempotencyKey: String? = null): GetOrgTrackingConsentResponse =
     GetOrgTrackingConsentResponse.fromJson(send("GET", "/v1/org/tracking-consent", emptyList(), null, idempotencyKey, "json"))
@@ -1479,7 +1675,9 @@ suspend fun ReferalliClient.getOrgTrackingConsent(idempotencyKey: String? = null
  *
  * Drafted, approved and sent outreach messages, newest first.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1909,7 +2107,9 @@ suspend fun ReferalliClient.getPartnerReferralsIdTransparency(id: String, idempo
  *
  * Partners, newest first. Filter by `email`, `externalRef` (the partner's own or a program-scoped one on an enrollment) or `status`. `programId` returns only partners enrolled in that program, each with the program's own `externalRef` for them when it has one, and then `externalRef` matches that. Archived partners are hidden unless you ask for them with `status=archived` or `includeArchived=true`. Always a list, even for a filter that matches one partner: read `data[0]`. Partner reads carry no `code` or `link`; use `GET /v1/partners/{id}/summary?programId=` or `GET /v1/links?partnerId=` for those.
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `partners:read`, or a session of any role.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1939,7 +2139,9 @@ suspend fun ReferalliClient.getPartnerSecurity(idempotencyKey: String? = null): 
  *
  * One partner, with a cross-network warning when the same account is flagged or banned by other merchants (it never says which). With `programId`, `externalRef` is the one that program knows them by: its own externalRef for them when it has one, else the partner's.
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `partners:read`, or a session of any role.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPartnersId(id: String, programId: String? = null, idempotencyKey: String? = null): GetPartnersIdResponse =
     send("GET", "/v1/partners/${segment(id)}", listOf("programId" to programId?.toString()), null, idempotencyKey, "json")
@@ -1949,7 +2151,9 @@ suspend fun ReferalliClient.getPartnersId(id: String, programId: String? = null,
  *
  * The partner's commission balances per currency: pending (in hold), approved (payable), paid and reversed.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1969,7 +2173,9 @@ fun ReferalliClient.getPartnersIdBalancesEach(id: String, limit: Long? = null, e
  *
  * The programs a partner is enrolled in or applied to, with status, group and `externalRef` (that program's own id for the partner, or null when the partner's own applies).
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `partners:read`, or a session of any role.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -1989,7 +2195,9 @@ fun ReferalliClient.getPartnersIdEnrollmentsEach(id: String, limit: Long? = null
  *
  * The partner's payout method, currency, threshold and tax form status. Method details are not returned. 404 when none is set.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `payouts:read`, or a session of any role.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPartnersIdPayoutProfile(id: String, idempotencyKey: String? = null): PayoutProfile =
     PayoutProfile.fromJson(send("GET", "/v1/partners/${segment(id)}/payout-profile", emptyList(), null, idempotencyKey, "json"))
@@ -1999,7 +2207,9 @@ suspend fun ReferalliClient.getPartnersIdPayoutProfile(id: String, idempotencyKe
  *
  * The partner's quality score computed now (with its metrics) and the last stored snapshot.
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `partners:read`, or a session of any role.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPartnersIdQuality(id: String, idempotencyKey: String? = null): GetPartnersIdQualityResponse =
     GetPartnersIdQualityResponse.fromJson(send("GET", "/v1/partners/${segment(id)}/quality", emptyList(), null, idempotencyKey, "json"))
@@ -2009,7 +2219,9 @@ suspend fun ReferalliClient.getPartnersIdQuality(id: String, idempotencyKey: Str
  *
  * What the partner brought in, in one call: eligible clicks, referrals by status, converted customers (referred, not void, with at least one payment) and balances per currency. Pass `programId` to count one program only (an org shared by several products).
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPartnersIdStats(id: String, programId: String? = null, idempotencyKey: String? = null): GetPartnersIdStatsResponse =
     GetPartnersIdStatsResponse.fromJson(send("GET", "/v1/partners/${segment(id)}/stats", listOf("programId" to programId?.toString()), null, idempotencyKey, "json"))
@@ -2017,9 +2229,11 @@ suspend fun ReferalliClient.getPartnersIdStats(id: String, programId: String? = 
 /**
  * Get a partner's referrer summary. GET /v1/partners/{id}/summary
  *
- * Everything a referrer panel shows, in one call: the stats for one program (`programId` is required) plus the partner's current `code` there (the newest coupon, else the newest link's code) and `linkUrl` (null when they have only a coupon).
+ * Everything a referrer panel shows, in one call: the stats for one program (`programId` is required) plus the partner's current `code` there (the newest coupon, else the newest link's code), `linkUrl` (null when they have only a coupon) and the program's `terms` (as `GET /v1/programs/{id}/terms`; null when it has no rule yet).
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPartnersIdSummary(id: String, programId: String, idempotencyKey: String? = null): GetPartnersIdSummaryResponse =
     GetPartnersIdSummaryResponse.fromJson(send("GET", "/v1/partners/${segment(id)}/summary", listOf("programId" to programId?.toString()), null, idempotencyKey, "json"))
@@ -2109,7 +2323,9 @@ suspend fun ReferalliClient.getPassportPublicKey(idempotencyKey: String? = null)
  *
  * The payout providers the org connected with its own credentials (PayPal, Stripe, Circle, Wise, Payoneer, Tremendous), with environment and status. Secrets are never returned.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:read`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2129,7 +2345,9 @@ fun ReferalliClient.getPayoutConnectionsEach(limit: Long? = null, endingBefore: 
  *
  * Payout runs, newest first, with their status and summary.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `payouts:read`, or a session of any role.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2149,7 +2367,9 @@ fun ReferalliClient.getPayoutRunsEach(limit: Long? = null, endingBefore: String?
  *
  * Individual payouts, newest first, with rail, provider reference and failure reason. Filter with `partnerId`.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `payouts:read`, or a session of any role.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2169,7 +2389,9 @@ fun ReferalliClient.getPayoutsEach(partnerId: String? = null, limit: Long? = nul
  *
  * The self-billing invoice issued for a payout, as JSON or (`format=html`) a printable page. 404 when the payout has no invoice.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `payouts:read`, or a session of any role.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPayoutsIdInvoice(id: String, format: String? = null, idempotencyKey: String? = null): Invoice =
     Invoice.fromJson(send("GET", "/v1/payouts/${segment(id)}/invoice", listOf("format" to format?.toString()), null, idempotencyKey, "json"))
@@ -2199,7 +2421,9 @@ suspend fun ReferalliClient.getPortalAuthCurrent(org: String? = null, idempotenc
  *
  * The partner portal's look and layout on your portal domain: `published` (what partners see) and `draft` (what you are editing, or null). Colours with a separate dark palette, the colour scheme, widths and density, fonts (a stylesheet URL, `@font-face` files, a family per role, the type scale), the logo set and favicon, component shape (radius, shadow, buttons, inputs, focus ring, links), an announcement, the header and footer, the home sections and navigation, the sign-in page, interface string overrides, typed theme settings, CSS snippets, custom CSS, phone tuning and embedding. Every key is optional; an unset key keeps the built-in look.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPortalTheme(idempotencyKey: String? = null): GetPortalThemeResponse =
     GetPortalThemeResponse.fromJson(send("GET", "/v1/portal/theme", emptyList(), null, idempotencyKey, "json"))
@@ -2209,7 +2433,9 @@ suspend fun ReferalliClient.getPortalTheme(idempotencyKey: String? = null): GetP
  *
  * The draft (or `?which=published`) compiled: `css`, the stylesheet partners load, and `view`, the layout, brand and text the portal draws. For a live preview in your own editor.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPortalThemeCompiled(which: String? = null, idempotencyKey: String? = null): GetPortalThemeCompiledResponse =
     GetPortalThemeCompiledResponse.fromJson(send("GET", "/v1/portal/theme/compiled", listOf("which" to which?.toString()), null, idempotencyKey, "json"))
@@ -2219,7 +2445,9 @@ suspend fun ReferalliClient.getPortalThemeCompiled(which: String? = null, idempo
  *
  * Every key the portal design takes, as JSON Schema (draft 2020-12): build an editor or validate a theme file before you send it.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPortalThemeSchema(idempotencyKey: String? = null): GetPortalThemeSchemaResponse =
     send("GET", "/v1/portal/theme/schema", emptyList(), null, idempotencyKey, "json").obj().mapValues { it.value }
@@ -2229,7 +2457,9 @@ suspend fun ReferalliClient.getPortalThemeSchema(idempotencyKey: String? = null)
  *
  * The last 50 published versions, newest first.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPortalThemeVersions(idempotencyKey: String? = null): GetPortalThemeVersionsResponse =
     GetPortalThemeVersionsResponse.fromJson(send("GET", "/v1/portal/theme/versions", emptyList(), null, idempotencyKey, "json"))
@@ -2239,7 +2469,9 @@ suspend fun ReferalliClient.getPortalThemeVersions(idempotencyKey: String? = nul
  *
  * The last 200 requests connected DSAR tools sent: operation, outcome and the vendor request id. Subjects are kept only as hashes.
  *
- * **Auth:** an API key with `privacy:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:read`, `privacy:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPrivacyExecutorRequests(idempotencyKey: String? = null): GetPrivacyExecutorRequestsResponse =
     send("GET", "/v1/privacy/executor-requests", emptyList(), null, idempotencyKey, "json").array().map { GetPrivacyExecutorRequestsResponseValueItem.fromJson(it) }
@@ -2249,7 +2481,9 @@ suspend fun ReferalliClient.getPrivacyExecutorRequests(idempotencyKey: String? =
  *
  * Every DSAR tool that can reach Referalli as a connected system (Cookie Munch cm-standard-v1, OneTrust, Transcend, DataGrail, Ketch, Osano, `custom` for any tool speaking Standard Webhooks), with the per-org URL to register, install steps and a health check. Keys are never returned.
  *
- * **Auth:** an API key with `privacy:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:read`, `privacy:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPrivacyExecutors(idempotencyKey: String? = null): GetPrivacyExecutorsResponse =
     send("GET", "/v1/privacy/executors", emptyList(), null, idempotencyKey, "json").array().map { GetPrivacyExecutorsResponseValueItem.fromJson(it) }
@@ -2259,7 +2493,9 @@ suspend fun ReferalliClient.getPrivacyExecutors(idempotencyKey: String? = null):
  *
  * Every stored row that references the customer, for a data-subject access request.
  *
- * **Auth:** an API key with `privacy:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:read`, `privacy:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPrivacyExport(customerRef: String, idempotencyKey: String? = null): CustomerExport =
     CustomerExport.fromJson(send("GET", "/v1/privacy/export", listOf("customerRef" to customerRef?.toString()), null, idempotencyKey, "json"))
@@ -2269,7 +2505,9 @@ suspend fun ReferalliClient.getPrivacyExport(customerRef: String, idempotencyKey
  *
  * Access and erasure requests, newest first, with their status.
  *
- * **Auth:** an API key with `privacy:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:read`, `privacy:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2289,7 +2527,9 @@ fun ReferalliClient.getPrivacyRequestsEach(limit: Long? = null, endingBefore: St
  *
  * Poll one request: `pending`, `completed` or `failed`, and whether data was found.
  *
- * **Auth:** an API key with `privacy:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:read`, `privacy:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPrivacyRequestsId(id: String, idempotencyKey: String? = null): PrivacyRequest =
     PrivacyRequest.fromJson(send("GET", "/v1/privacy/requests/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -2299,7 +2539,9 @@ suspend fun ReferalliClient.getPrivacyRequestsId(id: String, idempotencyKey: Str
  *
  * The full result of a completed request; for access requests, the exported data. 400 until it is completed.
  *
- * **Auth:** an API key with `privacy:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:read`, `privacy:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getPrivacyRequestsIdResult(id: String, idempotencyKey: String? = null): GetPrivacyRequestsIdResultResponse =
     GetPrivacyRequestsIdResultResponse.fromJson(send("GET", "/v1/privacy/requests/${segment(id)}/result", emptyList(), null, idempotencyKey, "json"))
@@ -2309,7 +2551,9 @@ suspend fun ReferalliClient.getPrivacyRequestsIdResult(id: String, idempotencyKe
  *
  * Other products allowed to call this organization's API (REF-S28), newest first, with status, scopes and last use. Secrets are never shown again. Owners and admins, or a key with team:read.
  *
- * **Auth:** an API key with `team:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `team:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `team:read`, `team:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProductLinks(idempotencyKey: String? = null): GetProductLinksResponse =
     GetProductLinksResponse.fromJson(send("GET", "/v1/product-links", emptyList(), null, idempotencyKey, "json"))
@@ -2319,7 +2563,9 @@ suspend fun ReferalliClient.getProductLinks(idempotencyKey: String? = null): Get
  *
  * The margin catalog: per product, a margin (bps) or a unit cost, used to turn revenue into profit.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProfitabilityProducts(idempotencyKey: String? = null): GetProfitabilityProductsResponse =
     GetProfitabilityProductsResponse.fromJson(send("GET", "/v1/profitability/products", emptyList(), null, idempotencyKey, "json"))
@@ -2329,7 +2575,9 @@ suspend fun ReferalliClient.getProfitabilityProducts(idempotencyKey: String? = n
  *
  * One product of the margin catalog.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProfitabilityProductsProductRef(productRef: String, idempotencyKey: String? = null): GetProfitabilityProductsProductRefResponse =
     GetProfitabilityProductsProductRefResponse.fromJson(send("GET", "/v1/profitability/products/${segment(productRef)}", emptyList(), null, idempotencyKey, "json"))
@@ -2339,7 +2587,9 @@ suspend fun ReferalliClient.getProfitabilityProductsProductRef(productRef: Strin
  *
  * Progress of a rebuild: `queued`, `running`, `done` or `failed` (a job untouched for an hour reports `failed` with `error: "stale"`), with processed and total counts.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProfitabilityRebuildJobId(jobId: String, idempotencyKey: String? = null): GetProfitabilityRebuildJobIdResponse =
     GetProfitabilityRebuildJobIdResponse.fromJson(send("GET", "/v1/profitability/rebuild/${segment(jobId)}", emptyList(), null, idempotencyKey, "json"))
@@ -2349,7 +2599,9 @@ suspend fun ReferalliClient.getProfitabilityRebuildJobId(jobId: String, idempote
  *
  * The economics credit ROI is computed with: reporting currency, default margin, how a credit's cost is modelled, how credit use is inferred, attribution and churn windows, target ROI and more. With `programId`, the program's overrides merged over the org's.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProfitabilitySettings(programId: String? = null, idempotencyKey: String? = null): GetProfitabilitySettingsResponse =
     GetProfitabilitySettingsResponse.fromJson(send("GET", "/v1/profitability/settings", listOf("programId" to programId?.toString()), null, idempotencyKey, "json"))
@@ -2359,7 +2611,9 @@ suspend fun ReferalliClient.getProfitabilitySettings(programId: String? = null, 
  *
  * The org's programs, oldest first, with their settings. `slug` returns just that program, still as a list (`data` holds one program, or none).
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2379,7 +2633,9 @@ fun ReferalliClient.getProgramsEach(slug: String? = null, limit: Long? = null, e
  *
  * One program with its settings (defaults filled in) and public page.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProgramsId(id: String, idempotencyKey: String? = null): Program =
     Program.fromJson(send("GET", "/v1/programs/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -2389,7 +2645,9 @@ suspend fun ReferalliClient.getProgramsId(id: String, idempotencyKey: String? = 
  *
  * The program's autopricing configuration, or `null` when it's off.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProgramsIdAutopricing(id: String, idempotencyKey: String? = null): GetProgramsIdAutopricingResponse =
     GetProgramsIdAutopricingResponse.fromJson(send("GET", "/v1/programs/${segment(id)}/autopricing", emptyList(), null, idempotencyKey, "json"))
@@ -2399,7 +2657,9 @@ suspend fun ReferalliClient.getProgramsIdAutopricing(id: String, idempotencyKey:
  *
  * The program's enrollments and applications, newest first, each with the partner and a cross-network warning when other merchants banned the same account and `externalRef` (this program's own id for the partner, or null). Filter with `status` or `partnerId`.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2419,7 +2679,9 @@ fun ReferalliClient.getProgramsIdEnrollmentsEach(id: String, status: String? = n
  *
  * Who referred whom from one partner (`root`) down, with revenue and net commission per node. Where customers are partners too (customerRef equals a partner's externalRef), the tree continues up to `depth` partner levels. Stops at 5,000 referrals and says so.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProgramsIdGraph(id: String, root: String, depth: Long? = null, idempotencyKey: String? = null): GetProgramsIdGraphResponse =
     send("GET", "/v1/programs/${segment(id)}/graph", listOf("root" to root?.toString(), "depth" to depth?.toString()), null, idempotencyKey, "json")
@@ -2429,7 +2691,9 @@ suspend fun ReferalliClient.getProgramsIdGraph(id: String, root: String, depth: 
  *
  * The program's partner groups with member counts. Archived groups are hidden unless `includeArchived=true`.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  *
  * includeArchived: true: include archived groups.
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2450,7 +2714,9 @@ fun ReferalliClient.getProgramsIdGroupsEach(id: String, includeArchived: String?
  *
  * The program's negotiation policy, or `null` when it isn't open to negotiation.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProgramsIdNegotiationPolicy(id: String, idempotencyKey: String? = null): GetProgramsIdNegotiationPolicyResponse =
     GetProgramsIdNegotiationPolicyResponse.fromJson(send("GET", "/v1/programs/${segment(id)}/negotiation-policy", emptyList(), null, idempotencyKey, "json"))
@@ -2460,7 +2726,9 @@ suspend fun ReferalliClient.getProgramsIdNegotiationPolicy(id: String, idempoten
  *
  * The program's promotions, latest start first.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2480,7 +2748,9 @@ fun ReferalliClient.getProgramsIdPromotionsEach(id: String, limit: Long? = null,
  *
  * The program's reward for referred customers (the friend's side of a double-sided program), or `null` when it has none.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProgramsIdRefereeReward(id: String, idempotencyKey: String? = null): GetProgramsIdRefereeRewardResponse =
     GetProgramsIdRefereeRewardResponse.fromJson(send("GET", "/v1/programs/${segment(id)}/referee-reward", emptyList(), null, idempotencyKey, "json"))
@@ -2490,7 +2760,9 @@ suspend fun ReferalliClient.getProgramsIdRefereeReward(id: String, idempotencyKe
  *
  * Whether settled lines of this program are credited to the partner's Stripe customer balance, how that customer is found (`referrerMatch`), and whether store-credit referee rewards are credited too. `keyConnected` says whether a Stripe key is available to this program; `hasOwnKey` whether that is the program's own key rather than the org's. The key is never returned.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `payouts:read`, or a session of any role.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getProgramsIdStripeCredits(id: String, idempotencyKey: String? = null): GetProgramsIdStripeCreditsResponse =
     GetProgramsIdStripeCreditsResponse.fromJson(send("GET", "/v1/programs/${segment(id)}/stripe-credits", emptyList(), null, idempotencyKey, "json"))
@@ -2498,9 +2770,11 @@ suspend fun ReferalliClient.getProgramsIdStripeCredits(id: String, idempotencyKe
 /**
  * List a program's Stripe balance credits. GET /v1/programs/{id}/stripe-credits/log
  *
- * Every credit and debit the rail queued for this program, newest first: amount and currency (the commission's), `appliedAmountMinor`/`appliedCurrency` (what is sent to Stripe after any conversion; a debit uses its credit's currency and rate), Stripe customer, `status` (`pending`, `applied`, `no_customer`, `ambiguous_customer`, `fx_rate_missing`, `failed`, `canceled`), attempts, the Stripe balance transaction id once applied, and the last error. Unapplied rows are retried hourly, up to 24 tries.
+ * Every credit and debit the rail queued for this program, newest first: amount and currency (the commission's), `appliedAmountMinor`/`appliedCurrency` (what is sent to Stripe after any conversion; a debit uses its credit's currency and rate), Stripe customer, `status` (`pending`, `applied`, `no_customer`, `ambiguous_customer`, `fx_rate_missing`, `failed`, `canceled`), attempts, the Stripe balance transaction id once applied, and the last error. Unapplied rows are retried hourly, up to 24 tries (a row waiting under `waitForCustomer` has no cap).
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `payouts:read`, or a session of any role.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2516,11 +2790,25 @@ fun ReferalliClient.getProgramsIdStripeCreditsLogEach(id: String, limit: Long? =
     paginate { cursor -> getProgramsIdStripeCreditsLog(id = id, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /**
+ * Get a program's terms. GET /v1/programs/{id}/terms
+ *
+ * The program's commission terms for product copy, from its latest commission rule version (`ruleVersion`): the `base` (`percentBps`, or `amountMinor` and `currency`), how long it recurs, the hold, and `summary.en`, an English sentence built deterministically from the rule, such as "20% of every payment for 12 months" or "$50.00 for the first payment only". Bounties are added (", plus $5.00 per signup"); rule conditions add "(conditions apply)"; overrides, tiers or new-vs-expansion rates set `ratesVary` and add "(rates vary)" rather than quote one rate. Partner-group rates and promotions are not included. Publishing a new rule version changes the terms on the next read. `404` when the program has no rule yet. Program-scoped keys read their own programs.
+ *
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
+ */
+suspend fun ReferalliClient.getProgramsIdTerms(id: String, idempotencyKey: String? = null): ProgramTerms =
+    ProgramTerms.fromJson(send("GET", "/v1/programs/${segment(id)}/terms", emptyList(), null, idempotencyKey, "json"))
+
+/**
  * List terms acceptances. GET /v1/programs/{id}/terms-acceptances
  *
  * Which partner accepted which version of the program's terms, newest first.
  *
- * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `programs:read`, or a session of any role.
+ *
+ * **Scopes:** `programs:read`, `programs:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2540,7 +2828,9 @@ fun ReferalliClient.getProgramsIdTermsAcceptancesEach(id: String, limit: Long? =
  *
  * Prospects, best fit first, with channel, audience, evidence and outreach status. Filter with `status`.
  *
- * **Auth:** an API key with `growth:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `growth:read`, or a session of any role.
+ *
+ * **Scopes:** `growth:read`, `growth:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2570,7 +2860,9 @@ suspend fun ReferalliClient.getPublicProgramsHandle(handle: String, idempotencyK
  *
  * Referrals, newest first, filtered by `programId`, `partnerId`, `status` or `customerRef`.
  *
- * **Auth:** an API key with `referrals:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `referrals:read`, or a session of any role.
+ *
+ * **Scopes:** `referrals:read`, `referrals:write`, `read`, `full`, `admin`.
  *
  * customerRef: Your id for the referred customer.
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2591,7 +2883,9 @@ fun ReferalliClient.getReferralsEach(programId: String? = null, partnerId: Strin
  *
  * One referral with its touch credits and attribution reasoning.
  *
- * **Auth:** an API key with `referrals:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `referrals:read`, or a session of any role.
+ *
+ * **Scopes:** `referrals:read`, `referrals:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getReferralsId(id: String, idempotencyKey: String? = null): Referral =
     Referral.fromJson(send("GET", "/v1/referrals/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -2601,7 +2895,9 @@ suspend fun ReferalliClient.getReferralsId(id: String, idempotencyKey: String? =
  *
  * The referral with every touchpoint considered: each click's time, URL, fraud score, eligibility, credit weight and which one won.
  *
- * **Auth:** an API key with `referrals:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `referrals:read`, or a session of any role.
+ *
+ * **Scopes:** `referrals:read`, `referrals:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getReferralsIdJourney(id: String, idempotencyKey: String? = null): GetReferralsIdJourneyResponse =
     GetReferralsIdJourneyResponse.fromJson(send("GET", "/v1/referrals/${segment(id)}/journey", emptyList(), null, idempotencyKey, "json"))
@@ -2611,7 +2907,9 @@ suspend fun ReferalliClient.getReferralsIdJourney(id: String, idempotencyKey: St
  *
  * Per day, newest first: total clicks, clicks excluded from attribution (bots, rate limits, invalid traffic) and the average fraud score.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2631,7 +2929,9 @@ fun ReferalliClient.getReportsFilteredClicksEach(limit: Long? = null, endingBefo
  *
  * Per partner, highest revenue first: clicks, referrals, payments, referred revenue, commission earned and reversed. `format=csv` returns the same as a CSV file.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * format: csv: the same rows as a CSV file.
  */
@@ -2643,7 +2943,9 @@ suspend fun ReferalliClient.getReportsPartnerPerformance(format: String? = null,
  *
  * Rewards issued to referred customers, newest first, with code and status (`issued`, `redeemed`, `void`). Filter with `status`.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2663,7 +2965,9 @@ fun ReferalliClient.getRewardsEach(status: String? = null, limit: Long? = null, 
  *
  * The last 200 rewards granted through `POST /v1/rewards`, with the commission line each one posted.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getRewardsGranted(idempotencyKey: String? = null): GetRewardsGrantedResponse =
     send("GET", "/v1/rewards/granted", emptyList(), null, idempotencyKey, "json").array().map { GetRewardsGrantedResponseValueItem.fromJson(it) }
@@ -2673,7 +2977,9 @@ suspend fun ReferalliClient.getRewardsGranted(idempotencyKey: String? = null): G
  *
  * Whether a reward code is valid (issued and unredeemed), with its kind and amount, so your checkout can apply it. Unknown codes answer `{ "valid": false }`.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getRewardsLookupCode(code: String, idempotencyKey: String? = null): GetRewardsLookupCodeResponse =
     GetRewardsLookupCodeResponse.fromJson(send("GET", "/v1/rewards/lookup/${segment(code)}", emptyList(), null, idempotencyKey, "json"))
@@ -2683,7 +2989,9 @@ suspend fun ReferalliClient.getRewardsLookupCode(code: String, idempotencyKey: S
  *
  * Your rules that turn an inbound event (or a rule key) into a fixed partner reward.
  *
- * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `commissions:read`, or a session of any role.
+ *
+ * **Scopes:** `commissions:read`, `commissions:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getRewardsRules(idempotencyKey: String? = null): List<PutRewardsRulesKeyResponse> =
     send("GET", "/v1/rewards/rules", emptyList(), null, idempotencyKey, "json").array().map { PutRewardsRulesKeyResponse.fromJson(it) }
@@ -2693,7 +3001,9 @@ suspend fun ReferalliClient.getRewardsRules(idempotencyKey: String? = null): Lis
  *
  * The summary figures grouped `by` program, partner, cohort (grant month), source or role, best ROI first (cohorts in date order). Partner and program rows also carry their referrals' combined figures. `from`/`to` select grants by grant date (a date covers its whole UTC day), `programId` and `partnerId` narrow them, `windowDays` overrides each program's attribution window (30, 90, 180, 365, or 0 for lifetime), and `currency` views one native currency instead of the reporting currency. `format=csv` returns the same as a CSV file.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * from: Grants (or referrals) from this instant or date, inclusive.
  * to: Up to this instant, or through the end of this date (UTC), inclusive.
@@ -2718,7 +3028,9 @@ fun ReferalliClient.getRoiBreakdownEach(from: String? = null, to: String? = null
  *
  * How complete the inputs to ROI are over `from`/`to`: payments with credit-applied info, products with a margin, partners linked to their own customer id, events excluded for a missing FX rate, and a list of gaps with how to fix each.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * from: Grants (or referrals) from this instant or date, inclusive.
  * to: Up to this instant, or through the end of this date (UTC), inclusive.
@@ -2731,7 +3043,9 @@ suspend fun ReferalliClient.getRoiDataQuality(from: String? = null, to: String? 
  *
  * Each credit grant in view with its status (`open`, `used`, `expired`, `revoked`) and figures, newest first. Filter by `status`, `role` (`referee` or `referrer`) and `paidBack`. `from`/`to` select grants by grant date (a date covers its whole UTC day), `programId` and `partnerId` narrow them, `windowDays` overrides each program's attribution window (30, 90, 180, 365, or 0 for lifetime), and `currency` views one native currency instead of the reporting currency. `format=csv` returns the same as a CSV file. CSV returns every grant, unpaged.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * from: Grants (or referrals) from this instant or date, inclusive.
  * to: Up to this instant, or through the end of this date (UTC), inclusive.
@@ -2756,7 +3070,9 @@ fun ReferalliClient.getRoiGrantsEach(from: String? = null, to: String? = null, p
  *
  * The same trace for a partner's own customer identity (through their externalRef).
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * windowDays: Attribution window; default each program's setting. 0 = lifetime.
  */
@@ -2768,7 +3084,9 @@ suspend fun ReferalliClient.getRoiPartnersIdTrace(id: String, windowDays: Long? 
  *
  * Every value pattern from one detection run, with the matching subjects: `credit_only` (a referee used their credit and paid no cash after within the window), `churn_at_exhaustion` (used it up, paid, then stopped), `bonus_collector` (a partner holding commission credit who never spends their own cash) and `negative_partner` (a partner whose referrals net below zero). Matches wait until the evidence is in, so young customers are never flagged.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getRoiPatterns(idempotencyKey: String? = null): GetRoiPatternsResponse =
     GetRoiPatternsResponse.fromJson(send("GET", "/v1/roi/patterns", emptyList(), null, idempotencyKey, "json"))
@@ -2778,7 +3096,9 @@ suspend fun ReferalliClient.getRoiPatterns(idempotencyKey: String? = null): GetR
  *
  * The subjects currently matching one pattern, with the detail of each match.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2798,7 +3118,9 @@ fun ReferalliClient.getRoiPatternsPatternEach(pattern: String, limit: Long? = nu
  *
  * Credit ROI for the grants in view: credit cost, cash and profit from the recipients after each grant, net, ROI, payback share and median days, outstanding credit and how much of it is measured rather than inferred. With `programId`, also status against the program's target ROI. `model=incremental` adds the lift against the program's holdout group; `includeProjection=true` adds the expected payback of open grants. `from`/`to` select grants by grant date (a date covers its whole UTC day), `programId` and `partnerId` narrow them, `windowDays` overrides each program's attribution window (30, 90, 180, 365, or 0 for lifetime), and `currency` views one native currency instead of the reporting currency. `format=csv` returns the same as a CSV file.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * from: Grants (or referrals) from this instant or date, inclusive.
  * to: Up to this instant, or through the end of this date (UTC), inclusive.
@@ -2816,7 +3138,9 @@ suspend fun ReferalliClient.getRoiSummary(from: String? = null, to: String? = nu
  *
  * Every value event of a customer (and the identities linked to them) in order, with the running net, to see exactly how their ROI was computed. `format=csv` for a file.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  *
  * windowDays: Attribution window; default each program's setting. 0 = lifetime.
  */
@@ -2828,7 +3152,9 @@ suspend fun ReferalliClient.getRoiTraceCustomerRef(customerRef: String, windowDa
  *
  * Test mode only. The Stripe event types `POST /v1/sandbox/stripe-fixtures` can send, each with the `overrides` fields it uses.
  *
- * **Auth:** an API key with `billing:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `billing:read`, or a session of any role.
+ *
+ * **Scopes:** `billing:read`, `billing:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getSandboxStripeFixtures(idempotencyKey: String? = null): GetSandboxStripeFixturesResponse =
     GetSandboxStripeFixturesResponse.fromJson(send("GET", "/v1/sandbox/stripe-fixtures", emptyList(), null, idempotencyKey, "json"))
@@ -2838,7 +3164,9 @@ suspend fun ReferalliClient.getSandboxStripeFixtures(idempotencyKey: String? = n
  *
  * The install checker: which integration steps are done (auth or associate, program and rule, partner, snippet or click, billing, a payable partner, webhooks) and the next steps as hints.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getSetupStatus(idempotencyKey: String? = null): GetSetupStatusResponse =
     GetSetupStatusResponse.fromJson(send("GET", "/v1/setup/status", emptyList(), null, idempotencyKey, "json"))
@@ -2897,7 +3225,9 @@ suspend fun ReferalliClient.getStatusIncidentsId(id: String, idempotencyKey: Str
  *
  * Whether the Stripe balance credit rail has a key: its own (`source: "stripe_credits"`) or your Stripe payout connection (`source: "payout_connection"`). The key is never returned.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `payouts:read`, or a session of any role.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getStripeCreditsConnection(idempotencyKey: String? = null): GetStripeCreditsConnectionResponse =
     GetStripeCreditsConnectionResponse.fromJson(send("GET", "/v1/stripe-credits/connection", emptyList(), null, idempotencyKey, "json"))
@@ -2907,7 +3237,9 @@ suspend fun ReferalliClient.getStripeCreditsConnection(idempotencyKey: String? =
  *
  * Every support tool Referalli can show referral context in (Chatly cards and AI tools, Intercom, Zendesk, HubSpot, Front, Help Scout, custom), with its card URL, install steps and whether it is set up. Secrets are never returned.
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getSupportApps(idempotencyKey: String? = null): GetSupportAppsResponse =
     send("GET", "/v1/support/apps", emptyList(), null, idempotencyKey, "json").array().map { GetSupportAppsResponseValueItem.fromJson(it) }
@@ -2927,7 +3259,9 @@ suspend fun ReferalliClient.getSupportCardsOrgIdAdapter(orgId: String, adapter: 
  *
  * What a support agent should know about a contact: the partner (status, tier, programs, referral link, pending/approved/paid balances, next payout, open flags) and/or the referred customer (who referred them, when, the referee reward and what is left of it). Name the contact by `partnerExternalRef`, `ext` (a tool's verified external id), `customerRef` or `email`; the email is used only when no stronger key is given. Your org's data only; `partner` and `customer` are null when nothing matches.
  *
- * **Auth:** an API key with `partners:read` (or `full`), or a session with role `owner`, `admin`, `support`, `finance`, `analyst`.
+ * **Auth:** an API key with `partners:read`, or a session with role `owner`, `admin`, `support`, `finance`, `analyst`.
+ *
+ * **Scopes:** `partners:read`, `partners:write`, `read`, `full`, `admin`.
  *
  * email: Used only when no stronger key is given.
  * ext: A support tool's verified external id: matched as a partner externalRef, then as a customer ref.
@@ -2950,7 +3284,9 @@ suspend fun ReferalliClient.getSupportPlatformChatlyAnswers(subject: String? = n
  *
  * For each partner with a W-9 on file: the total actually paid in the tax year, in USD at recorded FX rates, and whether a form is required (US$600 or more, or a currency that couldn't be converted, listed in `fxMissingCurrencies` for review).
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:read`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2970,7 +3306,9 @@ fun ReferalliClient.getTax1099Each(year: Long, limit: Long? = null, endingBefore
  *
  * A tax year's filings with their provider status and the documents in each.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:read`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -2990,7 +3328,9 @@ fun ReferalliClient.getTax1099FilingsEach(year: Long, limit: Long? = null, endin
  *
  * Which partners would get a 1099-NEC for a tax year, with amounts and anything missing (W-9s, TINs), without filing.
  *
- * **Auth:** an API key with `payouts:read` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:read`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:read`, `payouts:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getTax1099Preview(year: Long, idempotencyKey: String? = null): NecPreview =
     NecPreview.fromJson(send("GET", "/v1/tax/1099/preview", listOf("year" to year?.toString()), null, idempotencyKey, "json"))
@@ -3000,7 +3340,9 @@ suspend fun ReferalliClient.getTax1099Preview(year: Long, idempotencyKey: String
  *
  * Test mode only (`409 test_mode_only` otherwise). The test org's current time and how far it has been advanced.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getTestClock(idempotencyKey: String? = null): GetTestClockResponse =
     GetTestClockResponse.fromJson(send("GET", "/v1/test_clock", emptyList(), null, idempotencyKey, "json"))
@@ -3010,7 +3352,9 @@ suspend fun ReferalliClient.getTestClock(idempotencyKey: String? = null): GetTes
  *
  * Test mode only. Emails the test org would have sent, captured instead of delivered, newest first.
  *
- * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:read`, or a session of any role.
+ *
+ * **Scopes:** `org:read`, `org:write`, `read`, `full`, `admin`.
  *
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * ending_before: A cursor: returns the items before this item id (the previous page). Not with `starting_after`. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -3029,7 +3373,9 @@ fun ReferalliClient.getTestEmailsEach(limit: Long? = null, endingBefore: String?
  *
  * Progress and result of a background import: status, processed and total rows, recorded and duplicate counts and row errors.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getValueImportJobId(jobId: String, idempotencyKey: String? = null): GetValueImportJobIdResponse =
     GetValueImportJobIdResponse.fromJson(send("GET", "/v1/value/import/${segment(jobId)}", emptyList(), null, idempotencyKey, "json"))
@@ -3049,7 +3395,9 @@ suspend fun ReferalliClient.getVersions(idempotencyKey: String? = null): GetVers
  *
  * Deliveries to every endpoint, newest first: topic, status (`pending`, `delivered`, `failed`), attempts, the last response code and, while pending, when the next attempt is. Filter with `endpointId`.
  *
- * **Auth:** an API key with `webhooks:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `webhooks:read`, or a session of any role.
+ *
+ * **Scopes:** `webhooks:read`, `webhooks:write`, `read`, `full`, `admin`.
  *
  * endpointId: Only deliveries to this endpoint.
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -3070,7 +3418,9 @@ fun ReferalliClient.getWebhookDeliveriesEach(endpointId: String? = null, limit: 
  *
  * One delivery in full: the exact `payload` sent, its `eventId`, and what the endpoint answered last (`lastStatusCode`, the first 2,000 characters of `lastResponseBody`, or `lastError` when there was no response).
  *
- * **Auth:** an API key with `webhooks:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `webhooks:read`, or a session of any role.
+ *
+ * **Scopes:** `webhooks:read`, `webhooks:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getWebhookDeliveriesId(id: String, idempotencyKey: String? = null): GetWebhookDeliveriesIdResponse =
     send("GET", "/v1/webhook-deliveries/${segment(id)}", emptyList(), null, idempotencyKey, "json")
@@ -3080,7 +3430,9 @@ suspend fun ReferalliClient.getWebhookDeliveriesId(id: String, idempotencyKey: S
  *
  * Endpoints with their topics, programs, status (`active`, `paused`, `disabled`), secret-rotation state and failure state. Secrets are never returned. `programId` lists only the endpoints limited to that program (org-wide endpoints, which get every program's events, are left out).
  *
- * **Auth:** an API key with `webhooks:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `webhooks:read`, or a session of any role.
+ *
+ * **Scopes:** `webhooks:read`, `webhooks:write`, `read`, `full`, `admin`.
  *
  * programId: Only endpoints limited to this program (not the org-wide ones, which get every program's events).
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -3101,7 +3453,9 @@ fun ReferalliClient.getWebhookEndpointsEach(programId: String? = null, limit: Lo
  *
  * One endpoint with its status, rotation and failure state.
  *
- * **Auth:** an API key with `webhooks:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `webhooks:read`, or a session of any role.
+ *
+ * **Scopes:** `webhooks:read`, `webhooks:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getWebhookEndpointsId(id: String, idempotencyKey: String? = null): WebhookEndpoint =
     WebhookEndpoint.fromJson(send("GET", "/v1/webhook-endpoints/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
@@ -3111,7 +3465,9 @@ suspend fun ReferalliClient.getWebhookEndpointsId(id: String, idempotencyKey: St
  *
  * What one endpoint was sent, newest first.
  *
- * **Auth:** an API key with `webhooks:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `webhooks:read`, or a session of any role.
+ *
+ * **Scopes:** `webhooks:read`, `webhooks:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -3131,7 +3487,9 @@ fun ReferalliClient.getWebhookEndpointsIdDeliveriesEach(id: String, limit: Long?
  *
  * The event keys Zapier triggers can subscribe to.
  *
- * **Auth:** an API key with `integrations:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `integrations:read`, or a session of any role.
+ *
+ * **Scopes:** `integrations:read`, `integrations:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getZapierEvents(idempotencyKey: String? = null): GetZapierEventsResponse =
     send("GET", "/v1/zapier/events", emptyList(), null, idempotencyKey, "json").array().map { GetZapierEventsResponseValueItem.fromJson(it) }
@@ -3141,7 +3499,9 @@ suspend fun ReferalliClient.getZapierEvents(idempotencyKey: String? = null): Get
  *
  * Active Zapier REST hook subscriptions, newest first.
  *
- * **Auth:** an API key with `integrations:read` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:read`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:read`, `integrations:write`, `read`, `full`, `admin`.
  *
  * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
@@ -3161,7 +3521,9 @@ fun ReferalliClient.getZapierHooksEach(limit: Long? = null, endingBefore: String
  *
  * Zapier polling and sample data: the latest `limit` events of that kind, newest first, in the shape the hook delivers. Always a plain array (Zapier's contract), whatever the API version.
  *
- * **Auth:** an API key with `integrations:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `integrations:read`, or a session of any role.
+ *
+ * **Scopes:** `integrations:read`, `integrations:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.getZapierTriggersEvent(event: String, limit: Long? = null, idempotencyKey: String? = null): GetZapierTriggersEventResponse =
     send("GET", "/v1/zapier/triggers/${segment(event)}", listOf("limit" to limit?.toString()), null, idempotencyKey, "json").array().map { GetZapierTriggersEventResponseValueItem.fromJson(it) }
@@ -3181,7 +3543,9 @@ suspend fun ReferalliClient.patchAdminStatusIncidentsId(id: String, body: PatchA
  *
  * Changes a key's pinned `apiVersion`, `owner`, expiry (`expiresInDays` from now; `null` removes it) or `programIds` (`null` makes it org-wide); `apiVersion: "latest"` pins it to today's newest version. A new expiry re-arms the `api_key.expiring` notices. Revoked keys are 404. Needs an owner or admin session, or an API key with the `admin` scope. Audited.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:write`, or a session of any role.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchApiKeysId(id: String, body: PatchApiKeysIdBody, idempotencyKey: String? = null): PatchApiKeysIdResponse =
     PatchApiKeysIdResponse.fromJson(send("PATCH", "/v1/api-keys/${segment(id)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3191,7 +3555,9 @@ suspend fun ReferalliClient.patchApiKeysId(id: String, body: PatchApiKeysIdBody,
  *
  * Pauses or resumes a connection, renames it, changes `autoEnrollUsers` or the destination of auto-created links, or (signed-protocol connections) sets `signatureVersion`: `v2` to require request-line signatures, `v1+v2` to accept both again.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `connections:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchAuthConnectionsId(id: String, body: PatchAuthConnectionsIdBody, idempotencyKey: String? = null): PatchAuthConnectionsIdResponse =
     PatchAuthConnectionsIdResponse.fromJson(send("PATCH", "/v1/auth/connections/${segment(id)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3199,9 +3565,11 @@ suspend fun ReferalliClient.patchAuthConnectionsId(id: String, body: PatchAuthCo
 /**
  * Update a billing connection. PATCH /v1/billing/connections/{id}
  *
- * Renames a connection, sets `status` (`paused` makes its webhook URL refuse events until set back to `active`), or sets its product `filter` (`null` removes it). A filter applies to events received from then on. Audited.
+ * Renames a connection, sets `status` (`paused` makes its webhook URL refuse events until set back to `active`), or sets its product `filter` (`null` removes it) or `programIds` (`null` = every program). Both apply to events received from then on. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchBillingConnectionsId(id: String, body: PatchBillingConnectionsIdBody, idempotencyKey: String? = null): BillingConnection =
     BillingConnection.fromJson(send("PATCH", "/v1/billing/connections/${segment(id)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3211,7 +3579,9 @@ suspend fun ReferalliClient.patchBillingConnectionsId(id: String, body: PatchBil
  *
  * Changes the org name, merges keys into `settings` (a free-form map) and turns `payoutKycRequired` on or off. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchOrg(body: PatchOrgBody, idempotencyKey: String? = null): PatchOrgResponse =
     PatchOrgResponse.fromJson(send("PATCH", "/v1/org", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3221,7 +3591,9 @@ suspend fun ReferalliClient.patchOrg(body: PatchOrgBody, idempotencyKey: String?
  *
  * Changes a member's role. Only owners change owner roles, and the last owner can't be demoted (409). Audited. Live mode only.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `team:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchOrgMembersUserId(userId: String, body: PatchOrgMembersUserIdBody, idempotencyKey: String? = null): PatchOrgMembersUserIdResponse =
     PatchOrgMembersUserIdResponse.fromJson(send("PATCH", "/v1/org/members/${segment(userId)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3231,7 +3603,9 @@ suspend fun ReferalliClient.patchOrgMembersUserId(userId: String, body: PatchOrg
  *
  * Requires SSO for members on the org's SSO domains (`requireSso`; needs an active connection and the owner signed in through SSO, so nobody is locked out) and maps identity-provider roles to Referalli roles. Owner only. Live mode only.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchOrgSso(body: PatchOrgSsoBody, idempotencyKey: String? = null): PatchOrgSsoResponse =
     PatchOrgSsoResponse.fromJson(send("PATCH", "/v1/org/sso", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3241,7 +3615,9 @@ suspend fun ReferalliClient.patchOrgSso(body: PatchOrgSsoBody, idempotencyKey: S
  *
  * Changes a group's terms, or archives it (`archived: true`); archived groups take no new members.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchPartnerGroupsId(id: String, body: PatchPartnerGroupsIdBody, idempotencyKey: String? = null): PartnerGroup =
     PartnerGroup.fromJson(send("PATCH", "/v1/partner-groups/${segment(id)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3251,7 +3627,9 @@ suspend fun ReferalliClient.patchPartnerGroupsId(id: String, body: PatchPartnerG
  *
  * Changes the display name, status (`active`, `suspended`, `banned`, `archived`), tags, notes or externalRef (`null` clears it). Suspended partners keep earning but are not paid; banned ones stop attributing. 409 when another partner has the externalRef. Audited.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchPartnersId(id: String, body: PatchPartnersIdBody, idempotencyKey: String? = null): Partner =
     Partner.fromJson(send("PATCH", "/v1/partners/${segment(id)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3261,7 +3639,9 @@ suspend fun ReferalliClient.patchPartnersId(id: String, body: PatchPartnersIdBod
  *
  * Changes only the minimum balance before a payout (`minThresholdMinor`). 404 when the partner has no profile. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchPartnersIdPayoutProfile(id: String, body: PatchPartnersIdPayoutProfileBody, idempotencyKey: String? = null): PatchPartnersIdPayoutProfileResponse =
     PatchPartnersIdPayoutProfileResponse.fromJson(send("PATCH", "/v1/partners/${segment(id)}/payout-profile", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3271,7 +3651,9 @@ suspend fun ReferalliClient.patchPartnersIdPayoutProfile(id: String, body: Patch
  *
  * Deep-merges into the draft (or, with no draft, into a copy of what is published): objects merge key by key, arrays and values replace, `null` deletes a key. The result is validated as a whole. Owner or admin.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchPortalThemeDraft(body: Map<String, JsonValue>, idempotencyKey: String? = null): GetPortalThemeResponse =
     GetPortalThemeResponse.fromJson(send("PATCH", "/v1/portal/theme/draft", emptyList(), JsonValue.Obj(body.mapValues { it.value }), idempotencyKey, "json"))
@@ -3281,7 +3663,9 @@ suspend fun ReferalliClient.patchPortalThemeDraft(body: Map<String, JsonValue>, 
  *
  * Changes any program field or setting; omitted fields keep their value, and `publicPage` is merged. Changing `termsMd` records a new terms version. Setting `status` to `paused` or `archived` stops new attribution. `mobileApp` (iOS Team ID and bundle id, Android package and signing-certificate fingerprints) publishes the program's apps in the universal-links and App Links files on the org's link hosts. `destinationUrl` moves the program's default link destination: every link still on the old default (the widget's or a sign-in connection's) is repointed in the same call, custom destinations stay, and links already shared follow at click time; `{code}` in it becomes the link's code. Audited.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchProgramsId(id: String, body: PatchProgramsIdBody, idempotencyKey: String? = null): Program =
     Program.fromJson(send("PATCH", "/v1/programs/${segment(id)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3291,7 +3675,9 @@ suspend fun ReferalliClient.patchProgramsId(id: String, body: PatchProgramsIdBod
  *
  * Sets `status` to `paused` (no new commissions) or back to `active`. Only active referrals can be paused and only paused ones resumed (409 otherwise); setting the current status is a no-op. Publishes `referral.paused` or `referral.resumed`. Audited.
  *
- * **Auth:** an API key with `referrals:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `referrals:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `referrals:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchReferralsId(id: String, body: PatchReferralsIdBody, idempotencyKey: String? = null): Referral =
     Referral.fromJson(send("PATCH", "/v1/referrals/${segment(id)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3301,7 +3687,9 @@ suspend fun ReferalliClient.patchReferralsId(id: String, body: PatchReferralsIdB
  *
  * Changes the URL, topics, programs (`null` or `[]` for every program) or legacy signature, or pauses it (`status: "paused"`, deliveries held). Setting `active` re-enables a paused or auto-disabled endpoint: held deliveries resume and the failure clock starts over. `warnings` has `domain_changed` when the URL moves to another host. Audited.
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.patchWebhookEndpointsId(id: String, body: PatchWebhookEndpointsIdBody, idempotencyKey: String? = null): PatchWebhookEndpointsIdResponse =
     send("PATCH", "/v1/webhook-endpoints/${segment(id)}", emptyList(), body.toJson(), idempotencyKey, "json")
@@ -3401,7 +3789,9 @@ suspend fun ReferalliClient.postAgentsRegister(body: PostAgentsRegisterBody, ide
  *
  * Compares the last 24 hours of clicks, sign-ups and revenue with the trailing 7-day average and returns this org's spikes (3x or more) and drops (under 20%). Findings also become notifications; nothing is changed automatically. Also runs hourly.
  *
- * **Auth:** an API key with `analytics:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `analytics:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `analytics:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postAnomaliesScan(idempotencyKey: String? = null): PostAnomaliesScanResponse =
     send("POST", "/v1/anomalies/scan", emptyList(), null, idempotencyKey, "json").array().map { PostAnomaliesScanResponseValueItem.fromJson(it) }
@@ -3409,9 +3799,11 @@ suspend fun ReferalliClient.postAnomaliesScan(idempotencyKey: String? = null): P
 /**
  * Create an API key. POST /v1/api-keys
  *
- * Mints a secret key (`rk_live_…` / `rk_test_…`), shown only in this response (and in its `Idempotency-Key` replay: a retry with the same key and body within 24 hours returns this response again, secret included, without minting another). `scopes` defaults to `full`; a key can't grant scopes it doesn't hold. `mode` picks live, test or a matching pair of both (`both` returns `{ pairId, live, test }`); a test-mode caller can mint test keys only. `publishable: true` mints a browser-safe `rk_pub_` key limited to `programs:read` and `events:write` from `allowedOrigins`. `apiVersion` pins the key to a version, or `latest` (the default) to the newest version at the time of the call; the pin never moves on its own (a key keeps answering in that version after newer ones ship) until you `PATCH` it or send a `referalli-version` header. A key pinned to `2026-10-21` gets every list as a capped plain array instead of the paginated envelope. `programIds` limits the key to those programs (their partners, links, referrals, commissions, enrollments, and webhook endpoints whose `programIds` are all within the key's, with their deliveries); a program-scoped key gets 403 `program_scoped_key` on org-wide endpoints (keys, team, org settings, billing, payouts, the event feed, analytics, creating programs). An `api_keys:mint` key may also call this (and no other key endpoint): it can't mint `admin` or `api_keys:mint` keys or scopes it doesn't hold, and a program-scoped one must send `programIds` within its own (`403` otherwise). Needs an owner or admin session, or an API key with the `admin` scope. Audited.
+ * Mints a secret key (`rk_live_…` / `rk_test_…`), shown only in this response (and in its `Idempotency-Key` replay: a retry with the same key and body within 24 hours returns this response again, secret included, without minting another). `scopes` defaults to `full`; a key can't grant scopes it doesn't hold. `mode` picks live, test or a matching pair of both (`both` returns `{ pairId, live, test }`); a test-mode caller can mint test keys only. `publishable: true` mints a browser-safe `rk_pub_` key limited to `programs:read` and `events:write` from `allowedOrigins`. `apiVersion` pins the key to a version, or `latest` (the default) to the newest version at the time of the call; the pin never moves on its own (a key keeps answering in that version after newer ones ship) until you `PATCH` it or send a `referalli-version` header. A key pinned to `2026-10-21` gets every list as a capped plain array instead of the paginated envelope. `programIds` limits the key to those programs (their partners, links, referrals, commissions, enrollments, webhook endpoints whose `programIds` are all within the key's, with their deliveries, and billing connections likewise); a program-scoped key gets 403 `program_scoped_key` on org-wide endpoints (keys, team, org settings, the rest of billing, payouts, the event feed, analytics, creating programs). An `api_keys:mint` key may also call this (and no other key endpoint): it can't mint `admin` or `api_keys:mint` keys or scopes it doesn't hold, and a program-scoped one must send `programIds` within its own (`403` otherwise). Needs an owner or admin session, or an API key with the `admin` scope. Audited.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:write`, or a session of any role.
+ *
+ * **Scopes:** `team:write`, `api_keys:mint`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postApiKeys(body: PostApiKeysBody, idempotencyKey: String? = null): PostApiKeysResponse =
     send("POST", "/v1/api-keys", emptyList(), body.toJson(), idempotencyKey, "json")
@@ -3421,7 +3813,9 @@ suspend fun ReferalliClient.postApiKeys(body: PostApiKeysBody, idempotencyKey: S
  *
  * Mints a replacement key with the same name, scopes, origins, version pin, owner, programs and lifetime (an expiring key's new expiry is the same length from now), returned once with `rotatedFrom: { id, expiresAt }`. The old key keeps working for `graceHours` (default 24, at most 168, 0 = stop now), then expires; it gets no `api_key.expiring` notice. An expired or revoked key can't be rotated (409 `api_key_expired` / 404). Needs an owner or admin session, or an API key with the `admin` scope. Audited.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:write`, or a session of any role.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postApiKeysIdRotate(id: String, body: PostApiKeysIdRotateBody, idempotencyKey: String? = null): PostApiKeysIdRotateResponse =
     send("POST", "/v1/api-keys/${segment(id)}/rotate", emptyList(), body.toJson(), idempotencyKey, "json")
@@ -3431,7 +3825,9 @@ suspend fun ReferalliClient.postApiKeysIdRotate(id: String, body: PostApiKeysIdR
  *
  * Adds a marketing asset (`banner`, `copy`, `video` or `logo`) to a program for its approved partners, or only for one group's members with `groupId`.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postAssets(body: PostAssetsBody, idempotencyKey: String? = null): PostAssetsResponse =
     PostAssetsResponse.fromJson(send("POST", "/v1/assets", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3441,7 +3837,9 @@ suspend fun ReferalliClient.postAssets(body: PostAssetsBody, idempotencyKey: Str
  *
  * Deterministically recomputes attribution for a program's referrals from the recorded clicks and identity links, under its current model. Returns what changed. Audited.
  *
- * **Auth:** an API key with `referrals:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `referrals:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `referrals:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postAttributionReplay(body: PostAttributionReplayBody, idempotencyKey: String? = null): PostAttributionReplayResponse =
     PostAttributionReplayResponse.fromJson(send("POST", "/v1/attribution/replay", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3461,7 +3859,9 @@ suspend fun ReferalliClient.postAuthBackchannelLogout(body: PostAuthBackchannelL
  *
  * Connects your sign-up system so new users are attributed server-side without calling associate: `clerk`, `supabase`, `workos` or `generic` receive the platform's user webhooks at the returned URL; `atlas` and `custom` call the signed protocol endpoints under `/v1/auth/connections/{id}/`. `autoEnrollUsers` makes every new user a partner too. Returns the signing secret once. 409 when an Atlas instance already has a connection.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `connections:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postAuthConnections(body: PostAuthConnectionsBody, idempotencyKey: String? = null): CreatedAuthConnection =
     CreatedAuthConnection.fromJson(send("POST", "/v1/auth/connections", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3511,7 +3911,9 @@ suspend fun ReferalliClient.postAuthConnectionsIdPing(id: String, body: Map<Stri
  *
  * Ends the rotation overlap at once: only the newest secret verifies from now on.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `connections:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postAuthConnectionsIdRevokePreviousSecret(id: String, idempotencyKey: String? = null): PostAuthConnectionsIdRevokePreviousSecretResponse =
     PostAuthConnectionsIdRevokePreviousSecretResponse.fromJson(send("POST", "/v1/auth/connections/${segment(id)}/revoke-previous-secret", emptyList(), null, idempotencyKey, "json"))
@@ -3521,7 +3923,9 @@ suspend fun ReferalliClient.postAuthConnectionsIdRevokePreviousSecret(id: String
  *
  * Issues a new signing secret, returned once. The previous one keeps verifying for 24 hours, or until revoked.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `connections:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postAuthConnectionsIdRotateSecret(id: String, idempotencyKey: String? = null): PostAuthConnectionsIdRotateSecretResponse =
     PostAuthConnectionsIdRotateSecretResponse.fromJson(send("POST", "/v1/auth/connections/${segment(id)}/rotate-secret", emptyList(), null, idempotencyKey, "json"))
@@ -3561,7 +3965,9 @@ suspend fun ReferalliClient.postAuthConnectionsIdUsers(id: String, body: PostAut
  *
  * The dashboard's consent step for `GET /v1/oauth/authorize`: `allow` returns the redirect back to the platform with a single-use code (10 minutes) for the chosen program; `deny` returns it with `error=access_denied`. Owner or admin. Audited.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `connections:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postAuthConnectionsInstall(body: PostAuthConnectionsInstallBody, idempotencyKey: String? = null): PostAuthConnectionsInstallResponse =
     PostAuthConnectionsInstallResponse.fromJson(send("POST", "/v1/auth/connections/install", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3581,7 +3987,9 @@ suspend fun ReferalliClient.postAuthLogout(idempotencyKey: String? = null): Post
  *
  * Moves the org to a plan without checkout: anyone may move to Free (after cancelling a subscription); paid plans only for platform admins or self-hosted deployments (403 otherwise). Owner only. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBillingActivate(body: PostBillingActivateBody, idempotencyKey: String? = null): PostBillingActivateResponse =
     PostBillingActivateResponse.fromJson(send("POST", "/v1/billing/activate", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3591,7 +3999,9 @@ suspend fun ReferalliClient.postBillingActivate(body: PostBillingActivateBody, i
  *
  * Creates a checkout session for a paid plan and returns its `url` to redirect to. 400 when billing is not configured on this deployment.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBillingCheckout(body: PostBillingCheckoutBody, idempotencyKey: String? = null): PostBillingCheckoutResponse =
     PostBillingCheckoutResponse.fromJson(send("POST", "/v1/billing/checkout", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3599,9 +4009,11 @@ suspend fun ReferalliClient.postBillingCheckout(body: PostBillingCheckoutBody, i
 /**
  * Create a billing connection. POST /v1/billing/connections
  *
- * Connects a billing provider (`stripe`, `paddle`, `lemonsqueezy`, `polar`, `chargebee`, `shopify`, `recurly`, `braintree`, `woocommerce`, `bigcommerce` or `generic`) so its payment webhooks become commissions. Returns the `webhookUrl` path to register with the provider and its signing secret (generated unless you pass the provider's own `webhookSecret`); the secret is returned only here. A `filter` (`productIds`, `priceIds`, `skus` and/or exact `metadata`) limits which payments and subscription events earn when one provider account sells several products; the rest are recorded as `ignored_by_filter`. Audited.
+ * Connects a billing provider (`stripe`, `paddle`, `lemonsqueezy`, `polar`, `chargebee`, `shopify`, `recurly`, `braintree`, `woocommerce`, `bigcommerce` or `generic`) so its payment webhooks become commissions. Returns the `webhookUrl` path to register with the provider and its signing secret (generated unless you pass the provider's own `webhookSecret`); the secret is returned only here. For Stripe, pass `stripeKey` (a restricted key with Webhook Endpoints write and Customers write) instead of `webhookSecret`: Referalli registers a webhook endpoint at this connection's URL on your Stripe account with the events it reads and API version 2025-03-31.basil, stores the signing secret Stripe returns and answers with `stripeWebhookEndpointId`; nothing is saved unless Stripe registered it. If an endpoint on the account already points at one of your Stripe connections, it is updated and that connection returned with `reused: true` (one still `awaiting_secret` gets a fresh endpoint and its secret). `creditRail: { programId, ...settings }` also stores the key as that program's Stripe credit key and applies the `PUT /v1/programs/{id}/stripe-credits` settings (`enabled` defaults to true). The key is never returned and is stored only for `creditRail`. Deleting the connection leaves the Stripe endpoint in place. Errors: `422 stripe_key_wrong_mode`, `422 stripe_key_invalid`, `422 stripe_key_permission`, `502 stripe_unavailable`. A `filter` (`productIds`, `priceIds`, `skus` and/or exact `metadata`) limits which payments and subscription events earn when one provider account sells several products; the rest are recorded as `ignored_by_filter`. `programIds` limits the connection to those programs when one org runs several products: its events earn only through referrals in them, and a payment from a customer referred only in another program earns nothing (the event records `ignoredReason: "no_referral_in_scope"`); null or omitted = every program. A program-scoped API key must send `programIds` within its own. `status` is `awaiting_secret` when a provider that issues its own signing secret (Stripe, Paddle, Polar, Shopify, Recurly, Braintree) is connected without `webhookSecret`: its webhooks fail `401` until `PUT …/secret` stores the provider's secret, then it reads `active`. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBillingConnections(body: PostBillingConnectionsBody, idempotencyKey: String? = null): CreatedBillingConnection =
     CreatedBillingConnection.fromJson(send("POST", "/v1/billing/connections", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3611,7 +4023,9 @@ suspend fun ReferalliClient.postBillingConnections(body: PostBillingConnectionsB
  *
  * Generates a new signing secret, returned once. The previous one keeps verifying until `previousSecretExpiresAt` (24 hours). Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBillingConnectionsIdRotateSecret(id: String, idempotencyKey: String? = null): PostBillingConnectionsIdRotateSecretResponse =
     PostBillingConnectionsIdRotateSecretResponse.fromJson(send("POST", "/v1/billing/connections/${segment(id)}/rotate-secret", emptyList(), null, idempotencyKey, "json"))
@@ -3621,7 +4035,9 @@ suspend fun ReferalliClient.postBillingConnectionsIdRotateSecret(id: String, ide
  *
  * Applies the saved mapping (or a draft `mapping`) to a sample `payload` and returns what would be recorded. Writes nothing. A generic-connector body with `events` gets one result per event.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBillingConnectionsIdValueMappingPreview(id: String, body: PostBillingConnectionsIdValueMappingPreviewBody, idempotencyKey: String? = null): ValueMappingPreview =
     ValueMappingPreview.fromJson(send("POST", "/v1/billing/connections/${segment(id)}/value-mapping/preview", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3631,7 +4047,9 @@ suspend fun ReferalliClient.postBillingConnectionsIdValueMappingPreview(id: Stri
  *
  * Marks a customer ref (the provider customer id, or the `referalli_customer_ref` it is linked to) as internal: its payments are recorded as `ignored_by_filter` from now on. Idempotent; a repeat updates the note. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBillingInternalCustomers(body: PostBillingInternalCustomersBody, idempotencyKey: String? = null): PostBillingInternalCustomersResponse =
     PostBillingInternalCustomersResponse.fromJson(send("POST", "/v1/billing/internal-customers", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3641,7 +4059,9 @@ suspend fun ReferalliClient.postBillingInternalCustomers(body: PostBillingIntern
  *
  * Returns the `url` of the billing portal where the owner manages or cancels the subscription. 400 before there is a subscription.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBillingPortal(idempotencyKey: String? = null): PostBillingPortalResponse =
     PostBillingPortalResponse.fromJson(send("POST", "/v1/billing/portal", emptyList(), null, idempotencyKey, "json"))
@@ -3651,7 +4071,9 @@ suspend fun ReferalliClient.postBillingPortal(idempotencyKey: String? = null): P
  *
  * Starts serving the partner portal on your own domain (such as `partners.example.com`), in your branding: returns the CNAME and TXT records to add. Needs a plan with custom domains (402 otherwise).
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBrandingDomain(body: PostBrandingDomainBody, idempotencyKey: String? = null): PostBrandingDomainResponse =
     PostBrandingDomainResponse.fromJson(send("POST", "/v1/branding/domain", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3661,7 +4083,9 @@ suspend fun ReferalliClient.postBrandingDomain(body: PostBrandingDomainBody, ide
  *
  * Checks the portal domain's TXT record and CNAME, routes it and reports `provisioning` or `active` as for the link domain.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBrandingDomainVerify(idempotencyKey: String? = null): PostBrandingLinkDomainVerifyResponse =
     PostBrandingLinkDomainVerifyResponse.fromJson(send("POST", "/v1/branding/domain/verify", emptyList(), null, idempotencyKey, "json"))
@@ -3671,7 +4095,9 @@ suspend fun ReferalliClient.postBrandingDomainVerify(idempotencyKey: String? = n
  *
  * Starts using your own domain (such as `go.example.com`) for partner links: returns the CNAME target and the TXT record that proves you control it. Links move onto it once verified. Needs a plan with custom domains (402 otherwise); 409 when the domain is in use.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBrandingLinkDomain(body: PostBrandingLinkDomainBody, idempotencyKey: String? = null): PostBrandingLinkDomainResponse =
     PostBrandingLinkDomainResponse.fromJson(send("POST", "/v1/branding/link-domain", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3681,7 +4107,9 @@ suspend fun ReferalliClient.postBrandingLinkDomain(body: PostBrandingLinkDomainB
  *
  * Checks the TXT record and the CNAME. When both are right the domain is routed here; it is `active` once HTTPS answers on it (`provisioning` while the certificate is issued, which finishes on its own). 400 with what is missing otherwise.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postBrandingLinkDomainVerify(idempotencyKey: String? = null): PostBrandingLinkDomainVerifyResponse =
     PostBrandingLinkDomainVerifyResponse.fromJson(send("POST", "/v1/branding/link-domain/verify", emptyList(), null, idempotencyKey, "json"))
@@ -3711,7 +4139,9 @@ suspend fun ReferalliClient.postCliDeviceCodesToken(body: PostCliDeviceCodesToke
  *
  * Approves the sign-in and mints its API key in this org. `access` picks the scopes: `cli` (webhooks write and read access to the rest, the default), `read` or `full`. Needs a signed-in owner or admin. Audited.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `team:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCliDeviceCodesUserCodeApprove(userCode: String, body: PostCliDeviceCodesUserCodeApproveBody, idempotencyKey: String? = null): PostCliDeviceCodesUserCodeApproveResponse =
     PostCliDeviceCodesUserCodeApproveResponse.fromJson(send("POST", "/v1/cli/device-codes/${segment(userCode)}/approve", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3721,7 +4151,9 @@ suspend fun ReferalliClient.postCliDeviceCodesUserCodeApprove(userCode: String, 
  *
  * Refuses a pending sign-in; the CLI then sees `denied`.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `team:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCliDeviceCodesUserCodeDeny(userCode: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("POST", "/v1/cli/device-codes/${segment(userCode)}/deny", emptyList(), null, idempotencyKey, "json"))
@@ -3731,7 +4163,9 @@ suspend fun ReferalliClient.postCliDeviceCodesUserCodeDeny(userCode: String, ide
  *
  * The CLI `listen` command opens a listener for some `topics` (default every topic). Events are queued for it while it polls at least every 2 minutes, and each comes with Standard Webhooks headers signed with the returned `secret`, so the CLI can forward them to a local server.
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCliListeners(body: PostCliListenersBody, idempotencyKey: String? = null): PostCliListenersResponse =
     PostCliListenersResponse.fromJson(send("POST", "/v1/cli/listeners", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3741,7 +4175,9 @@ suspend fun ReferalliClient.postCliListeners(body: PostCliListenersBody, idempot
  *
  * The CLI `trigger` command sends a realistic sample event (ids `*_test_…`, `test: true`) to the org's listeners and webhook endpoints. `data` overrides fields of the sample. 400 for a topic with no sample; `GET /v1/cli/topics` lists them.
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCliTrigger(body: PostCliTriggerBody, idempotencyKey: String? = null): PostCliTriggerResponse =
     PostCliTriggerResponse.fromJson(send("POST", "/v1/cli/trigger", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3751,7 +4187,9 @@ suspend fun ReferalliClient.postCliTrigger(body: PostCliTriggerBody, idempotency
  *
  * Publishes a new version of a program's commission rule; the latest version applies to new payments, and past lines keep the version that earned them. A rule has a `base` (percent in basis points, or a fixed amount), what it applies to (gross or net of tax or fees), how long it recurs, a hold before lines can be paid (`holdDays`, default 30), and optional conditions, per-partner/link/product overrides, volume tiers, event bounties, sub-affiliate levels and new-vs-expansion rates. Unknown fields at any depth are rejected. Audited.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCommissionRules(body: PostCommissionRulesBody, idempotencyKey: String? = null): PostCommissionRulesResponse =
     PostCommissionRulesResponse.fromJson(send("POST", "/v1/commission-rules", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3761,7 +4199,9 @@ suspend fun ReferalliClient.postCommissionRules(body: PostCommissionRulesBody, i
  *
  * Approves every pending line whose hold has elapsed (this also runs on a schedule). Returns how many were approved. Audited.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCommissionsApproveDue(idempotencyKey: String? = null): PostCommissionsApproveDueResponse =
     PostCommissionsApproveDueResponse.fromJson(send("POST", "/v1/commissions/approve-due", emptyList(), null, idempotencyKey, "json"))
@@ -3771,7 +4211,9 @@ suspend fun ReferalliClient.postCommissionsApproveDue(idempotencyKey: String? = 
  *
  * Records an `adjusted` event against an earned line (a correction; the ledger is append-only). `amountMinor` is signed. An adjustment that would take the line below zero is refused unless `allowNegative`. Audited.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCommissionsIdAdjust(id: String, body: PostCommissionsIdAdjustBody, idempotencyKey: String? = null): PostCommissionsIdAdjustResponse =
     PostCommissionsIdAdjustResponse.fromJson(send("POST", "/v1/commissions/${segment(id)}/adjust", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3781,7 +4223,9 @@ suspend fun ReferalliClient.postCommissionsIdAdjust(id: String, body: PostCommis
  *
  * Marks an earned line paid because you credited the partner yourself (for example as store credit), with your `reference`: records `approved` (if it isn't yet) and `paid`, and publishes `commission.settled`. The line never reaches a payout run or the 1099 export. Repeating the same reference returns the original settlement; a line already paid otherwise is 409. Audited.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCommissionsIdSettle(id: String, body: PostCommissionsIdSettleBody, idempotencyKey: String? = null): Settlement =
     Settlement.fromJson(send("POST", "/v1/commissions/${segment(id)}/settle", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3791,7 +4235,9 @@ suspend fun ReferalliClient.postCommissionsIdSettle(id: String, body: PostCommis
  *
  * A contract offering one partner custom terms (`termsMd`) and `compensation` (percent or fixed) in a program, as a draft or sent at once (`send: true`). When accepted, the compensation becomes a partner override on a new rule version. Audited.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postContracts(body: PostContractsBody, idempotencyKey: String? = null): PostContractsResponse =
     PostContractsResponse.fromJson(send("POST", "/v1/contracts", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3801,7 +4247,9 @@ suspend fun ReferalliClient.postContracts(body: PostContractsBody, idempotencyKe
  *
  * Sends a draft contract to the partner. 400 when it is not a draft.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postContractsIdSend(id: String, idempotencyKey: String? = null): OkStatus =
     OkStatus.fromJson(send("POST", "/v1/contracts/${segment(id)}/send", emptyList(), null, idempotencyKey, "json"))
@@ -3811,7 +4259,9 @@ suspend fun ReferalliClient.postContractsIdSend(id: String, idempotencyKey: Stri
  *
  * Registers a coupon code for a partner in a program, so checkouts that use it attribute to them (coupon codes win over clicks). Codes match case-insensitively and are unique per org (409).
  *
- * **Auth:** an API key with `links:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `links:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `links:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCoupons(body: PostCouponsBody, idempotencyKey: String? = null): PostCouponsResponse =
     PostCouponsResponse.fromJson(send("POST", "/v1/coupons", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3821,7 +4271,9 @@ suspend fun ReferalliClient.postCoupons(body: PostCouponsBody, idempotencyKey: S
  *
  * Invites a listed creator to a program with an optional message. 400 when they do not accept invitations or were already invited to that program.
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postCreatorsAccountIdInvite(accountId: String, body: PostCreatorsAccountIdInviteBody, idempotencyKey: String? = null): PostCreatorsAccountIdInviteResponse =
     PostCreatorsAccountIdInviteResponse.fromJson(send("POST", "/v1/creators/${segment(accountId)}/invite", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3831,7 +4283,9 @@ suspend fun ReferalliClient.postCreatorsAccountIdInvite(accountId: String, body:
  *
  * Approves a submitted deal and protects it for the partner for `protectionDays` (default 90). 404 when there's no submitted deal with that id.
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postDealsIdApprove(id: String, body: PostDealsIdApproveBody, idempotencyKey: String? = null): PostDealsIdApproveResponse =
     PostDealsIdApproveResponse.fromJson(send("POST", "/v1/deals/${segment(id)}/approve", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3841,7 +4295,9 @@ suspend fun ReferalliClient.postDealsIdApprove(id: String, body: PostDealsIdAppr
  *
  * Rejects a submitted deal.
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postDealsIdReject(id: String, idempotencyKey: String? = null): PostDealsIdRejectResponse =
     PostDealsIdRejectResponse.fromJson(send("POST", "/v1/deals/${segment(id)}/reject", emptyList(), null, idempotencyKey, "json"))
@@ -3851,7 +4307,9 @@ suspend fun ReferalliClient.postDealsIdReject(id: String, idempotencyKey: String
  *
  * Marks an approved deal won, within its protection window: creates the referral for `customerRef` so the customer's payments earn the partner commission. Publishes `referral.created`.
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postDealsIdWon(id: String, body: PostDealsIdWonBody, idempotencyKey: String? = null): PostDealsIdWonResponse =
     PostDealsIdWonResponse.fromJson(send("POST", "/v1/deals/${segment(id)}/won", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3861,7 +4319,9 @@ suspend fun ReferalliClient.postDealsIdWon(id: String, body: PostDealsIdWonBody,
  *
  * Adds up to 500 prospects from your own crawl or data source. Raw page `html` is scanned for affiliate footprints (the competitor programs it recognizes) to enrich the evidence; `keywords` scores fit. Duplicate URLs are skipped. Needs a plan with discovery (402 otherwise).
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postDiscoveryCorpus(body: PostDiscoveryCorpusBody, idempotencyKey: String? = null): PostDiscoveryCorpusResponse =
     PostDiscoveryCorpusResponse.fromJson(send("POST", "/v1/discovery/corpus", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3871,7 +4331,9 @@ suspend fun ReferalliClient.postDiscoveryCorpus(body: PostDiscoveryCorpusBody, i
  *
  * Searches the configured corpus for creators and sites matching `keywords` (and `category`), scores their fit and saves them as prospects. Needs a plan with discovery (402 otherwise).
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postDiscoverySearch(body: PostDiscoverySearchBody, idempotencyKey: String? = null): PostDiscoverySearchResponse =
     PostDiscoverySearchResponse.fromJson(send("POST", "/v1/discovery/search", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3881,7 +4343,9 @@ suspend fun ReferalliClient.postDiscoverySearch(body: PostDiscoverySearchBody, i
  *
  * Resolves an open dispute with a `resolution` note, which the partner sees. Publishes `dispute.resolved`. 404 when not open. Audited.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postDisputesIdResolve(id: String, body: PostDisputesIdResolveBody, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("POST", "/v1/disputes/${segment(id)}/resolve", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3891,7 +4355,9 @@ suspend fun ReferalliClient.postDisputesIdResolve(id: String, body: PostDisputes
  *
  * Renders an event's email with sample values, from the stored template or an unsaved draft.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postEmailPreview(body: PostEmailPreviewBody, idempotencyKey: String? = null): EmailRendered =
     EmailRendered.fromJson(send("POST", "/v1/email/preview", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3901,7 +4367,9 @@ suspend fun ReferalliClient.postEmailPreview(body: PostEmailPreviewBody, idempot
  *
  * Asks the email provider whether the from address's domain is verified for sending, and stores the result. 400 until a provider, key and from address are set.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postEmailSettingsVerifyDomain(idempotencyKey: String? = null): PostEmailSettingsVerifyDomainResponse =
     send("POST", "/v1/email/settings/verify-domain", emptyList(), null, idempotencyKey, "json")
@@ -3911,7 +4379,9 @@ suspend fun ReferalliClient.postEmailSettingsVerifyDomain(idempotencyKey: String
  *
  * Sends one email with sample values to `to` through the org's provider. 400 without a provider or when the provider refuses it.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postEmailTest(body: PostEmailTestBody, idempotencyKey: String? = null): PostEmailTestResponse =
     PostEmailTestResponse.fromJson(send("POST", "/v1/email/test", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3921,7 +4391,9 @@ suspend fun ReferalliClient.postEmailTest(body: PostEmailTestBody, idempotencyKe
  *
  * A 15-minute token for the partner with this email, for the partner stats web component (`/embed.js`) in your app.
  *
- * **Auth:** an API key with `links:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `links:write`, or a session of any role.
+ *
+ * **Scopes:** `links:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postEmbedTokens(body: PostEmbedTokensBody, idempotencyKey: String? = null): PostEmbedTokensResponse =
     PostEmbedTokensResponse.fromJson(send("POST", "/v1/embed/tokens", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3931,7 +4403,9 @@ suspend fun ReferalliClient.postEmbedTokens(body: PostEmbedTokensBody, idempoten
  *
  * Closes a case with an `action`: `dismiss` (a held referral is approved), `void_referral`, `suspend_partner` or `ban_partner`. The matching `referral.*` events are published. Audited.
  *
- * **Auth:** an API key with `fraud:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `fraud:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `fraud:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postFraudCasesIdResolve(id: String, body: PostFraudCasesIdResolveBody, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("POST", "/v1/fraud/cases/${segment(id)}/resolve", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3941,7 +4415,9 @@ suspend fun ReferalliClient.postFraudCasesIdResolve(id: String, body: PostFraudC
  *
  * Looks for partners who are likely one operator with many accounts (a shared payout destination or a shared non-freemail sign-up domain) and opens a `ring` case for each group.
  *
- * **Auth:** an API key with `fraud:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `fraud:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `fraud:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postFraudDetectRings(idempotencyKey: String? = null): PostFraudDetectRingsResponse =
     PostFraudDetectRingsResponse.fromJson(send("POST", "/v1/fraud/detect-rings", emptyList(), null, idempotencyKey, "json"))
@@ -3951,7 +4427,9 @@ suspend fun ReferalliClient.postFraudDetectRings(idempotencyKey: String? = null)
  *
  * Scores each partner's clicks over the last `windowHours` (1 to 168, default 24) for invalid traffic and returns the probability, label and contributing signals per partner, plus how many were flagged.
  *
- * **Auth:** an API key with `fraud:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `fraud:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `fraud:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postFraudInvalidTrafficScan(body: PostFraudInvalidTrafficScanBody, idempotencyKey: String? = null): PostFraudInvalidTrafficScanResponse =
     PostFraudInvalidTrafficScanResponse.fromJson(send("POST", "/v1/fraud/invalid-traffic/scan", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3961,7 +4439,9 @@ suspend fun ReferalliClient.postFraudInvalidTrafficScan(body: PostFraudInvalidTr
  *
  * Records the rate cross-currency payouts convert at, for a currency pair, as a decimal string (`"1.0825"`), effective now or at `effectiveAt`. A manual rate pins its pair over the daily feed until cleared. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postFxRates(body: PostFxRatesBody, idempotencyKey: String? = null): FxRate =
     FxRate.fromJson(send("POST", "/v1/fx-rates", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3971,7 +4451,9 @@ suspend fun ReferalliClient.postFxRates(body: PostFxRatesBody, idempotencyKey: S
  *
  * Retires the manual rates for a pair, handing it back to the feed. Returns how many were cleared. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postFxRatesClearOverride(body: PostFxRatesClearOverrideBody, idempotencyKey: String? = null): PostFxRatesClearOverrideResponse =
     PostFxRatesClearOverrideResponse.fromJson(send("POST", "/v1/fx-rates/clear-override", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -3981,7 +4463,9 @@ suspend fun ReferalliClient.postFxRatesClearOverride(body: PostFxRatesClearOverr
  *
  * Fetches the latest ECB reference rates for this org now, instead of waiting for the daily sync.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postFxRatesSync(idempotencyKey: String? = null): PostFxRatesSyncResponse =
     PostFxRatesSyncResponse.fromJson(send("POST", "/v1/fx-rates/sync", emptyList(), null, idempotencyKey, "json"))
@@ -3991,7 +4475,9 @@ suspend fun ReferalliClient.postFxRatesSync(idempotencyKey: String? = null): Pos
  *
  * The GraphQL endpoint with the query in a JSON body. Read-only, so a read-scoped API key may call it.
  *
- * **Auth:** an API key with `analytics:read` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:read`, or a session of any role.
+ *
+ * **Scopes:** `analytics:read`, `analytics:write`, `read`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postGraphql(body: PostGraphqlBody, idempotencyKey: String? = null): PostGraphqlResponse =
     PostGraphqlResponse.fromJson(send("POST", "/v1/graphql", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4001,7 +4487,9 @@ suspend fun ReferalliClient.postGraphql(body: PostGraphqlBody, idempotencyKey: S
  *
  * Imports partners, links and codes from a Rewardful, FirstPromoter, Tolt or PartnerStack CSV export (as a `text/csv` body or `{ "csv": "…" }`) into a program. `dryRun=true` reports what would happen; `destinationUrl` is used when the export has no link column. The tool's referral parameter is added to aff.js so shared links keep crediting. Audited.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postImportProvider(provider: String, body: PostImportProviderBody, programId: String, dryRun: Boolean? = null, destinationUrl: String? = null, idempotencyKey: String? = null): PostImportProviderResponse =
     PostImportProviderResponse.fromJson(send("POST", "/v1/import/${segment(provider)}", listOf("programId" to programId?.toString(), "dryRun" to dryRun?.toString(), "destinationUrl" to destinationUrl?.toString()), body.toJson(), idempotencyKey, "json"))
@@ -4011,7 +4499,9 @@ suspend fun ReferalliClient.postImportProvider(provider: String, body: PostImpor
  *
  * Queues a failed or skipped delivery again. 404 when there is no failed or skipped delivery with that id.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postIntegrationsDeliveriesIdRetry(id: String, idempotencyKey: String? = null): IntegrationDelivery =
     IntegrationDelivery.fromJson(send("POST", "/v1/integrations/deliveries/${segment(id)}/retry", emptyList(), null, idempotencyKey, "json"))
@@ -4021,7 +4511,9 @@ suspend fun ReferalliClient.postIntegrationsDeliveriesIdRetry(id: String, idempo
  *
  * Checks the token against HubSpot and (unless `setupProperties: false`) creates the custom properties the sync uses. Returns `ok` and the error, if any, rather than failing.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postIntegrationsHubspotTest(body: PostIntegrationsHubspotTestBody, idempotencyKey: String? = null): PostIntegrationsHubspotTestResponse =
     PostIntegrationsHubspotTestResponse.fromJson(send("POST", "/v1/integrations/hubspot/test", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4031,7 +4523,9 @@ suspend fun ReferalliClient.postIntegrationsHubspotTest(body: PostIntegrationsHu
  *
  * Sends one test track event with the write key and reports whether Segment accepted it.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postIntegrationsSegmentTest(idempotencyKey: String? = null): PostIntegrationsSegmentTestResponse =
     PostIntegrationsSegmentTestResponse.fromJson(send("POST", "/v1/integrations/segment/test", emptyList(), null, idempotencyKey, "json"))
@@ -4041,7 +4535,9 @@ suspend fun ReferalliClient.postIntegrationsSegmentTest(idempotencyKey: String? 
  *
  * Withdraws a pending creator invitation. 400 when it was already answered or withdrawn.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postInvitationsIdWithdraw(id: String, idempotencyKey: String? = null): OkStatus =
     OkStatus.fromJson(send("POST", "/v1/invitations/${segment(id)}/withdraw", emptyList(), null, idempotencyKey, "json"))
@@ -4051,7 +4547,9 @@ suspend fun ReferalliClient.postInvitationsIdWithdraw(id: String, idempotencyKey
  *
  * Creates a partner's tracked link in a program. `code` (letters, digits, `-`; stored lowercase) is unique per org and generated when omitted. Returns the `shortUrl` to share, on the org's verified link domain when it has one. 409 when the code is taken. Audited.
  *
- * **Auth:** an API key with `links:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `links:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `links:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postLinks(body: PostLinksBody, idempotencyKey: String? = null): CreatedLink =
     CreatedLink.fromJson(send("POST", "/v1/links", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4061,7 +4559,9 @@ suspend fun ReferalliClient.postLinks(body: PostLinksBody, idempotencyKey: Strin
  *
  * Your backend reports a validated App Store or Play purchase (or refund), after checking the receipt; it flows through the same commission engine as web billing. Idempotent per `eventId`. Never call this from the app itself.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postMobilePurchases(body: PostMobilePurchasesBody, idempotencyKey: String? = null): PostMobilePurchasesResponse =
     PostMobilePurchasesResponse.fromJson(send("POST", "/v1/mobile/purchases", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4071,7 +4571,9 @@ suspend fun ReferalliClient.postMobilePurchases(body: PostMobilePurchasesBody, i
  *
  * Marks one notification read. Unknown or already-read ids are a no-op.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `org:write`, or a session of any role.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postNotificationsIdRead(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("POST", "/v1/notifications/${segment(id)}/read", emptyList(), null, idempotencyKey, "json"))
@@ -4091,7 +4593,9 @@ suspend fun ReferalliClient.postOauthToken(body: JsonValue, idempotencyKey: Stri
  *
  * Connects an on-chain indexer: on-chain conversions posted to its webhook URL become billing events. Returns the webhook URL and signing secret.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOnchainConnections(body: PostOnchainConnectionsBody, idempotencyKey: String? = null): PostOnchainConnectionsResponse =
     PostOnchainConnectionsResponse.fromJson(send("POST", "/v1/onchain/connections", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4101,7 +4605,9 @@ suspend fun ReferalliClient.postOnchainConnections(body: PostOnchainConnectionsB
  *
  * Asks Cookie Munch (`GET /v1/partner/sites/{cbid}/stamps/{stamp}`) what the visitor's consent stamp says on your registered site (`cbid`, or each registered site in turn) and keeps the answer. `verdict`: `consented` (found, with the `referrals` category on: the only verdict that credits a referral's consent), `not_consented`, `withdrawn` (a later decision turned `referrals` off: `withdrawnAt`), `not_found` (the site never recorded the stamp), `no_grant` (Cookie Munch's 403: the site has no live link to Referalli) or `error`. Clicks and consent events that carry a Cookie Munch stamp are checked the same way in the background. 409 when the partner token isn't configured or no site is registered. Owner or admin.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgConsentPartnersCookiemunchStampsCheck(body: PostOrgConsentPartnersCookiemunchStampsCheckBody, idempotencyKey: String? = null): PostOrgConsentPartnersCookiemunchStampsCheckResponse =
     PostOrgConsentPartnersCookiemunchStampsCheckResponse.fromJson(send("POST", "/v1/org/consent-partners/cookiemunch/stamps/check", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4111,7 +4617,9 @@ suspend fun ReferalliClient.postOrgConsentPartnersCookiemunchStampsCheck(body: P
  *
  * Read-only checks against the vendors: does the Cookie Munch site exist (and a reminder to add your portal domain as its alias), does each script URL answer. Updates `status` and `lastError`. Owner or admin.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgHostedPagesCheck(idempotencyKey: String? = null): PostOrgHostedPagesCheckResponse =
     PostOrgHostedPagesCheckResponse.fromJson(send("POST", "/v1/org/hosted-pages/check", emptyList(), null, idempotencyKey, "json"))
@@ -4121,7 +4629,9 @@ suspend fun ReferalliClient.postOrgHostedPagesCheck(idempotencyKey: String? = nu
  *
  * Adds an existing Referalli user (by email) with a role: `owner`, `admin`, `finance`, `analyst` or `support`. Only an owner can add an owner. 404 when no user has that email; 409 when already a member. Live mode only.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `team:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgMembers(body: PostOrgMembersBody, idempotencyKey: String? = null): PostOrgMembersResponse =
     PostOrgMembersResponse.fromJson(send("POST", "/v1/org/members", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4131,7 +4641,9 @@ suspend fun ReferalliClient.postOrgMembers(body: PostOrgMembersBody, idempotency
  *
  * Checks the partner sign-in configuration (JWKS reachable, or OIDC discovery) and records the result.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgPortalAuthTest(idempotencyKey: String? = null): PostOrgPortalAuthTestResponse =
     PostOrgPortalAuthTestResponse.fromJson(send("POST", "/v1/org/portal-auth/test", emptyList(), null, idempotencyKey, "json"))
@@ -4141,7 +4653,9 @@ suspend fun ReferalliClient.postOrgPortalAuthTest(idempotencyKey: String? = null
  *
  * Creates an organization with the signed-in user as its owner. Needs a user session (not an API key) but no `x-org-id`. Limited to 20 per hour per user. Live mode only.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:write`, or a session of any role.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgs(body: PostOrgsBody, idempotencyKey: String? = null): PostOrgsResponse =
     PostOrgsResponse.fromJson(send("POST", "/v1/orgs", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4161,7 +4675,9 @@ suspend fun ReferalliClient.postOrgsOrgIdPrivacyExecutorKey(orgId: String, body:
  *
  * Checks the configuration against the IdP (OIDC discovery, or the WorkOS organization) and records the result as the configuration's last success or last error.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgSsoDirectTest(idempotencyKey: String? = null): PostOrgPortalAuthTestResponse =
     PostOrgPortalAuthTestResponse.fromJson(send("POST", "/v1/org/sso/direct/test", emptyList(), null, idempotencyKey, "json"))
@@ -4171,7 +4687,9 @@ suspend fun ReferalliClient.postOrgSsoDirectTest(idempotencyKey: String? = null)
  *
  * Creates the org's directory tenant at the SSO provider, with the calling owner (who must have signed in with the provider) as its first admin. Owner session only. 409 when already linked elsewhere. Live mode only.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgSsoLink(idempotencyKey: String? = null): PostOrgSsoLinkResponse =
     PostOrgSsoLinkResponse.fromJson(send("POST", "/v1/org/sso/link", emptyList(), null, idempotencyKey, "json"))
@@ -4181,7 +4699,9 @@ suspend fun ReferalliClient.postOrgSsoLink(idempotencyKey: String? = null): Post
  *
  * A one-time link (valid `expiresInDays`, default 3) for the customer's IT admin to configure SAML or OIDC (and SCIM) on the provider's hosted page. The URL is returned once and never stored. Live mode only.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgSsoTickets(body: PostOrgSsoTicketsBody, idempotencyKey: String? = null): PostOrgSsoTicketsResponse =
     PostOrgSsoTicketsResponse.fromJson(send("POST", "/v1/org/sso/tickets", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4191,7 +4711,9 @@ suspend fun ReferalliClient.postOrgSsoTickets(body: PostOrgSsoTicketsBody, idemp
  *
  * Revokes a pending setup link. Live mode only.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOrgSsoTicketsIdRevoke(id: String, idempotencyKey: String? = null): PostOrgSsoTicketsIdRevokeResponse =
     PostOrgSsoTicketsIdRevokeResponse.fromJson(send("POST", "/v1/org/sso/tickets/${segment(id)}/revoke", emptyList(), null, idempotencyKey, "json"))
@@ -4201,7 +4723,9 @@ suspend fun ReferalliClient.postOrgSsoTicketsIdRevoke(id: String, idempotencyKey
  *
  * Drafts a recruiting email sequence for a prospect. Drafts are only sent after you approve them.
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOutreachDraft(body: PostOutreachDraftBody, idempotencyKey: String? = null): PostOutreachDraftResponse =
     PostOutreachDraftResponse.fromJson(send("POST", "/v1/outreach/draft", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4211,7 +4735,9 @@ suspend fun ReferalliClient.postOutreachDraft(body: PostOutreachDraftBody, idemp
  *
  * Approves a drafted message so `POST /v1/outreach/send-due` sends it when due. Audited.
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOutreachIdApprove(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("POST", "/v1/outreach/${segment(id)}/approve", emptyList(), null, idempotencyKey, "json"))
@@ -4221,7 +4747,9 @@ suspend fun ReferalliClient.postOutreachIdApprove(id: String, idempotencyKey: St
  *
  * Sends approved outreach messages that are due, skipping prospects without an email and addresses on the do-not-contact list (unsubscribed).
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postOutreachSendDue(idempotencyKey: String? = null): PostOutreachSendDueResponse =
     PostOutreachSendDueResponse.fromJson(send("POST", "/v1/outreach/send-due", emptyList(), null, idempotencyKey, "json"))
@@ -4391,7 +4919,9 @@ suspend fun ReferalliClient.postPartnerProgramsProgramIdApply(programId: String,
  *
  * Creates a partner. `email` is unique per org, and so is `externalRef` (your own id for them, such as a user id). With `upsert: true` an existing partner matching the email or externalRef is returned instead of a 409 (and gets the externalRef if it had none), with `matchedBy` (`email` or `externalRef`) and `externalRefKept`: true when the partner keeps its own externalRef (another product's) and yours was not applied to it, because yours is the program-scoped one on its enrollment. An email match whose partner has a different externalRef and no enrollment carrying yours is a 409. Over the plan's partner limit this is `402 payment_required`. Audited.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPartners(body: PostPartnersBody, idempotencyKey: String? = null): PostPartnersResponse =
     send("POST", "/v1/partners", emptyList(), body.toJson(), idempotencyKey, "json")
@@ -4431,7 +4961,9 @@ suspend fun ReferalliClient.postPartnerSecurityTotpSetup(idempotencyKey: String?
  *
  * A single-use `url` (valid 5 minutes) for a "View earnings" button in your app: opening it signs the partner in to the partner portal for `programId`, with no second account. The session is read-only and limited to this partner in your organization (never the partner's other merchants or account settings) and lasts 12 hours. `returnUrl` must be a path inside the portal, such as `/portal/earnings`. 404 for a partner outside your organization or not enrolled in the program. Owner or admin.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPartnersIdPortalLink(id: String, body: PostPartnersIdPortalLinkBody, idempotencyKey: String? = null): PostPartnersIdPortalLinkResponse =
     PostPartnersIdPortalLinkResponse.fromJson(send("POST", "/v1/partners/${segment(id)}/portal-link", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4441,7 +4973,9 @@ suspend fun ReferalliClient.postPartnersIdPortalLink(id: String, body: PostPartn
  *
  * Records a W-9, W-8BEN or W-8BEN-E for the partner (`data` is the form's fields). A tax form on file is required before a partner is included in a payout run.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPartnersIdTaxForm(id: String, body: PostPartnersIdTaxFormBody, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("POST", "/v1/partners/${segment(id)}/tax-form", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4471,7 +5005,9 @@ suspend fun ReferalliClient.postPassportVerify(body: PostPassportVerifyBody, ide
  *
  * Builds a draft run: one payout per partner who has a payout profile, a tax form and an approved, unpaid balance over their threshold, converted into their payout currency at recorded FX, each with a self-billing invoice. Partners left out are listed in `skipped` with the reason. Nothing is paid until you execute it. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPayoutRuns(idempotencyKey: String? = null): PayoutRunCreated =
     PayoutRunCreated.fromJson(send("POST", "/v1/payout-runs", emptyList(), null, idempotencyKey, "json"))
@@ -4481,7 +5017,9 @@ suspend fun ReferalliClient.postPayoutRuns(idempotencyKey: String? = null): Payo
  *
  * Cancels a run that hasn't paid out and releases its lines back to the partners' approved balances. A run with money in flight is 409. Publishes `payout.cancelled` per payout. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPayoutRunsIdCancel(id: String, idempotencyKey: String? = null): PostPayoutRunsIdCancelResponse =
     PostPayoutRunsIdCancelResponse.fromJson(send("POST", "/v1/payout-runs/${segment(id)}/cancel", emptyList(), null, idempotencyKey, "json"))
@@ -4491,7 +5029,9 @@ suspend fun ReferalliClient.postPayoutRunsIdCancel(id: String, idempotencyKey: S
  *
  * Pays a draft run through the org's own connected payout providers (methods with no connection are simulated and logged; test mode uses the test rail). Returns how many were sent, submitted (settling asynchronously) and failed; each outcome publishes `payout.sent`, `payout.submitted` or `payout.failed`. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPayoutRunsIdExecute(id: String, idempotencyKey: String? = null): PostPayoutRunsIdExecuteResponse =
     PostPayoutRunsIdExecuteResponse.fromJson(send("POST", "/v1/payout-runs/${segment(id)}/execute", emptyList(), null, idempotencyKey, "json"))
@@ -4501,7 +5041,9 @@ suspend fun ReferalliClient.postPayoutRunsIdExecute(id: String, idempotencyKey: 
  *
  * Creates and executes payout runs for every schedule (org or program) that is due now. This also runs hourly on its own.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPayoutRunsRunScheduled(idempotencyKey: String? = null): PostPayoutRunsRunScheduledResponse =
     send("POST", "/v1/payout-runs/run-scheduled", emptyList(), null, idempotencyKey, "json").array().map { PostPayoutRunsRunScheduledResponseValueItem.fromJson(it) }
@@ -4511,7 +5053,9 @@ suspend fun ReferalliClient.postPayoutRunsRunScheduled(idempotencyKey: String? =
  *
  * A W3C design-tokens (DTCG) brand file, sent as `document` or fetched from an https `url`, merged into the draft: colours (`color.primary`, `color.background`, `color.surface`, `color.text`, `color.muted`, `color.border`, status colours), fonts (`font.body`, `font.heading`, `font.mono`, `font.url`), `radius.base`, `logo.url` and `brand.name`. `applied` lists the tokens used. Owner or admin.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPortalThemeImportBrand(body: PostPortalThemeImportBrandBody, idempotencyKey: String? = null): PostPortalThemeImportBrandResponse =
     PostPortalThemeImportBrandResponse.fromJson(send("POST", "/v1/portal/theme/import-brand", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4521,7 +5065,9 @@ suspend fun ReferalliClient.postPortalThemeImportBrand(body: PostPortalThemeImpo
  *
  * A link that shows the draft on your verified portal domain (`?themePreview=rpv_…`) for 7 days, to anyone who has it; minting another retires the last. Partners without the link keep seeing the published design. Owner or admin.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPortalThemePreview(idempotencyKey: String? = null): PostPortalThemePreviewResponse =
     PostPortalThemePreviewResponse.fromJson(send("POST", "/v1/portal/theme/preview", emptyList(), null, idempotencyKey, "json"))
@@ -4531,7 +5077,9 @@ suspend fun ReferalliClient.postPortalThemePreview(idempotencyKey: String? = nul
  *
  * Makes the draft what partners see (within a minute), keeps it as a version you can restore, and retires the preview link. Optional `note`. Owner or admin. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPortalThemePublish(body: PostPortalThemePublishBody, idempotencyKey: String? = null): GetPortalThemeResponse =
     GetPortalThemeResponse.fromJson(send("POST", "/v1/portal/theme/publish", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4541,7 +5089,9 @@ suspend fun ReferalliClient.postPortalThemePublish(body: PostPortalThemePublishB
  *
  * Copies a published version into the draft; publish it to make it live again. Owner or admin.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPortalThemeVersionsIdRestore(id: String, idempotencyKey: String? = null): GetPortalThemeResponse =
     GetPortalThemeResponse.fromJson(send("POST", "/v1/portal/theme/versions/${segment(id)}/restore", emptyList(), null, idempotencyKey, "json"))
@@ -4551,7 +5101,9 @@ suspend fun ReferalliClient.postPortalThemeVersionsIdRestore(id: String, idempot
  *
  * Enables a DSAR tool for your org and mints its executor key (a bearer key, or a `whsec_` secret for Standard Webhooks), returned once. Rotating stops the old key at once. Also stores vendor settings: a Transcend public key and API key for completion callbacks, an Osano webhook secret.
  *
- * **Auth:** an API key with `privacy:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPrivacyExecutorKeys(body: PostPrivacyExecutorKeysBody, idempotencyKey: String? = null): PostPrivacyExecutorKeysResponse =
     PostPrivacyExecutorKeysResponse.fromJson(send("POST", "/v1/privacy/executor-keys", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4561,7 +5113,9 @@ suspend fun ReferalliClient.postPrivacyExecutorKeys(body: PostPrivacyExecutorKey
  *
  * Whether the tool is ready: a key or the vendor credentials it needs, and no failing requests since it was set up. Answers `{ok, detail, fix}`.
  *
- * **Auth:** an API key with `privacy:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPrivacyExecutorsAdapterCheck(adapter: String, idempotencyKey: String? = null): PostPrivacyExecutorsAdapterCheckResponse =
     PostPrivacyExecutorsAdapterCheckResponse.fromJson(send("POST", "/v1/privacy/executors/${segment(adapter)}/check", emptyList(), null, idempotencyKey, "json"))
@@ -4571,7 +5125,9 @@ suspend fun ReferalliClient.postPrivacyExecutorsAdapterCheck(adapter: String, id
  *
  * Erases (pseudonymizes, keeping the ledger balanced) a customer by `customerRef`, a partner by `partnerId`, or by `email` both the partner with that email and every customer stored under its hash. Send exactly one. 400 when nothing is found. Audited.
  *
- * **Auth:** an API key with `privacy:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPrivacyForget(body: PostPrivacyForgetBody, idempotencyKey: String? = null): PostPrivacyForgetResponse =
     PostPrivacyForgetResponse.fromJson(send("POST", "/v1/privacy/forget", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4581,7 +5137,9 @@ suspend fun ReferalliClient.postPrivacyForget(body: PostPrivacyForgetBody, idemp
  *
  * Which customers and partners an email refers to. The email is hashed on the server and never stored.
  *
- * **Auth:** an API key with `privacy:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPrivacyLookup(body: PostPrivacyLookupBody, idempotencyKey: String? = null): PostPrivacyLookupResponse =
     PostPrivacyLookupResponse.fromJson(send("POST", "/v1/privacy/lookup", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4591,7 +5149,9 @@ suspend fun ReferalliClient.postPrivacyLookup(body: PostPrivacyLookupBody, idemp
  *
  * Opens an `access` or `erasure` request for one subject (`email`, `customerRef` or `partnerId`) and answers `202` with the request to poll. Publishes `privacy.request_completed` when done.
  *
- * **Auth:** an API key with `privacy:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `privacy:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `privacy:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPrivacyRequests(body: PostPrivacyRequestsBody, idempotencyKey: String? = null): PostPrivacyRequestsResponse =
     PostPrivacyRequestsResponse.fromJson(send("POST", "/v1/privacy/requests", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4601,7 +5161,9 @@ suspend fun ReferalliClient.postPrivacyRequests(body: PostPrivacyRequestsBody, i
  *
  * `{partner, name?, scopes[], expires_at?}` (Unix ms or ISO 8601, at most a year; default a year; never "never"). Scopes are resource scopes (`integrations:write`, `partners:read`, …) or `connections:read|write` (the auth-platform connection routes only, what Atlas asks for); never admin, full or team. Returns `client_id` and `client_secret` once; the partner swaps them at POST /v1/oauth/token (client_credentials) or sends the secret as a bearer. A root action: an API key cannot hand out more than it holds, and an Atlas operator token needs an MFA sign-in at most 5 minutes old (403 `step_up_required` otherwise).
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `team:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProductLinks(body: PostProductLinksBody, idempotencyKey: String? = null): PostProductLinksResponse =
     PostProductLinksResponse.fromJson(send("POST", "/v1/product-links", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4611,7 +5173,9 @@ suspend fun ReferalliClient.postProductLinks(body: PostProductLinksBody, idempot
  *
  * Recomputes every stored ROI figure from the value events with the current settings and mappings, in the background. Returns a `jobId` to poll; while one rebuild is running, the same job is returned. Audited.
  *
- * **Auth:** an API key with `analytics:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `analytics:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `analytics:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProfitabilityRebuild(idempotencyKey: String? = null): PostProfitabilityRebuildResponse =
     PostProfitabilityRebuildResponse.fromJson(send("POST", "/v1/profitability/rebuild", emptyList(), null, idempotencyKey, "json"))
@@ -4621,7 +5185,9 @@ suspend fun ReferalliClient.postProfitabilityRebuild(idempotencyKey: String? = n
  *
  * Creates an affiliate program: its attribution model, cookie window, how long after sign-up a conversion still counts (`signupToConversionDays`, 1 to 1095, default 365; `cookieWindowDays` is 1 to 400, default 60), terms, public page and settings. `slug` is unique per org. Terms are versioned so partners can be asked to accept new ones. Over the plan's program limit this is `402 payment_required`.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPrograms(body: PostProgramsBody, idempotencyKey: String? = null): Program =
     Program.fromJson(send("POST", "/v1/programs", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4631,7 +5197,9 @@ suspend fun ReferalliClient.postPrograms(body: PostProgramsBody, idempotencyKey:
  *
  * Promotes the program's partners to the highest level their referral count qualifies for (never demotes). Publishes `partner.level_up` per promotion.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdApplyLeveling(id: String, idempotencyKey: String? = null): PostProgramsIdApplyLevelingResponse =
     PostProgramsIdApplyLevelingResponse.fromJson(send("POST", "/v1/programs/${segment(id)}/apply-leveling", emptyList(), null, idempotencyKey, "json"))
@@ -4641,7 +5209,9 @@ suspend fun ReferalliClient.postProgramsIdApplyLeveling(id: String, idempotencyK
  *
  * Moves each partner's rate toward the target and publishes the new rates as partner overrides on a new rule version. Objective `roas` compares attributed revenue to commission; `roi` uses each partner's matured referral ROI, holding partners with too few matured referrals or an unknown ROI (listed in `held`). 400 when autopricing is off, the program has no percent-based rule, or no partner has a known ROI under `roi`.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdAutopriceRun(id: String, body: PostProgramsIdAutopriceRunBody, idempotencyKey: String? = null): PostProgramsIdAutopriceRunResponse =
     PostProgramsIdAutopriceRunResponse.fromJson(send("POST", "/v1/programs/${segment(id)}/autoprice/run", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4651,7 +5221,9 @@ suspend fun ReferalliClient.postProgramsIdAutopriceRun(id: String, body: PostPro
  *
  * Enrolls an existing partner in the program, approved at once. Publishes `partner.enrolled`. 409 when already enrolled. `externalRef` is this program's own id for the partner, when their partner `externalRef` belongs to another product sharing the org; this program's webhooks and `GET /v1/partners?externalRef=` then use it. `mint` also gives them a referral code in the program, as `POST /v1/programs/{id}/referrers` does: `coupon: true` a coupon, `link: {}` a tracked link to `link.destinationUrl` or else the program's default destination (`{code}` in it becomes the code; 400 when the program has none and you send none). Their existing code in the program is reused. The response then adds `code` and `linkUrl` (null without a link).
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdEnrollments(id: String, body: PostProgramsIdEnrollmentsBody, idempotencyKey: String? = null): PostProgramsIdEnrollmentsResponse =
     send("POST", "/v1/programs/${segment(id)}/enrollments", emptyList(), body.toJson(), idempotencyKey, "json")
@@ -4661,7 +5233,9 @@ suspend fun ReferalliClient.postProgramsIdEnrollments(id: String, body: PostProg
  *
  * Approves a pending application (`status: "applied"`). Publishes `partner.approved`. 404 when there is no pending application with that id. Audited.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdEnrollmentsEnrollmentIdApprove(id: String, enrollmentId: String, idempotencyKey: String? = null): PostProgramsIdEnrollmentsEnrollmentIdApproveResponse =
     PostProgramsIdEnrollmentsEnrollmentIdApproveResponse.fromJson(send("POST", "/v1/programs/${segment(id)}/enrollments/${segment(enrollmentId)}/approve", emptyList(), null, idempotencyKey, "json"))
@@ -4671,7 +5245,9 @@ suspend fun ReferalliClient.postProgramsIdEnrollmentsEnrollmentIdApprove(id: Str
  *
  * Rejects a pending application. 404 when there is no pending application with that id. Audited.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdEnrollmentsEnrollmentIdReject(id: String, enrollmentId: String, idempotencyKey: String? = null): PostProgramsIdEnrollmentsEnrollmentIdRejectResponse =
     PostProgramsIdEnrollmentsEnrollmentIdRejectResponse.fromJson(send("POST", "/v1/programs/${segment(id)}/enrollments/${segment(enrollmentId)}/reject", emptyList(), null, idempotencyKey, "json"))
@@ -4681,7 +5257,9 @@ suspend fun ReferalliClient.postProgramsIdEnrollmentsEnrollmentIdReject(id: Stri
  *
  * A group of partners in a program with its own commission base (or `null` to keep the program rule's), hold days, payout threshold, payout currency, onboarding message and checklist. Names are unique per program (409).
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdGroups(id: String, body: PostProgramsIdGroupsBody, idempotencyKey: String? = null): PartnerGroup =
     PartnerGroup.fromJson(send("POST", "/v1/programs/${segment(id)}/groups", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4691,7 +5269,9 @@ suspend fun ReferalliClient.postProgramsIdGroups(id: String, body: PostProgramsI
  *
  * A time-boxed commission change for the whole program or one group: `replace` the base rate, or `boost` it by `bps`, between `startsAt` and `endsAt`. Payments in that window get it.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdPromotions(id: String, body: PostProgramsIdPromotionsBody, idempotencyKey: String? = null): Promotion =
     Promotion.fromJson(send("POST", "/v1/programs/${segment(id)}/promotions", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4701,7 +5281,9 @@ suspend fun ReferalliClient.postProgramsIdPromotions(id: String, body: PostProgr
  *
  * One idempotent call for one of your users: finds the partner by `externalRef` (or by `email`, enrolling them under this program's own `externalRef` when they refer for another product in the org), else creates it, then enrolls them and creates a coupon code and a link to the program's default destination when missing. `email` is needed only to create the partner (400 without it). 409 `email_taken` when that email is already enrolled in this program under another id.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdReferrers(id: String, body: PostProgramsIdReferrersBody, idempotencyKey: String? = null): PostProgramsIdReferrersResponse =
     PostProgramsIdReferrersResponse.fromJson(send("POST", "/v1/programs/${segment(id)}/referrers", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4711,7 +5293,9 @@ suspend fun ReferalliClient.postProgramsIdReferrers(id: String, body: PostProgra
  *
  * Resets the attempt count of this program's `no_customer`, `ambiguous_customer` and `fx_rate_missing` rows (all of them, or only `creditIds`) so the hourly sweep gives them another 24 tries: call it after adding the billing link, making the customer match unique or recording the FX rate. Rows in other statuses are left alone. Returns the requeued ids. Owner or admin. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postProgramsIdStripeCreditsRequeue(id: String, body: PostProgramsIdStripeCreditsRequeueBody, idempotencyKey: String? = null): PostProgramsIdStripeCreditsRequeueResponse =
     PostProgramsIdStripeCreditsRequeueResponse.fromJson(send("POST", "/v1/programs/${segment(id)}/stripe-credits/requeue", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4721,7 +5305,9 @@ suspend fun ReferalliClient.postProgramsIdStripeCreditsRequeue(id: String, body:
  *
  * Ends a promotion now: payments from this moment on no longer get it.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postPromotionsIdEnd(id: String, idempotencyKey: String? = null): Promotion =
     Promotion.fromJson(send("POST", "/v1/promotions/${segment(id)}/end", emptyList(), null, idempotencyKey, "json"))
@@ -4741,7 +5327,9 @@ suspend fun ReferalliClient.postPublicProgramsHandleJoin(handle: String, body: P
  *
  * Snapshots every partner's quality score now; per the org's policy, low scores open a `quality` case or suspend the partner. Audited.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postQualityRecompute(idempotencyKey: String? = null): PostQualityRecomputeResponse =
     PostQualityRecomputeResponse.fromJson(send("POST", "/v1/quality/recompute", emptyList(), null, idempotencyKey, "json"))
@@ -4751,7 +5339,9 @@ suspend fun ReferalliClient.postQualityRecompute(idempotencyKey: String? = null)
  *
  * The key server-side call: tell Referalli a customer signed up, with whatever you know about where they came from (`referralToken`/`ref_click_id`, `anonId`, `couponCode`, `emailHash`, IP and user agent). The attribution engine picks the partner under the program's model and windows. `referral` is `null` when no partner matched (not an error); `reasoning.notes` says why. Repeating `idempotencyKey` returns the existing referral. `occurredAt` records a late call at the real sign-up time (up to 5 minutes of clock skew is tolerated) and backfills payments since. `emailDomain` lets burner-email sign-ups be held for review. Publishes `referral.created` (or `referral.held`).
  *
- * **Auth:** an API key with `referrals:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `referrals:write`, or a session of any role.
+ *
+ * **Scopes:** `referrals:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postReferralsAssociate(body: PostReferralsAssociateBody, idempotencyKey: String? = null): AssociateResponse =
     AssociateResponse.fromJson(send("POST", "/v1/referrals/associate", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4761,7 +5351,9 @@ suspend fun ReferalliClient.postReferralsAssociate(body: PostReferralsAssociateB
  *
  * Releases a referral held for review (`pending_review`) back to `active`. 404 when it isn't pending review. Publishes `referral.approved`. Audited.
  *
- * **Auth:** an API key with `referrals:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `referrals:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `referrals:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postReferralsIdApprove(id: String, idempotencyKey: String? = null): Referral =
     Referral.fromJson(send("POST", "/v1/referrals/${segment(id)}/approve", emptyList(), null, idempotencyKey, "json"))
@@ -4771,7 +5363,9 @@ suspend fun ReferalliClient.postReferralsIdApprove(id: String, idempotencyKey: S
  *
  * Moves the referral to another partner (recorded as a manual match). Publishes `referral.reassigned` with the previous partner. Audited.
  *
- * **Auth:** an API key with `referrals:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `referrals:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `referrals:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postReferralsIdReassign(id: String, body: PostReferralsIdReassignBody, idempotencyKey: String? = null): Referral =
     Referral.fromJson(send("POST", "/v1/referrals/${segment(id)}/reassign", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4781,7 +5375,9 @@ suspend fun ReferalliClient.postReferralsIdReassign(id: String, body: PostReferr
  *
  * Voids the referral so it earns nothing more. Publishes `referral.voided`. Audited.
  *
- * **Auth:** an API key with `referrals:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `referrals:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `referrals:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postReferralsIdVoid(id: String, idempotencyKey: String? = null): Referral =
     Referral.fromJson(send("POST", "/v1/referrals/${segment(id)}/void", emptyList(), null, idempotencyKey, "json"))
@@ -4791,7 +5387,9 @@ suspend fun ReferalliClient.postReferralsIdVoid(id: String, idempotencyKey: Stri
  *
  * Rewards a partner for something outside a sale (a community answer, an event): one `earned` commission line that is approved and paid like any other. Name the partner by `partnerId` or `partnerExternalRef`; the amount is `amountMinor` (+ `currency`) or comes from a rule (`ruleKey`, or the `event` a rule maps). Idempotent on `idempotencyKey`: a retry returns the first grant with 200; the same key with a different request is 409.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postRewards(body: PostRewardsBody, idempotencyKey: String? = null): PostRewardsResponse =
     PostRewardsResponse.fromJson(send("POST", "/v1/rewards", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4801,7 +5399,9 @@ suspend fun ReferalliClient.postRewards(body: PostRewardsBody, idempotencyKey: S
  *
  * Records a (possibly partial) redemption: `amountMinor` (default the remaining balance) is capped at what's left, and the reward becomes `redeemed` once it is used up. `externalId` makes it idempotent (409 if reused for another reward). Publishes `credit.redeemed`.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postRewardsIdRedeem(id: String, body: PostRewardsIdRedeemBody, idempotencyKey: String? = null): PostRewardsRedeemByCodeResponse =
     PostRewardsRedeemByCodeResponse.fromJson(send("POST", "/v1/rewards/${segment(id)}/redeem", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4811,7 +5411,9 @@ suspend fun ReferalliClient.postRewardsIdRedeem(id: String, body: PostRewardsIdR
  *
  * Records a redemption of the reward with this code; see `POST /v1/rewards/{id}/redeem`. 404 for an unknown code.
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postRewardsRedeemByCode(body: PostRewardsRedeemByCodeBody, idempotencyKey: String? = null): PostRewardsRedeemByCodeResponse =
     PostRewardsRedeemByCodeResponse.fromJson(send("POST", "/v1/rewards/redeem-by-code", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4821,7 +5423,9 @@ suspend fun ReferalliClient.postRewardsRedeemByCode(body: PostRewardsRedeemByCod
  *
  * Turns one live pattern match (by `customerRef` and/or `partnerId`, optionally `programId`) into a `value_pattern` fraud case against its partner, or returns the open case for the same match. Publishes `fraud.case_opened`. 404 when no such match exists. Audited.
  *
- * **Auth:** an API key with `analytics:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `analytics:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `analytics:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postRoiPatternsPatternReview(pattern: String, body: PostRoiPatternsPatternReviewBody, idempotencyKey: String? = null): FraudCase =
     FraudCase.fromJson(send("POST", "/v1/roi/patterns/${segment(pattern)}/review", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4831,7 +5435,9 @@ suspend fun ReferalliClient.postRoiPatternsPatternReview(pattern: String, body: 
  *
  * Generates deterministic billing history through the real commission pipeline, so you can see commissions flow without a provider: a new sandbox customer referred to the partner, `months` (default 3) of subscription payments at `priceMinor`, then for `scenario: "refund"` a half refund of the first invoice or for `churn` a cancellation. Returns the customer and what was created. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postSandboxSimulate(body: PostSandboxSimulateBody, idempotencyKey: String? = null): PostSandboxSimulateResponse =
     PostSandboxSimulateResponse.fromJson(send("POST", "/v1/sandbox/simulate", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4841,7 +5447,9 @@ suspend fun ReferalliClient.postSandboxSimulate(body: PostSandboxSimulateBody, i
  *
  * Test mode only (`409 test_mode_only` otherwise). Builds a realistic Stripe event (`invoice.paid`, `charge.refunded`, `charge.dispute.created`, `customer.created`, `customer.updated`, `customer.subscription.created`, `customer.subscription.updated` or `customer.subscription.deleted`) and runs it through the same pipeline as a signed webhook to the stripe billing connection `connectionId`, so you can watch commissions happen without a Stripe account. `overrides` sets `customerRef` (the Stripe customer id), `amountMinor`, `currency`, `metadata`, `invoiceId` and `chargeId`; refunds and disputes find their payment by `chargeId`, so reuse the `invoice.paid` one. Each call is a new event unless you pass `eventId`, which replays (the second answers `duplicate: true`). Returns the event id, the processing results, the commission events created and the payload sent. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postSandboxStripeFixtures(body: PostSandboxStripeFixturesBody, idempotencyKey: String? = null): PostSandboxStripeFixturesResponse =
     PostSandboxStripeFixturesResponse.fromJson(send("POST", "/v1/sandbox/stripe-fixtures", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4851,7 +5459,9 @@ suspend fun ReferalliClient.postSandboxStripeFixtures(body: PostSandboxStripeFix
  *
  * Renders what the tool would show for a contact, from your own session: the context and the tool-format card. Nothing is sent to the tool.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postSupportAppsAdapterTest(adapter: String, body: PostSupportAppsAdapterTestBody, idempotencyKey: String? = null): PostSupportAppsAdapterTestResponse =
     PostSupportAppsAdapterTestResponse.fromJson(send("POST", "/v1/support/apps/${segment(adapter)}/test", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4881,7 +5491,9 @@ suspend fun ReferalliClient.postSupportPlatformChatlyCard(body: Map<String, Json
  *
  * Files a corrected form for one document with the partner's current amount. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postTax1099DocumentsIdCorrect(id: String, idempotencyKey: String? = null): TaxFiling =
     TaxFiling.fromJson(send("POST", "/v1/tax/1099/documents/${segment(id)}/correct", emptyList(), null, idempotencyKey, "json"))
@@ -4891,7 +5503,9 @@ suspend fun ReferalliClient.postTax1099DocumentsIdCorrect(id: String, idempotenc
  *
  * E-files the year's 1099-NEC forms through the connected provider and records one document per partner. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postTax1099Filings(body: PostTax1099FilingsBody, idempotencyKey: String? = null): TaxFiling =
     TaxFiling.fromJson(send("POST", "/v1/tax/1099/filings", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4901,7 +5515,9 @@ suspend fun ReferalliClient.postTax1099Filings(body: PostTax1099FilingsBody, ide
  *
  * Asks the filing provider for the latest status of a filing and its documents; accepted forms are then delivered to partners (`tax.form_delivered`).
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postTax1099FilingsIdRefresh(id: String, idempotencyKey: String? = null): PostTax1099FilingsIdRefreshResponse =
     PostTax1099FilingsIdRefreshResponse.fromJson(send("POST", "/v1/tax/1099/filings/${segment(id)}/refresh", emptyList(), null, idempotencyKey, "json"))
@@ -4911,7 +5527,9 @@ suspend fun ReferalliClient.postTax1099FilingsIdRefresh(id: String, idempotencyK
  *
  * Test mode only. Moves the test org's clock forward by `seconds` (never back), then runs what came due: held commissions are approved, payout schedules fire and retention purges run. Returns the new time and what ran. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postTestClockAdvance(body: PostTestClockAdvanceBody, idempotencyKey: String? = null): PostTestClockAdvanceResponse =
     PostTestClockAdvanceResponse.fromJson(send("POST", "/v1/test_clock/advance", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4921,7 +5539,9 @@ suspend fun ReferalliClient.postTestClockAdvance(body: PostTestClockAdvanceBody,
  *
  * Records one event. `type: "event"` is a product event for a known customer (`event`, such as `trial_started`) that can pay a bounty under the program's commission rule; it returns whether it was recorded and the commission. `idempotencyKey` deduplicates. `type: "click"` records a server-side click for a partner; `type: "custom"` records an audited custom event. Publishable keys may send only custom events.
  *
- * **Auth:** an API key with `events:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `events:write`, or a session of any role.
+ *
+ * **Scopes:** `events:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postTrackEvents(body: JsonValue, idempotencyKey: String? = null): PostTrackEventsResponse =
     PostTrackEventsResponse.fromJson(send("POST", "/v1/track/events", emptyList(), body, idempotencyKey, "json"))
@@ -4941,7 +5561,9 @@ suspend fun ReferalliClient.postUnsubscribeToken(token: String, idempotencyKey: 
  *
  * Reports up to 500 value facts from your platform: `payment`, `refund`, `credit_granted`, `credit_redeemed`, `credit_expired`, `credit_revoked`, `cost` or `adjustment`. Each needs `kind`, `currency`, `externalId` (your stable id, which makes it idempotent) and `occurredAt`, plus the customer, partner (`partnerId` or `partnerExternalRef`), grant, program, product and amount fields (`cashMinor`, `creditAppliedMinor`, `discountMinor`, `taxMinor`, `feesMinor`, `costMinor`, `faceMinor`) that apply. Each event is validated and recorded on its own: `results` and `errors` are by index. A repeat of an `externalId` with new figures supersedes the earlier one.
  *
- * **Auth:** an API key with `analytics:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:write`, or a session of any role.
+ *
+ * **Scopes:** `analytics:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postValueEvents(body: PostValueEventsBody, idempotencyKey: String? = null): PostValueEventsResponse =
     PostValueEventsResponse.fromJson(send("POST", "/v1/value/events", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4951,7 +5573,9 @@ suspend fun ReferalliClient.postValueEvents(body: PostValueEventsBody, idempoten
  *
  * Imports value events from CSV text (up to 10,000 rows and 5 MB, else `413 payload_too_large`) with a `mapping` from column names to event fields (money as `<field>Minor` or `<field>Major`). `kind` applies to every row unless a column maps to it. Up to 500 rows are recorded before the response; a larger file answers `202` with a `jobId` to poll. `dryRun` returns the first 20 parsed rows and every row error without recording.
  *
- * **Auth:** an API key with `analytics:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `analytics:write`, or a session of any role.
+ *
+ * **Scopes:** `analytics:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postValueImport(body: PostValueImportBody, idempotencyKey: String? = null): PostValueImportResponse =
     send("POST", "/v1/value/import", emptyList(), body.toJson(), idempotencyKey, "json")
@@ -4961,7 +5585,9 @@ suspend fun ReferalliClient.postValueImport(body: PostValueImportBody, idempoten
  *
  * Queues the delivery again at once with its attempt count reset. It keeps its `webhook-id`, so receivers can deduplicate.
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postWebhookDeliveriesIdReplay(id: String, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("POST", "/v1/webhook-deliveries/${segment(id)}/replay", emptyList(), null, idempotencyKey, "json"))
@@ -4971,7 +5597,9 @@ suspend fun ReferalliClient.postWebhookDeliveriesIdReplay(id: String, idempotenc
  *
  * Subscribes an HTTPS URL to event topics (default `["*"]`, every event; see the `webhooks` section of this document for each topic's payload). `programIds` limits it to events about those programs (org-wide events such as payouts are then not sent). Deliveries are signed the Standard Webhooks way with the returned `secret` (`whsec_…`), shown only here. `legacySignature: true` also sends the deprecated body-only signature. `alertContacts` (up to 10 emails) are emailed, with the org owner, when the endpoint has failed for 1 hour and again at 24 hours; it is disabled after 72 hours of failures or 1,000 failed attempts in a row. `status: "paused"` creates it without delivering anything until you `PATCH` it to `active` (default `active`).
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postWebhookEndpoints(body: PostWebhookEndpointsBody, idempotencyKey: String? = null): PostWebhookEndpointsResponse =
     PostWebhookEndpointsResponse.fromJson(send("POST", "/v1/webhook-endpoints", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -4981,7 +5609,9 @@ suspend fun ReferalliClient.postWebhookEndpoints(body: PostWebhookEndpointsBody,
  *
  * Requeues the endpoint's failed deliveries created at or after `since` (ISO 8601), for after an outage. Each keeps its `webhook-id`, so receivers can dedupe. Audited.
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  *
  * since: Requeue failed deliveries created at or after this time.
  */
@@ -4993,7 +5623,9 @@ suspend fun ReferalliClient.postWebhookEndpointsIdReplay(id: String, since: Stri
  *
  * Issues a new signing secret, returned once. For 24 hours (`previousSecretExpiresAt`) every delivery carries a signature from each secret, so receivers can switch without dropping any. Audited.
  *
- * **Auth:** an API key with `webhooks:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `webhooks:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `webhooks:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postWebhookEndpointsIdRotateSecret(id: String, idempotencyKey: String? = null): PostWebhookEndpointsIdRotateSecretResponse =
     PostWebhookEndpointsIdRotateSecretResponse.fromJson(send("POST", "/v1/webhook-endpoints/${segment(id)}/rotate-secret", emptyList(), null, idempotencyKey, "json"))
@@ -5003,7 +5635,9 @@ suspend fun ReferalliClient.postWebhookEndpointsIdRotateSecret(id: String, idemp
  *
  * Your backend mints a short-lived token (60 to 3600 seconds, default 900) for a signed-in customer, identified by `customerRef` or `partnerExternalRef`, for the in-app referral widget. When the program has `settings.widget.autoEnroll`, a customer who isn't a partner yet is created on demand (send `email`). The token only reads that partner's own data.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `partners:write`, or a session of any role.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postWidgetTokens(body: PostWidgetTokensBody, idempotencyKey: String? = null): PostWidgetTokensResponse =
     PostWidgetTokensResponse.fromJson(send("POST", "/v1/widget/tokens", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5013,7 +5647,9 @@ suspend fun ReferalliClient.postWidgetTokens(body: PostWidgetTokensBody, idempot
  *
  * Zapier's "Record conversion" action: a payment (or refund) for a customer through a generic billing connection (the org's first active one unless `connectionId`), with no signature needed. Idempotent by `providerEventId`. 400 without a generic billing connection.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postZapierConversions(body: PostZapierConversionsBody, idempotencyKey: String? = null): PostZapierConversionsResponse =
     PostZapierConversionsResponse.fromJson(send("POST", "/v1/zapier/conversions", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5023,7 +5659,9 @@ suspend fun ReferalliClient.postZapierConversions(body: PostZapierConversionsBod
  *
  * REST hook subscribe, called by Zapier when a Zap turns on: events of `event` are posted to the HTTPS `target_url`.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.postZapierHooks(body: PostZapierHooksBody, idempotencyKey: String? = null): ZapierHook =
     ZapierHook.fromJson(send("POST", "/v1/zapier/hooks", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5033,7 +5671,9 @@ suspend fun ReferalliClient.postZapierHooks(body: PostZapierHooksBody, idempoten
  *
  * For webhook connectors whose vendor issues the signing secret (Clerk, Stytch, WorkOS) or key set (Kinde's JWKS document): replaces the connection's secret. The previous one keeps verifying for 24 hours. Signed-protocol connections rotate instead. Audited.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `connections:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putAuthConnectionsIdSecret(id: String, body: PutAuthConnectionsIdSecretBody, idempotencyKey: String? = null): PutAuthConnectionsIdSecretResponse =
     PutAuthConnectionsIdSecretResponse.fromJson(send("PUT", "/v1/auth/connections/${segment(id)}/secret", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5043,7 +5683,9 @@ suspend fun ReferalliClient.putAuthConnectionsIdSecret(id: String, body: PutAuth
  *
  * For providers that send thin webhooks (Recurly, BigCommerce), the API credentials used to fetch the full event: `apiKey`, or `apiToken` plus `storeHash`, and `region`. Stored encrypted. 400 for providers that take no credentials or when a required field is missing. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putBillingConnectionsIdCredentials(id: String, body: PutBillingConnectionsIdCredentialsBody, idempotencyKey: String? = null): PutBillingConnectionsIdCredentialsResponse =
     PutBillingConnectionsIdCredentialsResponse.fromJson(send("PUT", "/v1/billing/connections/${segment(id)}/credentials", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5051,9 +5693,11 @@ suspend fun ReferalliClient.putBillingConnectionsIdCredentials(id: String, body:
 /**
  * Set the webhook signing secret. PUT /v1/billing/connections/{id}/secret
  *
- * Replaces the connection's signing secret with the provider's own (at least 8 characters). The previous secret keeps verifying for 24 hours. Audited.
+ * Replaces the connection's signing secret with the provider's own (at least 8 characters). The previous secret keeps verifying for 24 hours. A connection reading `awaiting_secret` reads `active` from then on. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putBillingConnectionsIdSecret(id: String, body: PutBillingConnectionsIdSecretBody, idempotencyKey: String? = null): PutBillingConnectionsIdSecretResponse =
     PutBillingConnectionsIdSecretResponse.fromJson(send("PUT", "/v1/billing/connections/${segment(id)}/secret", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5063,7 +5707,9 @@ suspend fun ReferalliClient.putBillingConnectionsIdSecret(id: String, body: PutB
  *
  * Where cash, credit applied, discount, cost and product live in this connection's payloads, as dot paths (`[]` sums an array, for example `data.discounts[].amount`), and whether amounts are in minor or major units. Each save bumps the mapping version; a rebuild re-applies it to stored events. Audited.
  *
- * **Auth:** an API key with `billing:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `billing:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `billing:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putBillingConnectionsIdValueMapping(id: String, body: PutBillingConnectionsIdValueMappingBody, idempotencyKey: String? = null): PutBillingConnectionsIdValueMappingResponse =
     PutBillingConnectionsIdValueMappingResponse.fromJson(send("PUT", "/v1/billing/connections/${segment(id)}/value-mapping", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5073,7 +5719,9 @@ suspend fun ReferalliClient.putBillingConnectionsIdValueMapping(id: String, body
  *
  * Sets the logo URL, theme (only the documented `--r-*` tokens, with plain CSS values) and email sender. Omitted fields keep their value. `warnings` lists theme text/background pairs (`--r-accent-ink` on `--r-accent`, `--r-ink` on `--r-paper`) below the 4.5:1 WCAG AA contrast; the theme is saved anyway.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putBranding(body: PutBrandingBody, idempotencyKey: String? = null): PutBrandingResponse =
     PutBrandingResponse.fromJson(send("PUT", "/v1/branding", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5083,7 +5731,9 @@ suspend fun ReferalliClient.putBranding(body: PutBrandingBody, idempotencyKey: S
  *
  * Sets the email provider and its API key (write-only: omit to keep it, `null` to remove), the from address and name, reply-to, logo and primary color for partner emails. Without a provider, no email is sent.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putEmailSettings(body: PutEmailSettingsBody, idempotencyKey: String? = null): EmailSettings =
     EmailSettings.fromJson(send("PUT", "/v1/email/settings", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5093,7 +5743,9 @@ suspend fun ReferalliClient.putEmailSettings(body: PutEmailSettingsBody, idempot
  *
  * Replaces the subject, text and optional HTML of one event in one locale. 404 for an unknown event or locale.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putEmailTemplatesEventLocale(event: String, locale: String, body: PutEmailTemplatesEventLocaleBody, idempotencyKey: String? = null): PutEmailTemplatesEventLocaleResponse =
     PutEmailTemplatesEventLocaleResponse.fromJson(send("PUT", "/v1/email/templates/${segment(event)}/${segment(locale)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5103,7 +5755,9 @@ suspend fun ReferalliClient.putEmailTemplatesEventLocale(event: String, locale: 
  *
  * Connects HubSpot with your private-app `token` (required the first time; omit to keep it) to sync partners as contacts and referrals as deals in `pipeline`, moving them to `paidDealStage` when they pay. `status: "paused"` stops syncing.
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putIntegrationsHubspot(body: PutIntegrationsHubspotBody, idempotencyKey: String? = null): IntegrationConnection =
     IntegrationConnection.fromJson(send("PUT", "/v1/integrations/hubspot", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5113,7 +5767,9 @@ suspend fun ReferalliClient.putIntegrationsHubspot(body: PutIntegrationsHubspotB
  *
  * Connects a Segment source with its `writeKey` (required the first time) and sends referral, commission, payout and partner events as track calls; `events` limits which topics (`null` for all).
  *
- * **Auth:** an API key with `integrations:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `integrations:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `integrations:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putIntegrationsSegment(body: PutIntegrationsSegmentBody, idempotencyKey: String? = null): IntegrationConnection =
     IntegrationConnection.fromJson(send("PUT", "/v1/integrations/segment", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5123,7 +5779,9 @@ suspend fun ReferalliClient.putIntegrationsSegment(body: PutIntegrationsSegmentB
  *
  * Creates or updates the marketplace listing of a program: visibility (`public` or `unlisted`), category, headline, description and sponsored placement. Audited.
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putMarketplaceListing(body: PutMarketplaceListingBody, idempotencyKey: String? = null): Ok =
     Ok.fromJson(send("PUT", "/v1/marketplace/listing", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5133,7 +5791,9 @@ suspend fun ReferalliClient.putMarketplaceListing(body: PutMarketplaceListingBod
  *
  * The signed-in user's preferred locale for emails. User session only.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:write`, or a session of any role.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putMeLocale(body: PutMeLocaleBody, idempotencyKey: String? = null): PutMeLocaleResponse =
     PutMeLocaleResponse.fromJson(send("PUT", "/v1/me/locale", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5143,7 +5803,9 @@ suspend fun ReferalliClient.putMeLocale(body: PutMeLocaleBody, idempotencyKey: S
  *
  * Whether the signed-in member receives this org's periodic credit ROI digest email. User session only.
  *
- * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
+ * **Auth:** an API key with `team:write`, or a session of any role.
+ *
+ * **Scopes:** `team:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putMeRoiDigest(body: PutMeRoiDigestBody, idempotencyKey: String? = null): PutMeRoiDigestResponse =
     PutMeRoiDigestResponse.fromJson(send("PUT", "/v1/me/roi-digest", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5153,7 +5815,9 @@ suspend fun ReferalliClient.putMeRoiDigest(body: PutMeRoiDigestBody, idempotency
  *
  * Opts the org in or out of the cross-merchant attribution network: contributing its referral touchpoints (as hashed customer identities and partner accounts, never merchant identity or PII) and, in return, reading the network journey.
  *
- * **Auth:** an API key with `growth:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `growth:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `growth:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putNetworkSettings(body: PutNetworkSettingsBody, idempotencyKey: String? = null): PutNetworkSettingsResponse =
     PutNetworkSettingsResponse.fromJson(send("PUT", "/v1/network/settings", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5163,7 +5827,9 @@ suspend fun ReferalliClient.putNetworkSettings(body: PutNetworkSettingsBody, ide
  *
  * Replaces the list of Cookie Munch sites (cbids) whose signed consent events this org keeps. An event for any other site is acknowledged and dropped, since the org a delivery names is chosen by whoever made the link. Owner or admin. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgConsentPartnersCookiemunch(body: PutOrgConsentPartnersCookiemunchBody, idempotencyKey: String? = null): GetOrgConsentPartnersCookiemunchResponse =
     GetOrgConsentPartnersCookiemunchResponse.fromJson(send("PUT", "/v1/org/consent-partners/cookiemunch", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5173,7 +5839,9 @@ suspend fun ReferalliClient.putOrgConsentPartnersCookiemunch(body: PutOrgConsent
  *
  * Turns the daily ECB reference-rate feed on or off. Turning it on syncs once at once and returns how many rates were inserted. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgFxFeed(body: PutOrgFxFeedBody, idempotencyKey: String? = null): PutOrgFxFeedResponse =
     PutOrgFxFeedResponse.fromJson(send("PUT", "/v1/org/fx-feed", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5183,7 +5851,9 @@ suspend fun ReferalliClient.putOrgFxFeed(body: PutOrgFxFeedBody, idempotencyKey:
  *
  * Validates and saves the adapters. A CMP's `scriptUrl` must be https on that vendor's own hosts; `custom` needs every origin listed; every chat vendor also takes `origins` for hosts its account needs beyond the documented list. `chat.identitySecret` (write-only, sealed) is your chat vendor's identity-verification secret, used to sign partners in to your chat: a string sets it, `null` removes it, absent keeps it, and switching vendors drops it. `customOrigins` adds origins per CSP directive (https or wss, no wildcards, no keywords). Owner or admin. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgHostedPages(body: PutOrgHostedPagesBody, idempotencyKey: String? = null): GetOrgHostedPagesResponse =
     GetOrgHostedPagesResponse.fromJson(send("PUT", "/v1/org/hosted-pages", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5193,7 +5863,9 @@ suspend fun ReferalliClient.putOrgHostedPages(body: PutOrgHostedPagesBody, idemp
  *
  * When payouts run automatically for every program without its own schedule: a `schedule` (`monthly`, `weekly`, `twice_monthly` or `custom` dates), the older `dayOfMonth` form, or `null` to turn automatic payouts off. Send exactly one of `schedule` and `dayOfMonth`. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgPayoutSchedule(body: PutOrgPayoutScheduleBody, idempotencyKey: String? = null): PutOrgPayoutScheduleResponse =
     PutOrgPayoutScheduleResponse.fromJson(send("PUT", "/v1/org/payout-schedule", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5203,7 +5875,9 @@ suspend fun ReferalliClient.putOrgPayoutSchedule(body: PutOrgPayoutScheduleBody,
  *
  * Chooses the portal sign-in adapter and its settings. `custom`: `issuer` and `jwksUrl` (https), or `preset` + `tenant` for a known platform (`jwtPresets` in the GET lists them: Clerk, Supabase, Firebase, Auth0, Cognito, Stytch, Kinde, Okta, Entra ID, Google, Keycloak, Descope, FusionAuth), or `keyType: hs256` with a write-only `sharedSecret` (≥ 32 characters, sealed); optional `audience` (default `referalli:<org>`), `maxAgeS` (30 to 3600, default 300), `claims` (where `sub`, `email`, `name`, `emailVerified` live, by name or dot path), `loginUrl` (your page that mints the token) and `autoEnrollProgramId`. `oidc`: `issuer`, `clientId`, `clientSecret`. `referalli` removes any configuration. Owner only.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgPortalAuth(body: JsonValue, idempotencyKey: String? = null): PutOrgPortalAuthResponse =
     PutOrgPortalAuthResponse.fromJson(send("PUT", "/v1/org/portal-auth", emptyList(), body, idempotencyKey, "json"))
@@ -5213,7 +5887,9 @@ suspend fun ReferalliClient.putOrgPortalAuth(body: JsonValue, idempotencyKey: St
  *
  * Replaces the extra query parameters aff.js reads a referral code from (up to 10; lowercase letters, digits and `_`). Built-in names are dropped. Imports add the previous tool's parameter here so already-shared links keep crediting. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgReferralParams(body: PutOrgReferralParamsBody, idempotencyKey: String? = null): GetOrgReferralParamsResponse =
     GetOrgReferralParamsResponse.fromJson(send("PUT", "/v1/org/referral-params", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5223,7 +5899,9 @@ suspend fun ReferalliClient.putOrgReferralParams(body: PutOrgReferralParamsBody,
  *
  * Changes retention days for one or more kinds of raw data (others keep their value). Values below a kind's minimum are rejected. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgRetention(body: PutOrgRetentionBody, idempotencyKey: String? = null): Retention =
     Retention.fromJson(send("PUT", "/v1/org/retention", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5233,7 +5911,9 @@ suspend fun ReferalliClient.putOrgRetention(body: PutOrgRetentionBody, idempoten
  *
  * Team SSO with the org's own IdP, no broker: `adapter` `oidc` (issuer, client id and secret, the claim that holds roles) or `workos` (client id, organization id, the org's own API key). `roleMapping` maps IdP groups or roles to `admin`, `finance`, `analyst` or `support` (never owner); `defaultRole` covers everyone else, or null to keep them out; `domains` are the email domains "require SSO" applies to. The secret is encrypted and never returned; leave it out to keep the stored one. 409 while the org uses the Atlas broker. Owner only.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgSsoDirect(body: JsonValue, idempotencyKey: String? = null): PutOrgSsoDirectResponse =
     PutOrgSsoDirectResponse.fromJson(send("PUT", "/v1/org/sso/direct", emptyList(), body, idempotencyKey, "json"))
@@ -5243,7 +5923,9 @@ suspend fun ReferalliClient.putOrgSsoDirect(body: JsonValue, idempotencyKey: Str
  *
  * Chooses who e-files 1099-NEC forms: `test` (simulated) or `tax1099` with your own API key (stored encrypted). Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgTaxFiling(body: PutOrgTaxFilingBody, idempotencyKey: String? = null): PutOrgTaxFilingResponse =
     PutOrgTaxFilingResponse.fromJson(send("PUT", "/v1/org/tax-filing", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5253,7 +5935,9 @@ suspend fun ReferalliClient.putOrgTaxFiling(body: PutOrgTaxFilingBody, idempoten
  *
  * Sets any of the tax profile fields; `null` clears one. A VAT id must be a valid EU VAT number; an EIN looks like `12-3456789`. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgTaxProfile(body: PutOrgTaxProfileBody, idempotencyKey: String? = null): TaxProfile =
     TaxProfile.fromJson(send("PUT", "/v1/org/tax-profile", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5263,7 +5947,9 @@ suspend fun ReferalliClient.putOrgTaxProfile(body: PutOrgTaxProfileBody, idempot
  *
  * Sets the consent default served inside `/t/{token}/aff.js` (cached up to 5 minutes). Owner or admin. Audited.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putOrgTrackingConsent(body: PutOrgTrackingConsentBody, idempotencyKey: String? = null): GetOrgTrackingConsentResponse =
     GetOrgTrackingConsentResponse.fromJson(send("PUT", "/v1/org/tracking-consent", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5323,7 +6009,9 @@ suspend fun ReferalliClient.putPartnerProfile(body: PutPartnerProfileBody, idemp
  *
  * How the partner is paid: `method` (`paypal`, `wise`, `stripe_connect`, `ach`, `crypto`, `payoneer`, `tremendous` or `csv`), method `details` (a free-form map such as `{ "paypalEmail": … }`), the currency to pay in and the minimum balance before a payout. Partners can also set this themselves in the portal.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putPartnersIdPayoutProfile(id: String, body: PutPartnersIdPayoutProfileBody, idempotencyKey: String? = null): PutPartnersIdPayoutProfileResponse =
     PutPartnersIdPayoutProfileResponse.fromJson(send("PUT", "/v1/partners/${segment(id)}/payout-profile", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5333,7 +6021,9 @@ suspend fun ReferalliClient.putPartnersIdPayoutProfile(id: String, body: PutPart
  *
  * Sets (or clears with `null`) the partner's EU VAT number on their payout profile. With `viesCheck` on, VIES must list it as registered. 404 until the partner has payout details. Audited.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putPartnersIdVat(id: String, body: PutPartnersIdVatBody, idempotencyKey: String? = null): PutPartnersIdVatResponse =
     PutPartnersIdVatResponse.fromJson(send("PUT", "/v1/partners/${segment(id)}/vat", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5343,7 +6033,9 @@ suspend fun ReferalliClient.putPartnersIdVat(id: String, body: PutPartnersIdVatB
  *
  * Connects (or replaces) your own account with a payout provider, so payouts move money from your account: `paypal` (`clientId`, `secret`), `stripe` (`secretKey`), `circle` (`apiKey`, `walletId`), `wise` (`apiToken`, `profileId`), `payoneer` (`clientId`, `secret`, `programId`) or `tremendous` (`apiKey`, `fundingSourceId`), each with `env`. Stored encrypted and never echoed. Live mode only (`409 test_mode_unsupported` in test mode). Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putPayoutConnectionsProvider(provider: String, body: JsonValue, idempotencyKey: String? = null): PutPayoutConnectionsProviderResponse =
     PutPayoutConnectionsProviderResponse.fromJson(send("PUT", "/v1/payout-connections/${segment(provider)}", emptyList(), body, idempotencyKey, "json"))
@@ -5353,7 +6045,9 @@ suspend fun ReferalliClient.putPayoutConnectionsProvider(provider: String, body:
  *
  * Replaces the whole draft: keys you leave out are gone. Unknown keys are refused with 422 naming each one by its full path. Owner or admin.
  *
- * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `org:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `org:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putPortalThemeDraft(body: Map<String, JsonValue>, idempotencyKey: String? = null): GetPortalThemeResponse =
     GetPortalThemeResponse.fromJson(send("PUT", "/v1/portal/theme/draft", emptyList(), JsonValue.Obj(body.mapValues { it.value }), idempotencyKey, "json"))
@@ -5363,7 +6057,9 @@ suspend fun ReferalliClient.putPortalThemeDraft(body: Map<String, JsonValue>, id
  *
  * Sets a product's margin (`marginBps`) or unit cost (`unitCostMinor`, in `currency`, default the reporting currency); exactly one of the two. Audited.
  *
- * **Auth:** an API key with `analytics:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `analytics:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `analytics:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProfitabilityProductsProductRef(productRef: String, body: PutProfitabilityProductsProductRefBody, idempotencyKey: String? = null): GetProfitabilityProductsProductRefResponse =
     GetProfitabilityProductsProductRefResponse.fromJson(send("PUT", "/v1/profitability/products/${segment(productRef)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5373,7 +6069,9 @@ suspend fun ReferalliClient.putProfitabilityProductsProductRef(productRef: Strin
  *
  * Changes the org's economics settings, or with `programId` that program's overrides (a program can't override org-only fields such as the reporting currency). Returns the resolved settings. Re-run `POST /v1/profitability/rebuild` to apply changes to past figures. Audited.
  *
- * **Auth:** an API key with `analytics:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `analytics:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `analytics:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProfitabilitySettings(body: PutProfitabilitySettingsBody, idempotencyKey: String? = null): GetProfitabilitySettingsResponse =
     GetProfitabilitySettingsResponse.fromJson(send("PUT", "/v1/profitability/settings", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5383,7 +6081,9 @@ suspend fun ReferalliClient.putProfitabilitySettings(body: PutProfitabilitySetti
  *
  * Self-pricing commissions: a target (`targetRoas`, or with `objective: "roi"` a `targetRoi`) and the `minBps`/`maxBps` band partner rates may move within. `enabled: false` turns it off.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProgramsIdAutopricing(id: String, body: PutProgramsIdAutopricingBody, idempotencyKey: String? = null): PutProgramsIdAutopricingResponse =
     PutProgramsIdAutopricingResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/autopricing", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5393,7 +6093,9 @@ suspend fun ReferalliClient.putProgramsIdAutopricing(id: String, body: PutProgra
  *
  * Holds out a random control share of referrals (`holdoutBps`, up to 5000 = 50%) from being commissioned, so comparing control and treatment conversion measures the true lift partners cause. 0 turns it off.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProgramsIdIncrementality(id: String, body: PutProgramsIdIncrementalityBody, idempotencyKey: String? = null): PutProgramsIdIncrementalityResponse =
     PutProgramsIdIncrementalityResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/incrementality", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5403,7 +6105,9 @@ suspend fun ReferalliClient.putProgramsIdIncrementality(id: String, body: PutPro
  *
  * What an agent may negotiate to in this program: rates between `minBps` and `maxBps`, accepted automatically up to `autoAcceptMaxBps`. Requires `minBps <= autoAcceptMaxBps <= maxBps`. `enabled: false` closes the program to negotiation.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProgramsIdNegotiationPolicy(id: String, body: PutProgramsIdNegotiationPolicyBody, idempotencyKey: String? = null): PutProgramsIdNegotiationPolicyResponse =
     PutProgramsIdNegotiationPolicyResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/negotiation-policy", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5413,7 +6117,9 @@ suspend fun ReferalliClient.putProgramsIdNegotiationPolicy(id: String, body: Put
  *
  * Puts an enrolled partner in one of the program's groups, or none (`groupId: null`). A partner is in at most one group per program.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProgramsIdPartnersPartnerIdGroup(id: String, partnerId: String, body: PutProgramsIdPartnersPartnerIdGroupBody, idempotencyKey: String? = null): PutProgramsIdPartnersPartnerIdGroupResponse =
     PutProgramsIdPartnersPartnerIdGroupResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/partners/${segment(partnerId)}/group", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5423,7 +6129,9 @@ suspend fun ReferalliClient.putProgramsIdPartnersPartnerIdGroup(id: String, part
  *
  * Overrides the org payout schedule for this program: a schedule, `{ "kind": "off" }` to never pay it automatically, or `null` to follow the org schedule again. Returns the next run date. Audited.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`, `finance`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`, `finance`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProgramsIdPayoutSchedule(id: String, body: PutProgramsIdPayoutScheduleBody, idempotencyKey: String? = null): PutProgramsIdPayoutScheduleResponse =
     PutProgramsIdPayoutScheduleResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/payout-schedule", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5433,7 +6141,9 @@ suspend fun ReferalliClient.putProgramsIdPayoutSchedule(id: String, body: PutPro
  *
  * What a referred customer gets: `store_credit`, a `coupon` or a `gift_card`, either a flat `amountMinor` or a percent (`bps`, optionally capped with `capMinor`) of their first payment, issued on their first commission or first payment. A percent reward needs `on: "first_payment"`. `enabled: false` removes it. Each reward issued publishes `referee_reward.earned`.
  *
- * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `programs:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `programs:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProgramsIdRefereeReward(id: String, body: PutProgramsIdRefereeRewardBody, idempotencyKey: String? = null): PutProgramsIdRefereeRewardResponse =
     PutProgramsIdRefereeRewardResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/referee-reward", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5441,9 +6151,11 @@ suspend fun ReferalliClient.putProgramsIdRefereeReward(id: String, body: PutProg
 /**
  * Set a program's Stripe balance credit settings. PUT /v1/programs/{id}/stripe-credits
  *
- * Turns the rail on or off for a program. Each `commission.settled` line with method `merchant_credit` is credited to the referrer's Stripe customer balance; a later `commission.reversed` debits it back. `referrerMatch`: `billing_link` (the partner's externalRef is a `cus_…` id or is billing-linked to one), `metadata` (Stripe customer search on `metadata[metadataKey]` = the partner's externalRef) or `email` (the one Stripe customer with the partner's email). `refereeRewards: true` also credits `store_credit` referee rewards to the referred customer. Custom units (`x_…`) are never credited. `balanceCurrency` (ISO code, stored lowercase) forces the currency every credit is sent in; without it a credit goes in the Stripe customer's balance currency, or the commission's when the customer has none yet. When that differs from the commission's currency the amount is converted at your FX rate (`POST /v1/fx-rates`, half-even rounding); with no rate the credit waits as `fx_rate_missing`. `createCustomerIfMissing: { metadata }` creates a Stripe customer for a referrer none matches (the partner's email, `metadata[metadataKey]` = the partner's externalRef, plus your metadata) and credits it; referee credits never create customers. Metadata and email matching need exactly one Stripe customer: several is `ambiguous_customer`, never a guess. `balanceCurrency` and `createCustomerIfMissing` are replaced on every PUT (omitted = off). Enabling needs a key (`409 stripe_key_required`). `secretKey` gives the program its own Stripe key, used instead of the org's for all of its credits and debits (a separate Stripe account per product, say); `null` removes it, omitting it keeps it. The key is checked with Stripe before it is saved: `422 stripe_key_invalid` (Stripe rejects it), `422 stripe_key_wrong_mode` (a test key in live mode or a live key in test mode) or `422 stripe_key_permission` (no Customers write), `502 stripe_unavailable` if Stripe cannot be reached. Owner or admin; setting or removing a key needs a recent sign-in. Audited (never the key).
+ * Turns the rail on or off for a program. Each `commission.settled` line with method `merchant_credit` is credited to the referrer's Stripe customer balance; a later `commission.reversed` debits it back. `referrerMatch`: `billing_link` (the partner's externalRef is a `cus_…` id or is billing-linked to one; with several linked customers, the one with the most recent activity on a still-active subscription, then the most recently linked, `ambiguous_customer` only on a tie), `metadata` (Stripe customer search on `metadata[metadataKey]` = the partner's externalRef) or `email` (the one Stripe customer with the partner's email). `refereeRewards: true` also credits `store_credit` referee rewards to the referred customer. Custom units (`x_…`) are never credited. `balanceCurrency` (ISO code, stored lowercase) forces the currency every credit is sent in; without it a credit goes in the Stripe customer's balance currency, or the commission's when the customer has none yet. When that differs from the commission's currency the amount is converted at your FX rate (`POST /v1/fx-rates`, half-even rounding); with no rate the credit waits as `fx_rate_missing`. `createCustomerIfMissing: { metadata }` creates a Stripe customer for a referrer none matches (the partner's email, `metadata[metadataKey]` = the partner's externalRef, plus your metadata) and credits it; referee credits never create customers. `waitForCustomer: true` keeps a credit no customer matches `pending` with no attempt cap (instead of `no_customer`) and retries it as soon as a billing webhook links a `cus_…` to that externalRef. Metadata and email matching need exactly one Stripe customer: several is `ambiguous_customer`, never a guess. `balanceCurrency`, `createCustomerIfMissing` and `waitForCustomer` are replaced on every PUT (omitted = off). Enabling needs a key (`409 stripe_key_required`). `secretKey` gives the program its own Stripe key, used instead of the org's for all of its credits and debits (a separate Stripe account per product, say); `null` removes it, omitting it keeps it. The key is checked with Stripe before it is saved: `422 stripe_key_invalid` (Stripe rejects it), `422 stripe_key_wrong_mode` (a test key in live mode or a live key in test mode) or `422 stripe_key_permission` (no Customers write), `502 stripe_unavailable` if Stripe cannot be reached. Owner or admin; setting or removing a key needs a recent sign-in. Audited (never the key).
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putProgramsIdStripeCredits(id: String, body: PutProgramsIdStripeCreditsBody, idempotencyKey: String? = null): GetProgramsIdStripeCreditsResponse =
     GetProgramsIdStripeCreditsResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/stripe-credits", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5453,7 +6165,9 @@ suspend fun ReferalliClient.putProgramsIdStripeCredits(id: String, body: PutProg
  *
  * Creates or replaces a rule: the amount, the reason, an optional program and an optional `event` it rewards (one rule per event).
  *
- * **Auth:** an API key with `commissions:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `commissions:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `commissions:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putRewardsRulesKey(key: String, body: PutRewardsRulesKeyBody, idempotencyKey: String? = null): PutRewardsRulesKeyResponse =
     PutRewardsRulesKeyResponse.fromJson(send("PUT", "/v1/rewards/rules/${segment(key)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5463,7 +6177,9 @@ suspend fun ReferalliClient.putRewardsRulesKey(key: String, body: PutRewardsRule
  *
  * Stores your own Stripe restricted key (`rk_…`, with Customers write) for the balance credit rail, encrypted and never echoed. Without one the rail uses the secret key of your Stripe payout connection, if any. A program can override it with its own key (`PUT /v1/programs/{id}/stripe-credits`). The key is checked with Stripe before it is saved: `422 stripe_key_invalid` (Stripe rejects it), `422 stripe_key_wrong_mode` (a test key in live mode or a live key in test mode) or `422 stripe_key_permission` (no Customers write), `502 stripe_unavailable` if Stripe cannot be reached. Owner or admin, recent sign-in. Audited.
  *
- * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `payouts:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `payouts:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putStripeCreditsConnection(body: PutStripeCreditsConnectionBody, idempotencyKey: String? = null): GetStripeCreditsConnectionResponse =
     GetStripeCreditsConnectionResponse.fromJson(send("PUT", "/v1/stripe-credits/connection", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5473,7 +6189,9 @@ suspend fun ReferalliClient.putStripeCreditsConnection(body: PutStripeCreditsCon
  *
  * Enable a support tool and store its signing secret (vendor-issued; write-only) or, for Zendesk, the app public key in `config.publicKeyPem`. For `custom` Referalli mints the secret: it is returned once, and `rotate: true` mints a new one.
  *
- * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ * **Auth:** an API key with `partners:write`, or a session with role `owner`, `admin`.
+ *
+ * **Scopes:** `partners:write`, `full`, `admin`.
  */
 suspend fun ReferalliClient.putSupportAppsAdapter(adapter: String, body: PutSupportAppsAdapterBody, idempotencyKey: String? = null): PutSupportAppsAdapterResponse =
     PutSupportAppsAdapterResponse.fromJson(send("PUT", "/v1/support/apps/${segment(adapter)}", emptyList(), body.toJson(), idempotencyKey, "json"))
@@ -5701,6 +6419,7 @@ private suspend fun ReferalliClient.call4(operationId: String, path: Map<String,
         "getProgramsIdRefereeReward" -> getProgramsIdRefereeReward(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProgramsIdStripeCredits" -> getProgramsIdStripeCredits(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProgramsIdStripeCreditsLog" -> getProgramsIdStripeCreditsLog(id = path.getValue("id"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
+        "getProgramsIdTerms" -> getProgramsIdTerms(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProgramsIdTermsAcceptances" -> getProgramsIdTermsAcceptances(id = path.getValue("id"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getProspects" -> getProspects(status = query["status"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPublicProgramsHandle" -> getPublicProgramsHandle(handle = path.getValue("handle"), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5715,12 +6434,12 @@ private suspend fun ReferalliClient.call4(operationId: String, path: Map<String,
         "getRewardsRules" -> getRewardsRules(idempotencyKey = idempotencyKey).let { JsonValue.Arr(it.map { it.toJson() }) }
         "getRoiBreakdown" -> getRoiBreakdown(from = query["from"]?.queryString(), to = query["to"]?.queryString(), programId = query["programId"]?.queryString(), partnerId = query["partnerId"]?.queryString(), windowDays = query["windowDays"]?.queryLong(), currency = query["currency"]?.queryString(), format = query["format"]?.queryString(), by = query["by"]?.queryString()!!, limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getRoiDataQuality" -> getRoiDataQuality(from = query["from"]?.queryString(), to = query["to"]?.queryString(), format = query["format"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
-        "getRoiGrants" -> getRoiGrants(from = query["from"]?.queryString(), to = query["to"]?.queryString(), programId = query["programId"]?.queryString(), partnerId = query["partnerId"]?.queryString(), windowDays = query["windowDays"]?.queryLong(), currency = query["currency"]?.queryString(), format = query["format"]?.queryString(), status = query["status"]?.queryString(), role = query["role"]?.queryString(), paidBack = query["paidBack"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         else -> null
     }
 
 private suspend fun ReferalliClient.call5(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "getRoiGrants" -> getRoiGrants(from = query["from"]?.queryString(), to = query["to"]?.queryString(), programId = query["programId"]?.queryString(), partnerId = query["partnerId"]?.queryString(), windowDays = query["windowDays"]?.queryLong(), currency = query["currency"]?.queryString(), format = query["format"]?.queryString(), status = query["status"]?.queryString(), role = query["role"]?.queryString(), paidBack = query["paidBack"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getRoiPartnersIdTrace" -> getRoiPartnersIdTrace(id = path.getValue("id"), windowDays = query["windowDays"]?.queryLong(), format = query["format"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getRoiPatterns" -> getRoiPatterns(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getRoiPatternsPattern" -> getRoiPatternsPattern(pattern = path.getValue("pattern"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
@@ -5760,12 +6479,12 @@ private suspend fun ReferalliClient.call5(operationId: String, path: Map<String,
         "patchOrgMembersUserId" -> patchOrgMembersUserId(userId = path.getValue("userId"), body = PatchOrgMembersUserIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchOrgSso" -> patchOrgSso(body = PatchOrgSsoBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchPartnerGroupsId" -> patchPartnerGroupsId(id = path.getValue("id"), body = PatchPartnerGroupsIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
-        "patchPartnersId" -> patchPartnersId(id = path.getValue("id"), body = PatchPartnersIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }
 
 private suspend fun ReferalliClient.call6(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "patchPartnersId" -> patchPartnersId(id = path.getValue("id"), body = PatchPartnersIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchPartnersIdPayoutProfile" -> patchPartnersIdPayoutProfile(id = path.getValue("id"), body = PatchPartnersIdPayoutProfileBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchPortalThemeDraft" -> patchPortalThemeDraft(body = (body ?: JsonValue.Obj(emptyMap())).obj().mapValues { it.value }, idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchProgramsId" -> patchProgramsId(id = path.getValue("id"), body = PatchProgramsIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5805,12 +6524,12 @@ private suspend fun ReferalliClient.call6(operationId: String, path: Map<String,
         "postBillingConnectionsIdValueMappingPreview" -> postBillingConnectionsIdValueMappingPreview(id = path.getValue("id"), body = PostBillingConnectionsIdValueMappingPreviewBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postBillingInternalCustomers" -> postBillingInternalCustomers(body = PostBillingInternalCustomersBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postBillingPortal" -> postBillingPortal(idempotencyKey = idempotencyKey).let { it.toJson() }
-        "postBrandingDomain" -> postBrandingDomain(body = PostBrandingDomainBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }
 
 private suspend fun ReferalliClient.call7(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "postBrandingDomain" -> postBrandingDomain(body = PostBrandingDomainBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postBrandingDomainVerify" -> postBrandingDomainVerify(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postBrandingLinkDomain" -> postBrandingLinkDomain(body = PostBrandingLinkDomainBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postBrandingLinkDomainVerify" -> postBrandingLinkDomainVerify(idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5850,12 +6569,12 @@ private suspend fun ReferalliClient.call7(operationId: String, path: Map<String,
         "postIntegrationsHubspotTest" -> postIntegrationsHubspotTest(body = PostIntegrationsHubspotTestBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postIntegrationsSegmentTest" -> postIntegrationsSegmentTest(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postInvitationsIdWithdraw" -> postInvitationsIdWithdraw(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
-        "postLinks" -> postLinks(body = PostLinksBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }
 
 private suspend fun ReferalliClient.call8(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "postLinks" -> postLinks(body = PostLinksBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postMobilePurchases" -> postMobilePurchases(body = PostMobilePurchasesBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postNotificationsIdRead" -> postNotificationsIdRead(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOauthToken" -> postOauthToken(body = (body ?: JsonValue.Obj(emptyMap())), idempotencyKey = idempotencyKey).let { it }
@@ -5895,12 +6614,12 @@ private suspend fun ReferalliClient.call8(operationId: String, path: Map<String,
         "postPartnerSecurityTotpSetup" -> postPartnerSecurityTotpSetup(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnersIdPortalLink" -> postPartnersIdPortalLink(id = path.getValue("id"), body = PostPartnersIdPortalLinkBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnersIdTaxForm" -> postPartnersIdTaxForm(id = path.getValue("id"), body = PostPartnersIdTaxFormBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
-        "postPartnerTermsVersionIdAccept" -> postPartnerTermsVersionIdAccept(versionId = path.getValue("versionId"), idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }
 
 private suspend fun ReferalliClient.call9(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "postPartnerTermsVersionIdAccept" -> postPartnerTermsVersionIdAccept(versionId = path.getValue("versionId"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPassportVerify" -> postPassportVerify(body = PostPassportVerifyBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPayoutRuns" -> postPayoutRuns(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPayoutRunsIdCancel" -> postPayoutRunsIdCancel(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5940,12 +6659,12 @@ private suspend fun ReferalliClient.call9(operationId: String, path: Map<String,
         "postRoiPatternsPatternReview" -> postRoiPatternsPatternReview(pattern = path.getValue("pattern"), body = PostRoiPatternsPatternReviewBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postSandboxSimulate" -> postSandboxSimulate(body = PostSandboxSimulateBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postSandboxStripeFixtures" -> postSandboxStripeFixtures(body = PostSandboxStripeFixturesBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
-        "postSupportAppsAdapterTest" -> postSupportAppsAdapterTest(adapter = path.getValue("adapter"), body = PostSupportAppsAdapterTestBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }
 
 private suspend fun ReferalliClient.call10(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "postSupportAppsAdapterTest" -> postSupportAppsAdapterTest(adapter = path.getValue("adapter"), body = PostSupportAppsAdapterTestBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postSupportCardsOrgIdAdapter" -> postSupportCardsOrgIdAdapter(orgId = path.getValue("orgId"), adapter = path.getValue("adapter"), body = (body ?: JsonValue.Obj(emptyMap())).obj().mapValues { it.value }, idempotencyKey = idempotencyKey).let { JsonValue.Obj(it.mapValues { it.value }) }
         "postSupportPlatformChatlyCard" -> postSupportPlatformChatlyCard(body = (body ?: JsonValue.Obj(emptyMap())).obj().mapValues { it.value }, idempotencyKey = idempotencyKey).let { JsonValue.Obj(it.mapValues { it.value }) }
         "postTax1099DocumentsIdCorrect" -> postTax1099DocumentsIdCorrect(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5985,12 +6704,12 @@ private suspend fun ReferalliClient.call10(operationId: String, path: Map<String
         "putOrgRetention" -> putOrgRetention(body = PutOrgRetentionBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgSsoDirect" -> putOrgSsoDirect(body = (body ?: JsonValue.Obj(emptyMap())), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgTaxFiling" -> putOrgTaxFiling(body = PutOrgTaxFilingBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
-        "putOrgTaxProfile" -> putOrgTaxProfile(body = PutOrgTaxProfileBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }
 
 private suspend fun ReferalliClient.call11(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "putOrgTaxProfile" -> putOrgTaxProfile(body = PutOrgTaxProfileBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgTrackingConsent" -> putOrgTrackingConsent(body = PutOrgTrackingConsentBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putPartnerLocale" -> putPartnerLocale(body = PutPartnerLocaleBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putPartnerOrgsOrgIdPayoutProfile" -> putPartnerOrgsOrgIdPayoutProfile(orgId = path.getValue("orgId"), body = PutPartnerOrgsOrgIdPayoutProfileBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }

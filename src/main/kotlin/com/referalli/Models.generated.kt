@@ -1040,6 +1040,155 @@ data class CommissionRule(
     }
 }
 
+data class ProgramTermsBaseOption1(
+    val kind: String,
+    val percentBps: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("kind", JsonValue.Str(this@ProgramTermsBaseOption1.kind))
+        put("percentBps", JsonValue.Num(this@ProgramTermsBaseOption1.percentBps.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): ProgramTermsBaseOption1 {
+            val o = json.obj()
+            return ProgramTermsBaseOption1(
+                kind = o.field("kind").string(),
+                percentBps = o.field("percentBps").long(),
+            )
+        }
+    }
+}
+
+data class ProgramTermsBaseOption2(
+    val kind: String,
+    val amountMinor: Long,
+    val currency: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("kind", JsonValue.Str(this@ProgramTermsBaseOption2.kind))
+        put("amountMinor", JsonValue.Num(this@ProgramTermsBaseOption2.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@ProgramTermsBaseOption2.currency))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): ProgramTermsBaseOption2 {
+            val o = json.obj()
+            return ProgramTermsBaseOption2(
+                kind = o.field("kind").string(),
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+            )
+        }
+    }
+}
+
+data class ProgramTermsRecurringOption1(
+    val type: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("type", JsonValue.Str(this@ProgramTermsRecurringOption1.type))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): ProgramTermsRecurringOption1 {
+            val o = json.obj()
+            return ProgramTermsRecurringOption1(
+                type = o.field("type").string(),
+            )
+        }
+    }
+}
+
+data class ProgramTermsRecurringOption2(
+    val type: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("type", JsonValue.Str(this@ProgramTermsRecurringOption2.type))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): ProgramTermsRecurringOption2 {
+            val o = json.obj()
+            return ProgramTermsRecurringOption2(
+                type = o.field("type").string(),
+            )
+        }
+    }
+}
+
+data class ProgramTermsRecurringOption3(
+    val type: String,
+    val months: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("type", JsonValue.Str(this@ProgramTermsRecurringOption3.type))
+        put("months", JsonValue.Num(this@ProgramTermsRecurringOption3.months.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): ProgramTermsRecurringOption3 {
+            val o = json.obj()
+            return ProgramTermsRecurringOption3(
+                type = o.field("type").string(),
+                months = o.field("months").long(),
+            )
+        }
+    }
+}
+
+data class ProgramTermsSummary(
+    val en: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("en", JsonValue.Str(this@ProgramTermsSummary.en))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): ProgramTermsSummary {
+            val o = json.obj()
+            return ProgramTermsSummary(
+                en = o.field("en").string(),
+            )
+        }
+    }
+}
+
+data class ProgramTerms(
+    val programId: String,
+    val ruleVersion: Long,
+    val base: JsonValue,
+    val recurring: JsonValue,
+    val holdDays: Long,
+    val ratesVary: Boolean,
+    val summary: ProgramTermsSummary,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("programId", JsonValue.Str(this@ProgramTerms.programId))
+        put("ruleVersion", JsonValue.Num(this@ProgramTerms.ruleVersion.toDouble()))
+        put("base", this@ProgramTerms.base)
+        put("recurring", this@ProgramTerms.recurring)
+        put("holdDays", JsonValue.Num(this@ProgramTerms.holdDays.toDouble()))
+        put("ratesVary", JsonValue.Bool(this@ProgramTerms.ratesVary))
+        put("summary", this@ProgramTerms.summary.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): ProgramTerms {
+            val o = json.obj()
+            return ProgramTerms(
+                programId = o.field("programId").string(),
+                ruleVersion = o.field("ruleVersion").long(),
+                base = o.field("base"),
+                recurring = o.field("recurring"),
+                holdDays = o.field("holdDays").long(),
+                ratesVary = o.field("ratesVary").bool(),
+                summary = ProgramTermsSummary.fromJson(o.field("summary")),
+            )
+        }
+    }
+}
+
 data class BillingFilter(
     val metadata: Map<String, String>? = null,
     val productIds: List<String>? = null,
@@ -1351,6 +1500,7 @@ data class BillingConnection(
     val provider: String,
     val name: String,
     val status: String,
+    val programIds: List<String>? = null,
     val createdAt: String,
     val webhookUrl: String,
     val needsCredentials: Boolean,
@@ -1358,6 +1508,7 @@ data class BillingConnection(
     val valueMapping: ValueMapping? = null,
     val filter: BillingFilter? = null,
     val customerRefMetadataKey: String? = null,
+    val stripeWebhookEndpointId: String? = null,
     val rotation: BillingConnectionRotation,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -1365,6 +1516,7 @@ data class BillingConnection(
         put("provider", JsonValue.Str(this@BillingConnection.provider))
         put("name", JsonValue.Str(this@BillingConnection.name))
         put("status", JsonValue.Str(this@BillingConnection.status))
+        put("programIds", (this@BillingConnection.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         put("createdAt", JsonValue.Str(this@BillingConnection.createdAt))
         put("webhookUrl", JsonValue.Str(this@BillingConnection.webhookUrl))
         put("needsCredentials", JsonValue.Bool(this@BillingConnection.needsCredentials))
@@ -1372,6 +1524,7 @@ data class BillingConnection(
         put("valueMapping", (this@BillingConnection.valueMapping?.let { it.toJson() } ?: JsonValue.Null))
         put("filter", (this@BillingConnection.filter?.let { it.toJson() } ?: JsonValue.Null))
         if (this@BillingConnection.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@BillingConnection.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@BillingConnection.stripeWebhookEndpointId != null) put("stripeWebhookEndpointId", (this@BillingConnection.stripeWebhookEndpointId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("rotation", this@BillingConnection.rotation.toJson())
     })
 
@@ -1383,6 +1536,7 @@ data class BillingConnection(
                 provider = o.field("provider").string(),
                 name = o.field("name").string(),
                 status = o.field("status").string(),
+                programIds = o.field("programIds").orNull()?.let { it.array().map { it.string() } },
                 createdAt = o.field("createdAt").string(),
                 webhookUrl = o.field("webhookUrl").string(),
                 needsCredentials = o.field("needsCredentials").bool(),
@@ -1390,6 +1544,7 @@ data class BillingConnection(
                 valueMapping = o.field("valueMapping").orNull()?.let { ValueMapping.fromJson(it) },
                 filter = o.field("filter").orNull()?.let { BillingFilter.fromJson(it) },
                 customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
+                stripeWebhookEndpointId = o["stripeWebhookEndpointId"]?.orNull()?.let { it.string() },
                 rotation = BillingConnectionRotation.fromJson(o.field("rotation")),
             )
         }
@@ -1399,18 +1554,26 @@ data class BillingConnection(
 data class CreatedBillingConnection(
     val id: String,
     val provider: String,
+    val status: String,
     val webhookSecret: String,
     val webhookUrl: String,
     val filter: BillingFilter? = null,
     val customerRefMetadataKey: String? = null,
+    val programIds: List<String>? = null,
+    val stripeWebhookEndpointId: String? = null,
+    val reused: Boolean? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@CreatedBillingConnection.id))
         put("provider", JsonValue.Str(this@CreatedBillingConnection.provider))
+        put("status", JsonValue.Str(this@CreatedBillingConnection.status))
         put("webhookSecret", JsonValue.Str(this@CreatedBillingConnection.webhookSecret))
         put("webhookUrl", JsonValue.Str(this@CreatedBillingConnection.webhookUrl))
         put("filter", (this@CreatedBillingConnection.filter?.let { it.toJson() } ?: JsonValue.Null))
         if (this@CreatedBillingConnection.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@CreatedBillingConnection.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("programIds", (this@CreatedBillingConnection.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@CreatedBillingConnection.stripeWebhookEndpointId != null) put("stripeWebhookEndpointId", (this@CreatedBillingConnection.stripeWebhookEndpointId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@CreatedBillingConnection.reused != null) put("reused", (this@CreatedBillingConnection.reused?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -1419,10 +1582,14 @@ data class CreatedBillingConnection(
             return CreatedBillingConnection(
                 id = o.field("id").string(),
                 provider = o.field("provider").string(),
+                status = o.field("status").string(),
                 webhookSecret = o.field("webhookSecret").string(),
                 webhookUrl = o.field("webhookUrl").string(),
                 filter = o.field("filter").orNull()?.let { BillingFilter.fromJson(it) },
                 customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
+                programIds = o.field("programIds").orNull()?.let { it.array().map { it.string() } },
+                stripeWebhookEndpointId = o["stripeWebhookEndpointId"]?.orNull()?.let { it.string() },
+                reused = o["reused"]?.orNull()?.let { it.bool() },
             )
         }
     }
@@ -10492,6 +10659,7 @@ data class GetPartnersIdSummaryResponse(
     val balances: List<Balance>,
     val code: String? = null,
     val linkUrl: String? = null,
+    val terms: ProgramTerms? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("partnerId", JsonValue.Str(this@GetPartnersIdSummaryResponse.partnerId))
@@ -10502,6 +10670,7 @@ data class GetPartnersIdSummaryResponse(
         put("balances", JsonValue.Arr(this@GetPartnersIdSummaryResponse.balances.map { it.toJson() }))
         put("code", (this@GetPartnersIdSummaryResponse.code?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("linkUrl", (this@GetPartnersIdSummaryResponse.linkUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("terms", (this@GetPartnersIdSummaryResponse.terms?.let { it.toJson() } ?: JsonValue.Null))
     })
 
     companion object {
@@ -10516,6 +10685,7 @@ data class GetPartnersIdSummaryResponse(
                 balances = o.field("balances").array().map { Balance.fromJson(it) },
                 code = o.field("code").orNull()?.let { it.string() },
                 linkUrl = o.field("linkUrl").orNull()?.let { it.string() },
+                terms = o.field("terms").orNull()?.let { ProgramTerms.fromJson(it) },
             )
         }
     }
@@ -25514,6 +25684,7 @@ data class GetProgramsIdStripeCreditsResponse(
     val refereeRewards: Boolean,
     val balanceCurrency: String? = null,
     val createCustomerIfMissing: GetProgramsIdStripeCreditsResponseCreateCustomerIfMissingOption1? = null,
+    val waitForCustomer: Boolean,
     val keyConnected: Boolean,
     val hasOwnKey: Boolean,
 ) {
@@ -25525,6 +25696,7 @@ data class GetProgramsIdStripeCreditsResponse(
         put("refereeRewards", JsonValue.Bool(this@GetProgramsIdStripeCreditsResponse.refereeRewards))
         put("balanceCurrency", (this@GetProgramsIdStripeCreditsResponse.balanceCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("createCustomerIfMissing", (this@GetProgramsIdStripeCreditsResponse.createCustomerIfMissing?.let { it.toJson() } ?: JsonValue.Null))
+        put("waitForCustomer", JsonValue.Bool(this@GetProgramsIdStripeCreditsResponse.waitForCustomer))
         put("keyConnected", JsonValue.Bool(this@GetProgramsIdStripeCreditsResponse.keyConnected))
         put("hasOwnKey", JsonValue.Bool(this@GetProgramsIdStripeCreditsResponse.hasOwnKey))
     })
@@ -25540,6 +25712,7 @@ data class GetProgramsIdStripeCreditsResponse(
                 refereeRewards = o.field("refereeRewards").bool(),
                 balanceCurrency = o.field("balanceCurrency").orNull()?.let { it.string() },
                 createCustomerIfMissing = o.field("createCustomerIfMissing").orNull()?.let { GetProgramsIdStripeCreditsResponseCreateCustomerIfMissingOption1.fromJson(it) },
+                waitForCustomer = o.field("waitForCustomer").bool(),
                 keyConnected = o.field("keyConnected").bool(),
                 hasOwnKey = o.field("hasOwnKey").bool(),
             )
@@ -28752,12 +28925,70 @@ data class PostBillingConnectionsBodyFilter(
     }
 }
 
+data class PostBillingConnectionsBodyCreditRailCreateCustomerIfMissingOption1(
+    val metadata: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostBillingConnectionsBodyCreditRailCreateCustomerIfMissingOption1.metadata != null) put("metadata", (this@PostBillingConnectionsBodyCreditRailCreateCustomerIfMissingOption1.metadata?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostBillingConnectionsBodyCreditRailCreateCustomerIfMissingOption1 {
+            val o = json.obj()
+            return PostBillingConnectionsBodyCreditRailCreateCustomerIfMissingOption1(
+                metadata = o["metadata"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostBillingConnectionsBodyCreditRail(
+    val enabled: Boolean? = null,
+    val referrerMatch: String? = null,
+    val metadataKey: String? = null,
+    val refereeRewards: Boolean? = null,
+    val balanceCurrency: String? = null,
+    val createCustomerIfMissing: PostBillingConnectionsBodyCreditRailCreateCustomerIfMissingOption1? = null,
+    val waitForCustomer: Boolean? = null,
+    val programId: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostBillingConnectionsBodyCreditRail.enabled != null) put("enabled", (this@PostBillingConnectionsBodyCreditRail.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyCreditRail.referrerMatch != null) put("referrerMatch", (this@PostBillingConnectionsBodyCreditRail.referrerMatch?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyCreditRail.metadataKey != null) put("metadataKey", (this@PostBillingConnectionsBodyCreditRail.metadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyCreditRail.refereeRewards != null) put("refereeRewards", (this@PostBillingConnectionsBodyCreditRail.refereeRewards?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyCreditRail.balanceCurrency != null) put("balanceCurrency", (this@PostBillingConnectionsBodyCreditRail.balanceCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyCreditRail.createCustomerIfMissing != null) put("createCustomerIfMissing", (this@PostBillingConnectionsBodyCreditRail.createCustomerIfMissing?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBodyCreditRail.waitForCustomer != null) put("waitForCustomer", (this@PostBillingConnectionsBodyCreditRail.waitForCustomer?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        put("programId", JsonValue.Str(this@PostBillingConnectionsBodyCreditRail.programId))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostBillingConnectionsBodyCreditRail {
+            val o = json.obj()
+            return PostBillingConnectionsBodyCreditRail(
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                referrerMatch = o["referrerMatch"]?.orNull()?.let { it.string() },
+                metadataKey = o["metadataKey"]?.orNull()?.let { it.string() },
+                refereeRewards = o["refereeRewards"]?.orNull()?.let { it.bool() },
+                balanceCurrency = o["balanceCurrency"]?.orNull()?.let { it.string() },
+                createCustomerIfMissing = o["createCustomerIfMissing"]?.orNull()?.let { PostBillingConnectionsBodyCreditRailCreateCustomerIfMissingOption1.fromJson(it) },
+                waitForCustomer = o["waitForCustomer"]?.orNull()?.let { it.bool() },
+                programId = o.field("programId").string(),
+            )
+        }
+    }
+}
+
 data class PostBillingConnectionsBody(
     val provider: String,
     val name: String? = null,
     val webhookSecret: String? = null,
     val filter: PostBillingConnectionsBodyFilter? = null,
     val customerRefMetadataKey: String? = null,
+    val programIds: List<String>? = null,
+    val stripeKey: String? = null,
+    val creditRail: PostBillingConnectionsBodyCreditRail? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("provider", JsonValue.Str(this@PostBillingConnectionsBody.provider))
@@ -28765,6 +28996,9 @@ data class PostBillingConnectionsBody(
         if (this@PostBillingConnectionsBody.webhookSecret != null) put("webhookSecret", (this@PostBillingConnectionsBody.webhookSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostBillingConnectionsBody.filter != null) put("filter", (this@PostBillingConnectionsBody.filter?.let { it.toJson() } ?: JsonValue.Null))
         if (this@PostBillingConnectionsBody.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@PostBillingConnectionsBody.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBody.programIds != null) put("programIds", (this@PostBillingConnectionsBody.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBody.stripeKey != null) put("stripeKey", (this@PostBillingConnectionsBody.stripeKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBody.creditRail != null) put("creditRail", (this@PostBillingConnectionsBody.creditRail?.let { it.toJson() } ?: JsonValue.Null))
     })
 
     companion object {
@@ -28776,6 +29010,9 @@ data class PostBillingConnectionsBody(
                 webhookSecret = o["webhookSecret"]?.orNull()?.let { it.string() },
                 filter = o["filter"]?.orNull()?.let { PostBillingConnectionsBodyFilter.fromJson(it) },
                 customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
+                programIds = o["programIds"]?.orNull()?.let { it.array().map { it.string() } },
+                stripeKey = o["stripeKey"]?.orNull()?.let { it.string() },
+                creditRail = o["creditRail"]?.orNull()?.let { PostBillingConnectionsBodyCreditRail.fromJson(it) },
             )
         }
     }
@@ -28855,12 +29092,14 @@ data class PatchBillingConnectionsIdBody(
     val name: String? = null,
     val filter: PatchBillingConnectionsIdBodyFilterOption1? = null,
     val customerRefMetadataKey: String? = null,
+    val programIds: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PatchBillingConnectionsIdBody.status != null) put("status", (this@PatchBillingConnectionsIdBody.status?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchBillingConnectionsIdBody.name != null) put("name", (this@PatchBillingConnectionsIdBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchBillingConnectionsIdBody.filter != null) put("filter", (this@PatchBillingConnectionsIdBody.filter?.let { it.toJson() } ?: JsonValue.Null))
         if (this@PatchBillingConnectionsIdBody.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@PatchBillingConnectionsIdBody.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchBillingConnectionsIdBody.programIds != null) put("programIds", (this@PatchBillingConnectionsIdBody.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -28871,6 +29110,7 @@ data class PatchBillingConnectionsIdBody(
                 name = o["name"]?.orNull()?.let { it.string() },
                 filter = o["filter"]?.orNull()?.let { PatchBillingConnectionsIdBodyFilterOption1.fromJson(it) },
                 customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
+                programIds = o["programIds"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -32615,6 +32855,7 @@ data class PutProgramsIdStripeCreditsBody(
     val refereeRewards: Boolean? = null,
     val balanceCurrency: String? = null,
     val createCustomerIfMissing: PutProgramsIdStripeCreditsBodyCreateCustomerIfMissingOption1? = null,
+    val waitForCustomer: Boolean? = null,
     val secretKey: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -32624,6 +32865,7 @@ data class PutProgramsIdStripeCreditsBody(
         if (this@PutProgramsIdStripeCreditsBody.refereeRewards != null) put("refereeRewards", (this@PutProgramsIdStripeCreditsBody.refereeRewards?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PutProgramsIdStripeCreditsBody.balanceCurrency != null) put("balanceCurrency", (this@PutProgramsIdStripeCreditsBody.balanceCurrency?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PutProgramsIdStripeCreditsBody.createCustomerIfMissing != null) put("createCustomerIfMissing", (this@PutProgramsIdStripeCreditsBody.createCustomerIfMissing?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PutProgramsIdStripeCreditsBody.waitForCustomer != null) put("waitForCustomer", (this@PutProgramsIdStripeCreditsBody.waitForCustomer?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PutProgramsIdStripeCreditsBody.secretKey != null) put("secretKey", (this@PutProgramsIdStripeCreditsBody.secretKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
@@ -32637,6 +32879,7 @@ data class PutProgramsIdStripeCreditsBody(
                 refereeRewards = o["refereeRewards"]?.orNull()?.let { it.bool() },
                 balanceCurrency = o["balanceCurrency"]?.orNull()?.let { it.string() },
                 createCustomerIfMissing = o["createCustomerIfMissing"]?.orNull()?.let { PutProgramsIdStripeCreditsBodyCreateCustomerIfMissingOption1.fromJson(it) },
+                waitForCustomer = o["waitForCustomer"]?.orNull()?.let { it.bool() },
                 secretKey = o["secretKey"]?.orNull()?.let { it.string() },
             )
         }
