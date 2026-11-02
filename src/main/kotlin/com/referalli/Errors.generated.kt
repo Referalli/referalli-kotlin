@@ -47,6 +47,14 @@ class SsoRequiredError(status: Int, code: String, apiMessage: String, requestId:
 class AccessSuspendedError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
 
+/** `program_scoped_key` (HTTP 403). */
+class ProgramScopedKeyError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
+/** `restricted_session` (HTTP 403). */
+class RestrictedSessionError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
 /** `not_found` (HTTP 404). */
 class NotFoundError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
@@ -57,6 +65,10 @@ class ConflictError(status: Int, code: String, apiMessage: String, requestId: St
 
 /** `idempotency_in_progress` (HTTP 409). */
 class IdempotencyInProgressError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
+/** `stripe_key_required` (HTTP 409). */
+class StripeKeyRequiredError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
 
 /** `replay` (HTTP 409). */
@@ -124,9 +136,12 @@ internal fun apiException(status: Int, code: String, apiMessage: String, request
         "webhooks_disabled" -> WebhooksDisabledError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "sso_required" -> SsoRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "access_suspended" -> AccessSuspendedError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "program_scoped_key" -> ProgramScopedKeyError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "restricted_session" -> RestrictedSessionError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "not_found" -> NotFoundError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "conflict" -> ConflictError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "idempotency_in_progress" -> IdempotencyInProgressError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "stripe_key_required" -> StripeKeyRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "replay" -> ReplayError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "live_mode_only" -> LiveModeOnlyError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "test_mode_only" -> TestModeOnlyError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)

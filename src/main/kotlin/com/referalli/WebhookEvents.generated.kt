@@ -67,6 +67,10 @@ object WebhookTopic {
     const val ROI_PATTERN_DETECTED = "roi.pattern_detected"
     /** `roi.payback_reached`: A credit grant paid back */
     const val ROI_PAYBACK_REACHED = "roi.payback_reached"
+    /** `stripe_credit.applied`: A Stripe balance credit or debit was applied */
+    const val STRIPE_CREDIT_APPLIED = "stripe_credit.applied"
+    /** `stripe_credit.failed`: A Stripe balance credit or debit gave up */
+    const val STRIPE_CREDIT_FAILED = "stripe_credit.failed"
     /** `tax.form_delivered`: A tax form was delivered to a partner */
     const val TAX_FORM_DELIVERED = "tax.form_delivered"
     /** `webhook_endpoint.disabled`: A failing webhook endpoint was disabled */
@@ -77,7 +81,7 @@ object WebhookTopic {
     const val WEBHOOK_ENDPOINT_RECOVERED = "webhook_endpoint.recovered"
 
     /** Every topic. */
-    val ALL: List<String> = listOf("billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
+    val ALL: List<String> = listOf("billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "stripe_credit.applied", "stripe_credit.failed", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
 }
 
 /** A webhook event's payload, typed by topic. [Unknown] is a topic this SDK predates. */
@@ -144,6 +148,10 @@ sealed class WebhookPayload {
     data class RoiPatternDetected(val data: RoiPatternDetectedEventData) : WebhookPayload()
     /** `roi.payback_reached` */
     data class RoiPaybackReached(val data: RoiPaybackReachedEventData) : WebhookPayload()
+    /** `stripe_credit.applied` */
+    data class StripeCreditApplied(val data: StripeCreditAppliedEventData) : WebhookPayload()
+    /** `stripe_credit.failed` */
+    data class StripeCreditFailed(val data: StripeCreditFailedEventData) : WebhookPayload()
     /** `tax.form_delivered` */
     data class TaxFormDelivered(val data: TaxFormDeliveredEventData) : WebhookPayload()
     /** `webhook_endpoint.disabled` */
@@ -188,6 +196,8 @@ sealed class WebhookPayload {
                 "referral.voided" -> ReferralVoided(ReferralVoidedEventData.fromJson(data))
                 "roi.pattern_detected" -> RoiPatternDetected(RoiPatternDetectedEventData.fromJson(data))
                 "roi.payback_reached" -> RoiPaybackReached(RoiPaybackReachedEventData.fromJson(data))
+                "stripe_credit.applied" -> StripeCreditApplied(StripeCreditAppliedEventData.fromJson(data))
+                "stripe_credit.failed" -> StripeCreditFailed(StripeCreditFailedEventData.fromJson(data))
                 "tax.form_delivered" -> TaxFormDelivered(TaxFormDeliveredEventData.fromJson(data))
                 "webhook_endpoint.disabled" -> WebhookEndpointDisabled(WebhookEndpointDisabledEventData.fromJson(data))
                 "webhook_endpoint.failing" -> WebhookEndpointFailing(WebhookEndpointFailingEventData.fromJson(data))

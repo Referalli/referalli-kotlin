@@ -131,6 +131,16 @@ suspend fun ReferalliClient.deleteOrgSsoDirect(idempotencyKey: String? = null): 
     DeleteOrgSsoDirectResponse.fromJson(send("DELETE", "/v1/org/sso/direct", emptyList(), null, idempotencyKey, "json"))
 
 /**
+ * Revoke a partner API token. DELETE /v1/partner/api-tokens/{id}
+ *
+ * Stops the token at once. Portal session only.
+ *
+ * **Auth:** a partner session.
+ */
+suspend fun ReferalliClient.deletePartnerApiTokensId(id: String, idempotencyKey: String? = null): DeletePartnerApiTokensIdResponse =
+    DeletePartnerApiTokensIdResponse.fromJson(send("DELETE", "/v1/partner/api-tokens/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
+
+/**
  * Delete a partner. DELETE /v1/partners/{id}
  *
  * Deletes a partner that never did anything, with its enrollments, links, coupons and payout profile. A partner with any clicks, referrals, commissions, payouts or other history is `409`: archive it instead (`status: "archived"`). Audited.
@@ -151,6 +161,16 @@ suspend fun ReferalliClient.deletePayoutConnectionsProvider(provider: String, id
     DeletePayoutConnectionsProviderResponse.fromJson(send("DELETE", "/v1/payout-connections/${segment(provider)}", emptyList(), null, idempotencyKey, "json"))
 
 /**
+ * Discard the portal design draft. DELETE /v1/portal/theme/draft
+ *
+ * Drops the draft and its preview link. What partners see is unchanged. Owner or admin.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.deletePortalThemeDraft(idempotencyKey: String? = null): GetPortalThemeResponse =
+    GetPortalThemeResponse.fromJson(send("DELETE", "/v1/portal/theme/draft", emptyList(), null, idempotencyKey, "json"))
+
+/**
  * Disconnect a DSAR tool. DELETE /v1/privacy/executors/{adapter}
  *
  * Removes the tool, its key and settings; its URL answers 404 from now on. The request log stays.
@@ -159,6 +179,16 @@ suspend fun ReferalliClient.deletePayoutConnectionsProvider(provider: String, id
  */
 suspend fun ReferalliClient.deletePrivacyExecutorsAdapter(adapter: String, idempotencyKey: String? = null): DeletePrivacyExecutorsAdapterResponse =
     DeletePrivacyExecutorsAdapterResponse.fromJson(send("DELETE", "/v1/privacy/executors/${segment(adapter)}", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * Revoke a partner link. DELETE /v1/product-links/{id}
+ *
+ * The link and every token issued from it stop at once. A root action (see create).
+ *
+ * **Auth:** an API key with `team:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.deleteProductLinksId(id: String, idempotencyKey: String? = null): DeleteProductLinksIdResponse =
+    DeleteProductLinksIdResponse.fromJson(send("DELETE", "/v1/product-links/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
 
 /**
  * Delete a product margin. DELETE /v1/profitability/products/{productRef}
@@ -179,6 +209,16 @@ suspend fun ReferalliClient.deleteProfitabilityProductsProductRef(productRef: St
  */
 suspend fun ReferalliClient.deleteRewardsRulesKey(key: String, idempotencyKey: String? = null): DeleteRewardsRulesKeyResponse =
     DeleteRewardsRulesKeyResponse.fromJson(send("DELETE", "/v1/rewards/rules/${segment(key)}", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * Remove the Stripe balance credit key. DELETE /v1/stripe-credits/connection
+ *
+ * Deletes the rail's own key. A Stripe payout connection, if any, is then used instead; with neither, queued credits fail until a key is connected. Owner or admin. Audited.
+ *
+ * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.deleteStripeCreditsConnection(idempotencyKey: String? = null): GetStripeCreditsConnectionResponse =
+    GetStripeCreditsConnectionResponse.fromJson(send("DELETE", "/v1/stripe-credits/connection", emptyList(), null, idempotencyKey, "json"))
 
 /**
  * Disconnect a support tool. DELETE /v1/support/apps/{adapter}
@@ -634,7 +674,7 @@ suspend fun ReferalliClient.getBranding(idempotencyKey: String? = null): GetBran
 /**
  * Get the support-chat identity. GET /v1/chatly/identity
  *
- * The signed-in merchant user or partner as a Chatly widget identity: `externalId` (`merchant:<id>` or `partner:<id>`), email, name and `userHash`, the HMAC-SHA256 of `externalId` with Referalli's identity secret. `identity` is null when signed out or when identity verification isn't configured. Never cached.
+ * The signed-in merchant user or partner as a Chatly widget identity: `userToken`, an Atlas token minted for the Atlas session behind this one (audience `chatly:<channel>`, at most 120 s), which the page passes to the widget, and `externalId` (`merchant:<id>` or `partner:<id>`), which stays on the page to notice an account switch. `identity` is null when signed out, when the session has no Atlas session behind it, or when Atlas isn't configured. Never cached.
  *
  * **Auth:** none.
  */
@@ -916,18 +956,6 @@ fun ReferalliClient.getEmailTemplatesEach(limit: Long? = null, endingBefore: Str
     paginate { cursor -> getEmailTemplates(limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /**
- * Get one org's embed manifest. GET /v1/embed
- *
- * The embed manifest for the org that owns `token` (its public tracking token): its link domain in the CSP origins, its longest program cookie window as the storage lifetime, and its consent default. Public, CORS `*`.
- *
- * **Auth:** none.
- *
- * token: The org's public tracking token.
- */
-suspend fun ReferalliClient.getEmbed(token: String, idempotencyKey: String? = null): GetWellKnownForgedeckEmbedJsonResponse =
-    GetWellKnownForgedeckEmbedJsonResponse.fromJson(send("GET", "/v1/embed", listOf("token" to token?.toString()), null, idempotencyKey, "json"))
-
-/**
  * Read embedded partner stats. GET /v1/embed/summary
  *
  * Called by the embed component with `Authorization: Bearer <embed token>`: the partner's name, eligible clicks, active referrals, balances and link codes. 401 for a missing, invalid or expired token.
@@ -1038,8 +1066,18 @@ suspend fun ReferalliClient.getHealth(idempotencyKey: String? = null): Ok =
  *
  * **Auth:** none.
  */
-suspend fun ReferalliClient.getHostsCurrent(idempotencyKey: String? = null): GetHostsCurrentResponse =
-    send("GET", "/v1/hosts/current", emptyList(), null, idempotencyKey, "json")
+suspend fun ReferalliClient.getHostsCurrent(themePreview: String? = null, idempotencyKey: String? = null): GetHostsCurrentResponse =
+    send("GET", "/v1/hosts/current", listOf("themePreview" to themePreview?.toString()), null, idempotencyKey, "json")
+
+/**
+ * Identify the signed-in partner to the chat. GET /v1/hosts/current/chat-identity
+ *
+ * On a merchant's portal domain, for the signed-in partner of that merchant: the head tags that tell the merchant's chat who they are (partner id, email, name) and, when the merchant saved its chat vendor's identity-verification secret, the vendor's proof (Intercom `user_hash`, a Zendesk messaging JWT, a HubSpot visitor token…). The secret itself never leaves the API. Elsewhere, or for someone who isn't this merchant's partner, `tags` is empty. Partner session; `private, no-store`.
+ *
+ * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getHostsCurrentChatIdentity(idempotencyKey: String? = null): GetHostsCurrentChatIdentityResponse =
+    GetHostsCurrentChatIdentityResponse.fromJson(send("GET", "/v1/hosts/current/chat-identity", emptyList(), null, idempotencyKey, "json"))
 
 /**
  * Get the current host's theme stylesheet. GET /v1/hosts/current/theme.css
@@ -1048,8 +1086,8 @@ suspend fun ReferalliClient.getHostsCurrent(idempotencyKey: String? = null): Get
  *
  * **Auth:** none.
  */
-suspend fun ReferalliClient.getHostsCurrentThemeCss(idempotencyKey: String? = null): String =
-    (send("GET", "/v1/hosts/current/theme.css", emptyList(), null, idempotencyKey, "text") as JsonValue.Str).value
+suspend fun ReferalliClient.getHostsCurrentThemeCss(themePreview: String? = null, idempotencyKey: String? = null): String =
+    (send("GET", "/v1/hosts/current/theme.css", listOf("themePreview" to themePreview?.toString()), null, idempotencyKey, "text") as JsonValue.Str).value
 
 /**
  * Get incrementality results. GET /v1/incrementality
@@ -1293,6 +1331,28 @@ suspend fun ReferalliClient.getOrg(idempotencyKey: String? = null): Org =
     Org.fromJson(send("GET", "/v1/org", emptyList(), null, idempotencyKey, "json"))
 
 /**
+ * Get the Cookie Munch consent-event link. GET /v1/org/consent-partners/cookiemunch
+ *
+ * What to enter in Cookie Munch to send your site's consent events to Referalli: link partner `referalli` with `externalId` (your org id); deliveries go to `receiverUrl`. `sites` are the Cookie Munch sites (cbids) whose events this org accepts, and `grants` says, per site, whether its owner granted Referalli that site in Cookie Munch (`granted`, `waiting_on_partner`, `revoked`, `expired`, `none`, or `unknown` when Cookie Munch couldn't be asked; `grantCheck` says why). `stampCheck.status` is `live` when Referalli checks visitors' consent stamps with Cookie Munch, else `not_configured`.
+ *
+ * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getOrgConsentPartnersCookiemunch(idempotencyKey: String? = null): GetOrgConsentPartnersCookiemunchResponse =
+    GetOrgConsentPartnersCookiemunchResponse.fromJson(send("GET", "/v1/org/consent-partners/cookiemunch", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * List received Cookie Munch consent events. GET /v1/org/consent-partners/cookiemunch/events
+ *
+ * Consent evidence from Cookie Munch, newest first: each `consent.recorded` and `consent.withdrawn` event for your registered sites, with the visitor's consent `stamp`, the `choices` (and for a withdrawal, the `withdrawn` categories), and the id of the key that signed it. Filter by `stamp` to see one visitor's history; with `stamp`, `checks` lists what Cookie Munch said about it (newest first, `credited` only for `consented`). Append-only.
+ *
+ * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ *
+ * stamp: Only this visitor's consent stamp.
+ */
+suspend fun ReferalliClient.getOrgConsentPartnersCookiemunchEvents(stamp: String? = null, limit: Long? = null, idempotencyKey: String? = null): GetOrgConsentPartnersCookiemunchEventsResponse =
+    GetOrgConsentPartnersCookiemunchEventsResponse.fromJson(send("GET", "/v1/org/consent-partners/cookiemunch/events", listOf("stamp" to stamp?.toString(), "limit" to limit?.toString()), null, idempotencyKey, "json"))
+
+/**
  * Get the FX feed setting. GET /v1/org/fx-feed
  *
  * Whether the daily ECB reference-rate feed is on for this org, and the date of its latest rate.
@@ -1305,7 +1365,7 @@ suspend fun ReferalliClient.getOrgFxFeed(idempotencyKey: String? = null): GetOrg
 /**
  * Get the hosted-page consent and chat. GET /v1/org/hosted-pages
  *
- * What runs on the pages Referalli hosts for you on your own portal domain (the partner portal and `/join`): your consent banner (Cookie Munch, OneTrust, Cookiebot, Usercentrics, Didomi, Osano, Termly, iubenda, a custom CMP, a built-in necessary-only notice, or none) and your support chat (Chatly, Intercom, Crisp or custom). `served` is exactly what visitors get: the head tags, the "Cookie settings" link and the Content-Security-Policy built from these adapters. Referalli's own banner and chat never run on your domain.
+ * What runs on the pages Referalli hosts for you on your own portal domain (the partner portal and `/join`): your consent banner (Cookie Munch, OneTrust, Cookiebot, Usercentrics, Didomi, Osano, Termly, iubenda, CookieYes, TrustArc, Ketch, Transcend, CookieFirst, consentmanager, Cookie Information, CookieScript, CookieHub, Google Privacy & messaging, Axeptio, Sourcepoint, InMobi Choice, Securiti, Enzuzo, CookiePro, TrustCommander, Klaro, Civic Cookie Control, a custom CMP, a built-in necessary-only notice, or none) and your support chat (Chatly, Intercom, Crisp, Zendesk Messaging, HubSpot, Drift, LiveChat, Tawk.to, Freshchat, Tidio, Help Scout Beacon, Front, Chatwoot, Olark, Smartsupp, JivoChat, Gorgias, Pylon, Plain, Userlike, Zoho SalesIQ, Re:amaze, Chatra, Kustomer, Gladly, Brevo, Trengo, Dixa, Gist, Freshdesk, LiveAgent, Chatbase, Voiceflow, Botpress, Salesforce, Dynamics 365 or custom). `adapters.consent[].fields` are the `config.params` a CMP's inline snippet needs. `adapters.chat[].fields` lists each chat's config keys; `chat.hasIdentitySecret` says whether an identity-verification secret is saved (never the secret). `served` is exactly what visitors get: the head tags, the "Cookie settings" link and the Content-Security-Policy built from these adapters. Referalli's own banner and chat never run on your domain.
  *
  * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
  */
@@ -1481,6 +1541,16 @@ fun ReferalliClient.getPartnerAdvanceEach(limit: Long? = null, endingBefore: Str
  */
 suspend fun ReferalliClient.getPartnerAdvanceOffer(idempotencyKey: String? = null): GetPartnerAdvanceOfferResponse =
     GetPartnerAdvanceOfferResponse.fromJson(send("GET", "/v1/partner/advance/offer", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * List your partner API tokens. GET /v1/partner/api-tokens
+ *
+ * Your active `rpt_` tokens (never the token itself). Portal session only: a token cannot list tokens.
+ *
+ * **Auth:** a partner session.
+ */
+suspend fun ReferalliClient.getPartnerApiTokens(idempotencyKey: String? = null): GetPartnerApiTokensResponse =
+    GetPartnerApiTokensResponse.fromJson(send("GET", "/v1/partner/api-tokens", emptyList(), null, idempotencyKey, "json"))
 
 /**
  * List marketing assets. GET /v1/partner/assets
@@ -1865,12 +1935,12 @@ suspend fun ReferalliClient.getPartnerSecurity(idempotencyKey: String? = null): 
 /**
  * Get a partner. GET /v1/partners/{id}
  *
- * One partner, with a cross-network warning when the same account is flagged or banned by other merchants (it never says which).
+ * One partner, with a cross-network warning when the same account is flagged or banned by other merchants (it never says which). With `programId`, `externalRef` is the one that program knows them by: its own externalRef for them when it has one, else the partner's.
  *
  * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
  */
-suspend fun ReferalliClient.getPartnersId(id: String, idempotencyKey: String? = null): GetPartnersIdResponse =
-    send("GET", "/v1/partners/${segment(id)}", emptyList(), null, idempotencyKey, "json")
+suspend fun ReferalliClient.getPartnersId(id: String, programId: String? = null, idempotencyKey: String? = null): GetPartnersIdResponse =
+    send("GET", "/v1/partners/${segment(id)}", listOf("programId" to programId?.toString()), null, idempotencyKey, "json")
 
 /**
  * Get a partner's balances. GET /v1/partners/{id}/balances
@@ -1895,7 +1965,7 @@ fun ReferalliClient.getPartnersIdBalancesEach(id: String, limit: Long? = null, e
 /**
  * List a partner's enrollments. GET /v1/partners/{id}/enrollments
  *
- * The programs a partner is enrolled in or applied to, with status and group.
+ * The programs a partner is enrolled in or applied to, with status, group and `externalRef` (that program's own id for the partner, or null when the partner's own applies).
  *
  * **Auth:** an API key with `partners:read` (or `full`), or a session of any role.
  *
@@ -1931,6 +2001,26 @@ suspend fun ReferalliClient.getPartnersIdPayoutProfile(id: String, idempotencyKe
  */
 suspend fun ReferalliClient.getPartnersIdQuality(id: String, idempotencyKey: String? = null): GetPartnersIdQualityResponse =
     GetPartnersIdQualityResponse.fromJson(send("GET", "/v1/partners/${segment(id)}/quality", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * Get a partner's stats. GET /v1/partners/{id}/stats
+ *
+ * What the partner brought in, in one call: eligible clicks, referrals by status, converted customers (referred, not void, with at least one payment) and balances per currency. Pass `programId` to count one program only (an org shared by several products).
+ *
+ * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getPartnersIdStats(id: String, programId: String? = null, idempotencyKey: String? = null): GetPartnersIdStatsResponse =
+    GetPartnersIdStatsResponse.fromJson(send("GET", "/v1/partners/${segment(id)}/stats", listOf("programId" to programId?.toString()), null, idempotencyKey, "json"))
+
+/**
+ * Get a partner's referrer summary. GET /v1/partners/{id}/summary
+ *
+ * Everything a referrer panel shows, in one call: the stats for one program (`programId` is required) plus the partner's current `code` there (the newest coupon, else the newest link's code) and `linkUrl` (null when they have only a coupon).
+ *
+ * **Auth:** an API key with `commissions:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getPartnersIdSummary(id: String, programId: String, idempotencyKey: String? = null): GetPartnersIdSummaryResponse =
+    GetPartnersIdSummaryResponse.fromJson(send("GET", "/v1/partners/${segment(id)}/summary", listOf("programId" to programId?.toString()), null, idempotencyKey, "json"))
 
 /**
  * Get my stats. GET /v1/partner/stats
@@ -2103,6 +2193,46 @@ suspend fun ReferalliClient.getPortalAuthCurrent(org: String? = null, idempotenc
     GetPortalAuthCurrentResponse.fromJson(send("GET", "/v1/portal-auth/current", listOf("org" to org?.toString()), null, idempotencyKey, "json"))
 
 /**
+ * Get the portal design. GET /v1/portal/theme
+ *
+ * The partner portal's look and layout on your portal domain: `published` (what partners see) and `draft` (what you are editing, or null). Colours with a separate dark palette, the colour scheme, widths and density, fonts (a stylesheet URL, `@font-face` files, a family per role, the type scale), the logo set and favicon, component shape (radius, shadow, buttons, inputs, focus ring, links), an announcement, the header and footer, the home sections and navigation, the sign-in page, interface string overrides, typed theme settings, CSS snippets, custom CSS, phone tuning and embedding. Every key is optional; an unset key keeps the built-in look.
+ *
+ * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getPortalTheme(idempotencyKey: String? = null): GetPortalThemeResponse =
+    GetPortalThemeResponse.fromJson(send("GET", "/v1/portal/theme", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * Preview the compiled portal design. GET /v1/portal/theme/compiled
+ *
+ * The draft (or `?which=published`) compiled: `css`, the stylesheet partners load, and `view`, the layout, brand and text the portal draws. For a live preview in your own editor.
+ *
+ * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getPortalThemeCompiled(which: String? = null, idempotencyKey: String? = null): GetPortalThemeCompiledResponse =
+    GetPortalThemeCompiledResponse.fromJson(send("GET", "/v1/portal/theme/compiled", listOf("which" to which?.toString()), null, idempotencyKey, "json"))
+
+/**
+ * Get the portal design schema. GET /v1/portal/theme/schema
+ *
+ * Every key the portal design takes, as JSON Schema (draft 2020-12): build an editor or validate a theme file before you send it.
+ *
+ * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getPortalThemeSchema(idempotencyKey: String? = null): GetPortalThemeSchemaResponse =
+    send("GET", "/v1/portal/theme/schema", emptyList(), null, idempotencyKey, "json").obj().mapValues { it.value }
+
+/**
+ * List published portal designs. GET /v1/portal/theme/versions
+ *
+ * The last 50 published versions, newest first.
+ *
+ * **Auth:** an API key with `org:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getPortalThemeVersions(idempotencyKey: String? = null): GetPortalThemeVersionsResponse =
+    GetPortalThemeVersionsResponse.fromJson(send("GET", "/v1/portal/theme/versions", emptyList(), null, idempotencyKey, "json"))
+
+/**
  * List DSAR tool requests. GET /v1/privacy/executor-requests
  *
  * The last 200 requests connected DSAR tools sent: operation, outcome and the vendor request id. Subjects are kept only as hashes.
@@ -2173,6 +2303,16 @@ suspend fun ReferalliClient.getPrivacyRequestsIdResult(id: String, idempotencyKe
     GetPrivacyRequestsIdResultResponse.fromJson(send("GET", "/v1/privacy/requests/${segment(id)}/result", emptyList(), null, idempotencyKey, "json"))
 
 /**
+ * List partner links. GET /v1/product-links
+ *
+ * Other products allowed to call this organization's API (REF-S28), newest first, with status, scopes and last use. Secrets are never shown again. Owners and admins, or a key with team:read.
+ *
+ * **Auth:** an API key with `team:read` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.getProductLinks(idempotencyKey: String? = null): GetProductLinksResponse =
+    GetProductLinksResponse.fromJson(send("GET", "/v1/product-links", emptyList(), null, idempotencyKey, "json"))
+
+/**
  * List product margins. GET /v1/profitability/products
  *
  * The margin catalog: per product, a margin (bps) or a unit cost, used to turn revenue into profit.
@@ -2215,7 +2355,7 @@ suspend fun ReferalliClient.getProfitabilitySettings(programId: String? = null, 
 /**
  * List programs. GET /v1/programs
  *
- * The org's programs, oldest first, with their settings.
+ * The org's programs, oldest first, with their settings. `slug` returns just that program.
  *
  * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
  *
@@ -2225,12 +2365,12 @@ suspend fun ReferalliClient.getProfitabilitySettings(programId: String? = null, 
  * created[gte]: Only items created at or after this time (ISO 8601), on lists of timestamped records. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * created[lte]: Only items created at or before this time (ISO 8601), on lists of timestamped records. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  */
-suspend fun ReferalliClient.getPrograms(limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<Program> =
-    Page.fromJson(send("GET", "/v1/programs", listOf("limit" to limit?.toString(), "starting_after" to startingAfter?.toString(), "ending_before" to endingBefore?.toString(), "created[gte]" to createdGte?.toString(), "created[lte]" to createdLte?.toString()), null, idempotencyKey, "list")) { Program.fromJson(it) }
+suspend fun ReferalliClient.getPrograms(slug: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<Program> =
+    Page.fromJson(send("GET", "/v1/programs", listOf("slug" to slug?.toString(), "limit" to limit?.toString(), "starting_after" to startingAfter?.toString(), "ending_before" to endingBefore?.toString(), "created[gte]" to createdGte?.toString(), "created[lte]" to createdLte?.toString()), null, idempotencyKey, "list")) { Program.fromJson(it) }
 
 /** Every item of [getPrograms], following the pages (cold [Flow]: each collection starts over). */
-fun ReferalliClient.getProgramsEach(limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Flow<Program> =
-    paginate { cursor -> getPrograms(limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliClient.getProgramsEach(slug: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Flow<Program> =
+    paginate { cursor -> getPrograms(slug = slug, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /**
  * Get a program. GET /v1/programs/{id}
@@ -2255,7 +2395,7 @@ suspend fun ReferalliClient.getProgramsIdAutopricing(id: String, idempotencyKey:
 /**
  * List program enrollments. GET /v1/programs/{id}/enrollments
  *
- * The program's enrollments and applications, newest first, each with the partner and a cross-network warning when other merchants banned the same account. Filter with `status`.
+ * The program's enrollments and applications, newest first, each with the partner and a cross-network warning when other merchants banned the same account and `externalRef` (this program's own id for the partner, or null). Filter with `status` or `partnerId`.
  *
  * **Auth:** an API key with `programs:read` (or `full`), or a session of any role.
  *
@@ -2265,12 +2405,12 @@ suspend fun ReferalliClient.getProgramsIdAutopricing(id: String, idempotencyKey:
  * created[gte]: Only items created at or after this time (ISO 8601), on lists of timestamped records. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  * created[lte]: Only items created at or before this time (ISO 8601), on lists of timestamped records. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
  */
-suspend fun ReferalliClient.getProgramsIdEnrollments(id: String, status: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<GetProgramsIdEnrollmentsResponseDataItem> =
-    Page.fromJson(send("GET", "/v1/programs/${segment(id)}/enrollments", listOf("status" to status?.toString(), "limit" to limit?.toString(), "starting_after" to startingAfter?.toString(), "ending_before" to endingBefore?.toString(), "created[gte]" to createdGte?.toString(), "created[lte]" to createdLte?.toString()), null, idempotencyKey, "list")) { GetProgramsIdEnrollmentsResponseDataItem.fromJson(it) }
+suspend fun ReferalliClient.getProgramsIdEnrollments(id: String, status: String? = null, partnerId: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<GetProgramsIdEnrollmentsResponseDataItem> =
+    Page.fromJson(send("GET", "/v1/programs/${segment(id)}/enrollments", listOf("status" to status?.toString(), "partnerId" to partnerId?.toString(), "limit" to limit?.toString(), "starting_after" to startingAfter?.toString(), "ending_before" to endingBefore?.toString(), "created[gte]" to createdGte?.toString(), "created[lte]" to createdLte?.toString()), null, idempotencyKey, "list")) { GetProgramsIdEnrollmentsResponseDataItem.fromJson(it) }
 
 /** Every item of [getProgramsIdEnrollments], following the pages (cold [Flow]: each collection starts over). */
-fun ReferalliClient.getProgramsIdEnrollmentsEach(id: String, status: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Flow<GetProgramsIdEnrollmentsResponseDataItem> =
-    paginate { cursor -> getProgramsIdEnrollments(id = id, status = status, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliClient.getProgramsIdEnrollmentsEach(id: String, status: String? = null, partnerId: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Flow<GetProgramsIdEnrollmentsResponseDataItem> =
+    paginate { cursor -> getProgramsIdEnrollments(id = id, status = status, partnerId = partnerId, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /**
  * Get the referral tree. GET /v1/programs/{id}/graph
@@ -2342,6 +2482,36 @@ fun ReferalliClient.getProgramsIdPromotionsEach(id: String, limit: Long? = null,
  */
 suspend fun ReferalliClient.getProgramsIdRefereeReward(id: String, idempotencyKey: String? = null): GetProgramsIdRefereeRewardResponse =
     GetProgramsIdRefereeRewardResponse.fromJson(send("GET", "/v1/programs/${segment(id)}/referee-reward", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * Get a program's Stripe balance credit settings. GET /v1/programs/{id}/stripe-credits
+ *
+ * Whether settled lines of this program are credited to the partner's Stripe customer balance, how that customer is found (`referrerMatch`), and whether store-credit referee rewards are credited too. `keyConnected` says whether a Stripe key is available.
+ *
+ * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getProgramsIdStripeCredits(id: String, idempotencyKey: String? = null): GetProgramsIdStripeCreditsResponse =
+    GetProgramsIdStripeCreditsResponse.fromJson(send("GET", "/v1/programs/${segment(id)}/stripe-credits", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * List a program's Stripe balance credits. GET /v1/programs/{id}/stripe-credits/log
+ *
+ * Every credit and debit the rail queued for this program, newest first: amount, Stripe customer, `status` (`pending`, `applied`, `no_customer`, `failed`, `canceled`), attempts, the Stripe balance transaction id once applied, and the last error. Unapplied rows are retried hourly, up to 24 tries.
+ *
+ * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ *
+ * limit: Items per page, 1 to 100 (default 50). From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
+ * starting_after: A cursor: the id of an item (the previous page's `next_cursor`); returns the items after it. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
+ * ending_before: A cursor: returns the items before this item id (the previous page). Not with `starting_after`. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
+ * created[gte]: Only items created at or after this time (ISO 8601), on lists of timestamped records. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
+ * created[lte]: Only items created at or before this time (ISO 8601), on lists of timestamped records. From API version 2026-11-01; ignored under 2026-10-21, where lists are a capped plain array.
+ */
+suspend fun ReferalliClient.getProgramsIdStripeCreditsLog(id: String, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<GetProgramsIdStripeCreditsLogResponseDataItem> =
+    Page.fromJson(send("GET", "/v1/programs/${segment(id)}/stripe-credits/log", listOf("limit" to limit?.toString(), "starting_after" to startingAfter?.toString(), "ending_before" to endingBefore?.toString(), "created[gte]" to createdGte?.toString(), "created[lte]" to createdLte?.toString()), null, idempotencyKey, "list")) { GetProgramsIdStripeCreditsLogResponseDataItem.fromJson(it) }
+
+/** Every item of [getProgramsIdStripeCreditsLog], following the pages (cold [Flow]: each collection starts over). */
+fun ReferalliClient.getProgramsIdStripeCreditsLogEach(id: String, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Flow<GetProgramsIdStripeCreditsLogResponseDataItem> =
+    paginate { cursor -> getProgramsIdStripeCreditsLog(id = id, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /**
  * List terms acceptances. GET /v1/programs/{id}/terms-acceptances
@@ -2711,6 +2881,16 @@ suspend fun ReferalliClient.getStatusIncidentsId(id: String, idempotencyKey: Str
     Incident.fromJson(send("GET", "/v1/status/incidents/${segment(id)}", emptyList(), null, idempotencyKey, "json"))
 
 /**
+ * Get the Stripe balance credit key status. GET /v1/stripe-credits/connection
+ *
+ * Whether the Stripe balance credit rail has a key: its own (`source: "stripe_credits"`) or your Stripe payout connection (`source: "payout_connection"`). The key is never returned.
+ *
+ * **Auth:** an API key with `payouts:read` (or `full`), or a session of any role.
+ */
+suspend fun ReferalliClient.getStripeCreditsConnection(idempotencyKey: String? = null): GetStripeCreditsConnectionResponse =
+    GetStripeCreditsConnectionResponse.fromJson(send("GET", "/v1/stripe-credits/connection", emptyList(), null, idempotencyKey, "json"))
+
+/**
  * List support tool connections. GET /v1/support/apps
  *
  * Every support tool Referalli can show referral context in (Chatly cards and AI tools, Intercom, Zendesk, HubSpot, Front, Help Scout, custom), with its card URL, install steps and whether it is set up. Secrets are never returned.
@@ -2727,7 +2907,7 @@ suspend fun ReferalliClient.getSupportApps(idempotencyKey: String? = null): GetS
  *
  * **Auth:** none.
  */
-suspend fun ReferalliClient.getSupportCardsOrgIdAdapter(orgId: String, adapter: String, email: String? = null, externalId: String? = null, idempotencyKey: String? = null): PostSupportCardsOrgIdAdapterResponse =
+suspend fun ReferalliClient.getSupportCardsOrgIdAdapter(orgId: String, adapter: String, email: String? = null, externalId: String? = null, idempotencyKey: String? = null): GetSupportPlatformChatlyAnswersResponse =
     send("GET", "/v1/support/cards/${segment(orgId)}/${segment(adapter)}", listOf("email" to email?.toString(), "externalId" to externalId?.toString()), null, idempotencyKey, "json").obj().mapValues { it.value }
 
 /**
@@ -2742,6 +2922,16 @@ suspend fun ReferalliClient.getSupportCardsOrgIdAdapter(orgId: String, adapter: 
  */
 suspend fun ReferalliClient.getSupportContext(email: String? = null, customerRef: String? = null, partnerExternalRef: String? = null, ext: String? = null, idempotencyKey: String? = null): GetSupportContextResponse =
     GetSupportContextResponse.fromJson(send("GET", "/v1/support/context", listOf("email" to email?.toString(), "customerRef" to customerRef?.toString(), "partnerExternalRef" to partnerExternalRef?.toString(), "ext" to ext?.toString()), null, idempotencyKey, "json"))
+
+/**
+ * Answer a partner's question for Referalli's own support desk. GET /v1/support/platform/chatly-answers
+ *
+ * Called by Chatly's `referral_answers` preset, never by you: a signed GET (`x-chatly-signature: t=…,v1=…`, HMAC-SHA256 with `CHATLY_TOOL_SECRET` over `<t>.GET.<path and query>.`, 300 s window) with `question` (`referral_link`, `commission_status`, `next_payout`; others get the full answer), `subject` (the verified Atlas `sub`) and `principal` (`partner`, or absent when the tool was created over the API). Read-only: the partner's link, pending, approved and paid commission and next payout in every programme they're in. `{found: false}` when no partner account is linked; 403 without a verified partner identity; 404 for a bad or stale signature.
+ *
+ * **Auth:** none.
+ */
+suspend fun ReferalliClient.getSupportPlatformChatlyAnswers(subject: String? = null, principal: String? = null, question: String? = null, idempotencyKey: String? = null): GetSupportPlatformChatlyAnswersResponse =
+    send("GET", "/v1/support/platform/chatly-answers", listOf("subject" to subject?.toString(), "principal" to principal?.toString(), "question" to question?.toString()), null, idempotencyKey, "json").obj().mapValues { it.value }
 
 /**
  * Export 1099-NEC data. GET /v1/tax/1099
@@ -2976,7 +3166,7 @@ suspend fun ReferalliClient.patchAdminStatusIncidentsId(id: String, body: PatchA
 /**
  * Update an API key. PATCH /v1/api-keys/{id}
  *
- * Changes a key's pinned `apiVersion`, `owner` or expiry (`expiresInDays` from now; `null` removes it). Revoked keys are 404. Needs an owner or admin session, or an API key with the `admin` scope. Audited.
+ * Changes a key's pinned `apiVersion`, `owner`, expiry (`expiresInDays` from now; `null` removes it) or `programIds` (`null` makes it org-wide). Revoked keys are 404. Needs an owner or admin session, or an API key with the `admin` scope. Audited.
  *
  * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
  */
@@ -3064,9 +3254,19 @@ suspend fun ReferalliClient.patchPartnersIdPayoutProfile(id: String, body: Patch
     PatchPartnersIdPayoutProfileResponse.fromJson(send("PATCH", "/v1/partners/${segment(id)}/payout-profile", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
+ * Change part of the portal design draft. PATCH /v1/portal/theme/draft
+ *
+ * Deep-merges into the draft (or, with no draft, into a copy of what is published): objects merge key by key, arrays and values replace, `null` deletes a key. The result is validated as a whole. Owner or admin.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.patchPortalThemeDraft(body: Map<String, JsonValue>, idempotencyKey: String? = null): GetPortalThemeResponse =
+    GetPortalThemeResponse.fromJson(send("PATCH", "/v1/portal/theme/draft", emptyList(), JsonValue.Obj(body.mapValues { it.value }), idempotencyKey, "json"))
+
+/**
  * Update a program. PATCH /v1/programs/{id}
  *
- * Changes any program field or setting; omitted fields keep their value, and `publicPage` is merged. Changing `termsMd` records a new terms version. Setting `status` to `paused` or `archived` stops new attribution. `mobileApp` (iOS Team ID and bundle id, Android package and signing-certificate fingerprints) publishes the program's apps in the universal-links and App Links files on the org's link hosts. Audited.
+ * Changes any program field or setting; omitted fields keep their value, and `publicPage` is merged. Changing `termsMd` records a new terms version. Setting `status` to `paused` or `archived` stops new attribution. `mobileApp` (iOS Team ID and bundle id, Android package and signing-certificate fingerprints) publishes the program's apps in the universal-links and App Links files on the org's link hosts. `destinationUrl` moves the program's default link destination: every link still on the old default (the widget's or a sign-in connection's) is repointed in the same call, custom destinations stay, and links already shared follow at click time; `{code}` in it becomes the link's code. Audited.
  *
  * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
  */
@@ -3196,7 +3396,7 @@ suspend fun ReferalliClient.postAnomaliesScan(idempotencyKey: String? = null): P
 /**
  * Create an API key. POST /v1/api-keys
  *
- * Mints a secret key (`rk_live_…` / `rk_test_…`), shown only in this response. `scopes` defaults to `full`; a key can't grant scopes it doesn't hold. `mode` picks live, test or a matching pair of both (`both` returns `{ pairId, live, test }`); a test-mode caller can mint test keys only. `publishable: true` mints a browser-safe `rk_pub_` key limited to `programs:read` and `events:write` from `allowedOrigins`. `apiVersion` pins the key (default: latest). Needs an owner or admin session, or an API key with the `admin` scope. Audited.
+ * Mints a secret key (`rk_live_…` / `rk_test_…`), shown only in this response. `scopes` defaults to `full`; a key can't grant scopes it doesn't hold. `mode` picks live, test or a matching pair of both (`both` returns `{ pairId, live, test }`); a test-mode caller can mint test keys only. `publishable: true` mints a browser-safe `rk_pub_` key limited to `programs:read` and `events:write` from `allowedOrigins`. `apiVersion` pins the key (default: latest). `programIds` limits the key to those programs (their partners, links, referrals, commissions, enrollments, and webhook endpoints whose `programIds` are all within the key's, with their deliveries); a program-scoped key gets 403 `program_scoped_key` on org-wide endpoints (keys, team, org settings, billing, payouts, the event feed, analytics, creating programs). Needs an owner or admin session, or an API key with the `admin` scope. Audited.
  *
  * **Auth:** an API key with `team:write` (or `full`), or a session of any role.
  */
@@ -3276,7 +3476,7 @@ suspend fun ReferalliClient.postAuthConnectionsIdPartners(id: String, body: Post
 /**
  * Test an auth connection (signed protocol). POST /v1/auth/connections/{id}/ping
  *
- * Proves the secret works: returns the connection, its program and org and the server time, to check clock skew. Signed with the connection secret in `x-referalli-signature: t=<unix>,v1=…,v2=…` (v2 also signs the request line; once a connection has seen v2 it requires it), with a unique `x-referalli-id` per call. The legacy header names from before the rename are also accepted, for existing integrations. Calls older than 5 minutes, reused ids (`409 replay`), paused connections (`423 connection_paused`) and unknown fields (`422`) are refused.
+ * Proves the secret works: returns the connection, its program and org, the server time (to check clock skew) and `capabilities` (`{ partners: true }`: user-chosen referral codes through `/partners`). Signed with the connection secret in `x-referalli-signature: t=<unix>,v1=…,v2=…` (v2 also signs the request line; once a connection has seen v2 it requires it), with a unique `x-referalli-id` per call. The legacy header names from before the rename are also accepted, for existing integrations. Calls older than 5 minutes, reused ids (`409 replay`), paused connections (`423 connection_paused`) and unknown fields (`422`) are refused.
  *
  * **Auth:** a signature (see above); no API key.
  */
@@ -3854,14 +4054,14 @@ suspend fun ReferalliClient.postNotificationsIdRead(id: String, idempotencyKey: 
     Ok.fromJson(send("POST", "/v1/notifications/${segment(id)}/read", emptyList(), null, idempotencyKey, "json"))
 
 /**
- * Exchange an install code. POST /v1/oauth/token
+ * Token endpoint: install codes, partner links, Atlas operator token exchange. POST /v1/oauth/token
  *
- * Server to server: the platform trades the single-use code and its PKCE `code_verifier` for a new signed-protocol connection and its signing secret (returned only here). Installing again for the same instance keeps the connection and issues a new secret, the old one verifying for 24 hours. 401 for an unknown, used, expired or mismatched code. No authentication.
+ * Form-encoded or JSON, three grants. `authorization_code`: the platform trades the single-use one-click-install code and its PKCE `code_verifier` for a new signed-protocol connection and its signing secret (returned only here), plus a one-hour `access_token` scoped `connections:write webhooks:write` so the platform can require v2 signatures and register its sync webhook; installing again keeps the connection and issues a new secret, the old one verifying for 24 hours; 401 for an unknown, used, expired or mismatched code. `client_credentials`: a partner link's `client_id` and `client_secret` (HTTP Basic or the body), optional `scope` within the link's, for a one-hour `rat_…` bearer token. `urn:ietf:params:oauth:grant-type:token-exchange` (RFC 8693): `subject_token` = an Atlas operator access token from `atlas login` (issuer https://atlasauth.net, verified with its discovery document and JWKS, scope `atlas:operator`), `subject_token_type` access_token, `resource` = the org id; the Atlas account must sign in to a Referalli member of that org, and the token gets that role (owner: admin, admin: full, others: read), narrowed by `scope`. Errors follow RFC 6749 §5.2 (`{error, error_description}`). No authentication.
  *
  * **Auth:** none.
  */
-suspend fun ReferalliClient.postOauthToken(body: PostOauthTokenBody, idempotencyKey: String? = null): PostOauthTokenResponse =
-    PostOauthTokenResponse.fromJson(send("POST", "/v1/oauth/token", emptyList(), body.toJson(), idempotencyKey, "json"))
+suspend fun ReferalliClient.postOauthToken(body: JsonValue, idempotencyKey: String? = null): PostOauthTokenResponse =
+    send("POST", "/v1/oauth/token", emptyList(), body, idempotencyKey, "json")
 
 /**
  * Create an on-chain connection. POST /v1/onchain/connections
@@ -3872,6 +4072,16 @@ suspend fun ReferalliClient.postOauthToken(body: PostOauthTokenBody, idempotency
  */
 suspend fun ReferalliClient.postOnchainConnections(body: PostOnchainConnectionsBody, idempotencyKey: String? = null): PostOnchainConnectionsResponse =
     PostOnchainConnectionsResponse.fromJson(send("POST", "/v1/onchain/connections", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
+ * Check a visitor's consent stamp with Cookie Munch. POST /v1/org/consent-partners/cookiemunch/stamps/check
+ *
+ * Asks Cookie Munch (`GET /v1/partner/sites/{cbid}/stamps/{stamp}`) what the visitor's consent stamp says on your registered site (`cbid`, or each registered site in turn) and keeps the answer. `verdict`: `consented` (found, with the `referrals` category on: the only verdict that credits a referral's consent), `not_consented`, `withdrawn` (a later decision turned `referrals` off: `withdrawnAt`), `not_found` (the site never recorded the stamp), `no_grant` (Cookie Munch's 403: the site has no live link to Referalli) or `error`. Clicks and consent events that carry a Cookie Munch stamp are checked the same way in the background. 409 when the partner token isn't configured or no site is registered. Owner or admin.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.postOrgConsentPartnersCookiemunchStampsCheck(body: PostOrgConsentPartnersCookiemunchStampsCheckBody, idempotencyKey: String? = null): PostOrgConsentPartnersCookiemunchStampsCheckResponse =
+    PostOrgConsentPartnersCookiemunchStampsCheckResponse.fromJson(send("POST", "/v1/org/consent-partners/cookiemunch/stamps/check", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
  * Check the hosted-page adapters. POST /v1/org/hosted-pages/check
@@ -3912,6 +4122,16 @@ suspend fun ReferalliClient.postOrgPortalAuthTest(idempotencyKey: String? = null
  */
 suspend fun ReferalliClient.postOrgs(body: PostOrgsBody, idempotencyKey: String? = null): PostOrgsResponse =
     PostOrgsResponse.fromJson(send("POST", "/v1/orgs", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
+ * Mint an executor key under a Cookie Munch partner link. POST /v1/orgs/{orgId}/privacy/executor-key
+ *
+ * Called by Cookie Munch, not by you (CMU-X25): mints (or rotates) this org's cm-standard-v2 executor key so Cookie Munch's `referalli` executor preset can connect without a pasted key. The request must be signed by Cookie Munch's partner key exactly like its consent deliveries: `CookieMunch-Partner-Signature: t=<unix seconds>,kid=<key id>,ed25519=<base64url>` over `<t>.<raw body>`, with the key named in `https://api.cookiemunch.net/v1/partner/jwks.json` (300 s window; each signed request and each body `nonce` works once, a replay is 409; `partner` must be `referalli` and `externalId` the org in the path). Referalli then confirms the partner link with Cookie Munch over its own partner token (`GET /v1/partner/links`): it must be `active` or `waiting_on_partner`, name this org as `externalId`, sit on a site this org registered (`PUT /v1/org/consent-partners/cookiemunch`), and match `cbid`/`linkId` when sent; otherwise 403 `no_grant`. 201 `{secret, executorUrl, contract, orgId, linkId, cbid, rotated}`: `secret` is shown once and is the bearer key for `executorUrl` (`https://referalli.com/api`, the cm-standard-v2 baseUrl: calls go to `<executorUrl>/privacy/&#42;`), where it reaches only this org's referred customers and partners. The old key stops working at once. Audited (`privacy.executor_key_minted`).
+ *
+ * **Auth:** none.
+ */
+suspend fun ReferalliClient.postOrgsOrgIdPrivacyExecutorKey(orgId: String, body: PostOrgsOrgIdPrivacyExecutorKeyBody, idempotencyKey: String? = null): PostOrgsOrgIdPrivacyExecutorKeyResponse =
+    PostOrgsOrgIdPrivacyExecutorKeyResponse.fromJson(send("POST", "/v1/orgs/${segment(orgId)}/privacy/executor-key", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
  * Test your identity provider. POST /v1/org/sso/direct/test
@@ -3992,6 +4212,16 @@ suspend fun ReferalliClient.postOutreachSendDue(idempotencyKey: String? = null):
  */
 suspend fun ReferalliClient.postPartnerAdvanceAccept(body: PostPartnerAdvanceAcceptBody, idempotencyKey: String? = null): PostPartnerAdvanceAcceptResponse =
     PostPartnerAdvanceAcceptResponse.fromJson(send("POST", "/v1/partner/advance/accept", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
+ * Create a partner API token. POST /v1/partner/api-tokens
+ *
+ * A token for calling the partner API from your own code, across every programme you're in: `Authorization: Bearer rpt_…`. `read` reaches your profile, stats, links, referrals, payouts, achievements, assets, groups, contracts, deals, disputes, notifications, invitations, recruiting, terms and KYC status; `write` also creates links, deals and disputes and marks notifications read. Security, profile and payout details, KYC, contracts, advances and tax documents stay portal-only. Shown once. Portal session only, with `x-totp-code` when two-factor is on; at most 10 active.
+ *
+ * **Auth:** a partner session.
+ */
+suspend fun ReferalliClient.postPartnerApiTokens(body: PostPartnerApiTokensBody, idempotencyKey: String? = null): PostPartnerApiTokensResponse =
+    PostPartnerApiTokensResponse.fromJson(send("POST", "/v1/partner/api-tokens", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
  * Get a wallet sign-in nonce. POST /v1/partner/auth/wallet/nonce
@@ -4174,6 +4404,16 @@ suspend fun ReferalliClient.postPartnerSecurityTotpSetup(idempotencyKey: String?
     PostPartnerSecurityTotpSetupResponse.fromJson(send("POST", "/v1/partner/security/totp/setup", emptyList(), null, idempotencyKey, "json"))
 
 /**
+ * Create a portal sign-in link. POST /v1/partners/{id}/portal-link
+ *
+ * A single-use `url` (valid 5 minutes) for a "View earnings" button in your app: opening it signs the partner in to the partner portal for `programId`, with no second account. The session is read-only and limited to this partner in your organization (never the partner's other merchants or account settings) and lasts 12 hours. `returnUrl` must be a path inside the portal, such as `/portal/earnings`. 404 for a partner outside your organization or not enrolled in the program. Owner or admin.
+ *
+ * **Auth:** an API key with `partners:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.postPartnersIdPortalLink(id: String, body: PostPartnersIdPortalLinkBody, idempotencyKey: String? = null): PostPartnersIdPortalLinkResponse =
+    PostPartnersIdPortalLinkResponse.fromJson(send("POST", "/v1/partners/${segment(id)}/portal-link", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
  * Record a partner's tax form. POST /v1/partners/{id}/tax-form
  *
  * Records a W-9, W-8BEN or W-8BEN-E for the partner (`data` is the form's fields). A tax form on file is required before a partner is included in a payout run.
@@ -4244,6 +4484,46 @@ suspend fun ReferalliClient.postPayoutRunsRunScheduled(idempotencyKey: String? =
     send("POST", "/v1/payout-runs/run-scheduled", emptyList(), null, idempotencyKey, "json").array().map { PostPayoutRunsRunScheduledResponseValueItem.fromJson(it) }
 
 /**
+ * Import a brand file into the portal design. POST /v1/portal/theme/import-brand
+ *
+ * A W3C design-tokens (DTCG) brand file, sent as `document` or fetched from an https `url`, merged into the draft: colours (`color.primary`, `color.background`, `color.surface`, `color.text`, `color.muted`, `color.border`, status colours), fonts (`font.body`, `font.heading`, `font.mono`, `font.url`), `radius.base`, `logo.url` and `brand.name`. `applied` lists the tokens used. Owner or admin.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.postPortalThemeImportBrand(body: PostPortalThemeImportBrandBody, idempotencyKey: String? = null): PostPortalThemeImportBrandResponse =
+    PostPortalThemeImportBrandResponse.fromJson(send("POST", "/v1/portal/theme/import-brand", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
+ * Get a preview link for the portal design draft. POST /v1/portal/theme/preview
+ *
+ * A link that shows the draft on your verified portal domain (`?themePreview=rpv_…`) for 7 days, to anyone who has it; minting another retires the last. Partners without the link keep seeing the published design. Owner or admin.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.postPortalThemePreview(idempotencyKey: String? = null): PostPortalThemePreviewResponse =
+    PostPortalThemePreviewResponse.fromJson(send("POST", "/v1/portal/theme/preview", emptyList(), null, idempotencyKey, "json"))
+
+/**
+ * Publish the portal design. POST /v1/portal/theme/publish
+ *
+ * Makes the draft what partners see (within a minute), keeps it as a version you can restore, and retires the preview link. Optional `note`. Owner or admin. Audited.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.postPortalThemePublish(body: PostPortalThemePublishBody, idempotencyKey: String? = null): GetPortalThemeResponse =
+    GetPortalThemeResponse.fromJson(send("POST", "/v1/portal/theme/publish", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
+ * Restore a portal design version. POST /v1/portal/theme/versions/{id}/restore
+ *
+ * Copies a published version into the draft; publish it to make it live again. Owner or admin.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.postPortalThemeVersionsIdRestore(id: String, idempotencyKey: String? = null): GetPortalThemeResponse =
+    GetPortalThemeResponse.fromJson(send("POST", "/v1/portal/theme/versions/${segment(id)}/restore", emptyList(), null, idempotencyKey, "json"))
+
+/**
  * Mint a DSAR executor key. POST /v1/privacy/executor-keys
  *
  * Enables a DSAR tool for your org and mints its executor key (a bearer key, or a `whsec_` secret for Standard Webhooks), returned once. Rotating stops the old key at once. Also stores vendor settings: a Transcend public key and API key for completion callbacks, an Osano webhook secret.
@@ -4294,6 +4574,16 @@ suspend fun ReferalliClient.postPrivacyRequests(body: PostPrivacyRequestsBody, i
     PostPrivacyRequestsResponse.fromJson(send("POST", "/v1/privacy/requests", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
+ * Create a partner link. POST /v1/product-links
+ *
+ * `{partner, name?, scopes[], expires_at?}` (Unix ms or ISO 8601, at most a year; default a year; never "never"). Scopes are resource scopes (`integrations:write`, `partners:read`, …) or `connections:read|write` (the auth-platform connection routes only, what Atlas asks for); never admin, full or team. Returns `client_id` and `client_secret` once; the partner swaps them at POST /v1/oauth/token (client_credentials) or sends the secret as a bearer. A root action: an API key cannot hand out more than it holds, and an Atlas operator token needs an MFA sign-in at most 5 minutes old (403 `step_up_required` otherwise).
+ *
+ * **Auth:** an API key with `team:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.postProductLinks(body: PostProductLinksBody, idempotencyKey: String? = null): PostProductLinksResponse =
+    PostProductLinksResponse.fromJson(send("POST", "/v1/product-links", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
  * Rebuild ROI figures. POST /v1/profitability/rebuild
  *
  * Recomputes every stored ROI figure from the value events with the current settings and mappings, in the background. Returns a `jobId` to poll; while one rebuild is running, the same job is returned. Audited.
@@ -4336,7 +4626,7 @@ suspend fun ReferalliClient.postProgramsIdAutopriceRun(id: String, body: PostPro
 /**
  * Enroll a partner. POST /v1/programs/{id}/enrollments
  *
- * Enrolls an existing partner in the program, approved at once. Publishes `partner.enrolled`. 409 when already enrolled.
+ * Enrolls an existing partner in the program, approved at once. Publishes `partner.enrolled`. 409 when already enrolled. `externalRef` is this program's own id for the partner, when their partner `externalRef` belongs to another product sharing the org; this program's webhooks and `GET /v1/partners?externalRef=` then use it.
  *
  * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
  */
@@ -4382,6 +4672,16 @@ suspend fun ReferalliClient.postProgramsIdGroups(id: String, body: PostProgramsI
  */
 suspend fun ReferalliClient.postProgramsIdPromotions(id: String, body: PostProgramsIdPromotionsBody, idempotencyKey: String? = null): Promotion =
     Promotion.fromJson(send("POST", "/v1/programs/${segment(id)}/promotions", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
+ * Make a user a referrer. POST /v1/programs/{id}/referrers
+ *
+ * One idempotent call for one of your users: finds the partner by `externalRef` (or by `email`, enrolling them under this program's own `externalRef` when they refer for another product in the org), else creates it, then enrolls them and creates a coupon code and a link to the program's default destination when missing. `email` is needed only to create the partner (400 without it). 409 `email_taken` when that email is already enrolled in this program under another id.
+ *
+ * **Auth:** an API key with `programs:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.postProgramsIdReferrers(id: String, body: PostProgramsIdReferrersBody, idempotencyKey: String? = null): PostProgramsIdReferrersResponse =
+    PostProgramsIdReferrersResponse.fromJson(send("POST", "/v1/programs/${segment(id)}/referrers", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
  * End a promotion. POST /v1/promotions/{id}/end
@@ -4520,8 +4820,18 @@ suspend fun ReferalliClient.postSupportAppsAdapterTest(adapter: String, body: Po
  *
  * **Auth:** none.
  */
-suspend fun ReferalliClient.postSupportCardsOrgIdAdapter(orgId: String, adapter: String, body: Map<String, JsonValue>, idempotencyKey: String? = null): PostSupportCardsOrgIdAdapterResponse =
+suspend fun ReferalliClient.postSupportCardsOrgIdAdapter(orgId: String, adapter: String, body: Map<String, JsonValue>, idempotencyKey: String? = null): GetSupportPlatformChatlyAnswersResponse =
     send("POST", "/v1/support/cards/${segment(orgId)}/${segment(adapter)}", emptyList(), JsonValue.Obj(body.mapValues { it.value }), idempotencyKey, "json").obj().mapValues { it.value }
+
+/**
+ * Render the card for Referalli's own support desk. POST /v1/support/platform/chatly-card
+ *
+ * Called by Chatly for Referalli's own support workspace, signed `x-chatly-signature` with `CHATLY_PLATFORM_CARD_SECRET`. Names the person by the verified Atlas identity (`iss`, `sub`, `principal`), or by `contact.externalId` (`merchant:<user id>` / `partner:<account id>`), and answers one card across every programme they're in: a partner's status, balances and next payout per programme, or a merchant's organizations and roles. Unknown people get `blocks: null`; a bad or stale signature answers 404.
+ *
+ * **Auth:** none.
+ */
+suspend fun ReferalliClient.postSupportPlatformChatlyCard(body: Map<String, JsonValue>, idempotencyKey: String? = null): GetSupportPlatformChatlyAnswersResponse =
+    send("POST", "/v1/support/platform/chatly-card", emptyList(), JsonValue.Obj(body.mapValues { it.value }), idempotencyKey, "json").obj().mapValues { it.value }
 
 /**
  * File a corrected 1099. POST /v1/tax/1099/documents/{id}/correct
@@ -4806,6 +5116,16 @@ suspend fun ReferalliClient.putNetworkSettings(body: PutNetworkSettingsBody, ide
     PutNetworkSettingsResponse.fromJson(send("PUT", "/v1/network/settings", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
+ * Set the Cookie Munch sites to accept consent events for. PUT /v1/org/consent-partners/cookiemunch
+ *
+ * Replaces the list of Cookie Munch sites (cbids) whose signed consent events this org keeps. An event for any other site is acknowledged and dropped, since the org a delivery names is chosen by whoever made the link. Owner or admin. Audited.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.putOrgConsentPartnersCookiemunch(body: PutOrgConsentPartnersCookiemunchBody, idempotencyKey: String? = null): GetOrgConsentPartnersCookiemunchResponse =
+    GetOrgConsentPartnersCookiemunchResponse.fromJson(send("PUT", "/v1/org/consent-partners/cookiemunch", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
  * Turn the FX feed on or off. PUT /v1/org/fx-feed
  *
  * Turns the daily ECB reference-rate feed on or off. Turning it on syncs once at once and returns how many rates were inserted. Audited.
@@ -4818,7 +5138,7 @@ suspend fun ReferalliClient.putOrgFxFeed(body: PutOrgFxFeedBody, idempotencyKey:
 /**
  * Set the hosted-page consent and chat. PUT /v1/org/hosted-pages
  *
- * Validates and saves the adapters. A CMP's `scriptUrl` must be https on that vendor's own hosts; `custom` needs every origin listed. `customOrigins` adds origins per CSP directive (https or wss, no wildcards, no keywords). Owner or admin. Audited.
+ * Validates and saves the adapters. A CMP's `scriptUrl` must be https on that vendor's own hosts; `custom` needs every origin listed; every chat vendor also takes `origins` for hosts its account needs beyond the documented list. `chat.identitySecret` (write-only, sealed) is your chat vendor's identity-verification secret, used to sign partners in to your chat: a string sets it, `null` removes it, absent keeps it, and switching vendors drops it. `customOrigins` adds origins per CSP directive (https or wss, no wildcards, no keywords). Owner or admin. Audited.
  *
  * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
  */
@@ -4838,7 +5158,7 @@ suspend fun ReferalliClient.putOrgPayoutSchedule(body: PutOrgPayoutScheduleBody,
 /**
  * Set partner sign-in. PUT /v1/org/portal-auth
  *
- * Chooses the portal sign-in adapter and its settings. `custom`: `issuer`, `jwksUrl` (https), optional `loginUrl` (your page that mints the token) and `autoEnrollProgramId`. `oidc`: `issuer`, `clientId`, `clientSecret`. `referalli` removes any configuration. Owner only.
+ * Chooses the portal sign-in adapter and its settings. `custom`: `issuer` and `jwksUrl` (https), or `preset` + `tenant` for a known platform (`jwtPresets` in the GET lists them: Clerk, Supabase, Firebase, Auth0, Cognito, Stytch, Kinde, Okta, Entra ID, Google, Keycloak, Descope, FusionAuth), or `keyType: hs256` with a write-only `sharedSecret` (≥ 32 characters, sealed); optional `audience` (default `referalli:<org>`), `maxAgeS` (30 to 3600, default 300), `claims` (where `sub`, `email`, `name`, `emailVerified` live, by name or dot path), `loginUrl` (your page that mints the token) and `autoEnrollProgramId`. `oidc`: `issuer`, `clientId`, `clientSecret`. `referalli` removes any configuration. Owner only.
  *
  * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`.
  */
@@ -4986,6 +5306,16 @@ suspend fun ReferalliClient.putPayoutConnectionsProvider(provider: String, body:
     PutPayoutConnectionsProviderResponse.fromJson(send("PUT", "/v1/payout-connections/${segment(provider)}", emptyList(), body, idempotencyKey, "json"))
 
 /**
+ * Replace the portal design draft. PUT /v1/portal/theme/draft
+ *
+ * Replaces the whole draft: keys you leave out are gone. Unknown keys are refused with 422 naming each one by its full path. Owner or admin.
+ *
+ * **Auth:** an API key with `org:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.putPortalThemeDraft(body: Map<String, JsonValue>, idempotencyKey: String? = null): GetPortalThemeResponse =
+    GetPortalThemeResponse.fromJson(send("PUT", "/v1/portal/theme/draft", emptyList(), JsonValue.Obj(body.mapValues { it.value }), idempotencyKey, "json"))
+
+/**
  * Set a product margin. PUT /v1/profitability/products/{productRef}
  *
  * Sets a product's margin (`marginBps`) or unit cost (`unitCostMinor`, in `currency`, default the reporting currency); exactly one of the two. Audited.
@@ -5066,6 +5396,16 @@ suspend fun ReferalliClient.putProgramsIdRefereeReward(id: String, body: PutProg
     PutProgramsIdRefereeRewardResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/referee-reward", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
+ * Set a program's Stripe balance credit settings. PUT /v1/programs/{id}/stripe-credits
+ *
+ * Turns the rail on or off for a program. Each `commission.settled` line with method `merchant_credit` is credited to the referrer's Stripe customer balance; a later `commission.reversed` debits it back. `referrerMatch`: `billing_link` (the partner's externalRef is a `cus_…` id or is billing-linked to one), `metadata` (Stripe customer search on `metadata[metadataKey]` = the partner's externalRef) or `email` (the one Stripe customer with the partner's email). `refereeRewards: true` also credits `store_credit` referee rewards to the referred customer. Custom units (`x_…`) are never credited. Enabling needs a key (`409 stripe_key_required`). Owner or admin. Audited.
+ *
+ * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.putProgramsIdStripeCredits(id: String, body: PutProgramsIdStripeCreditsBody, idempotencyKey: String? = null): GetProgramsIdStripeCreditsResponse =
+    GetProgramsIdStripeCreditsResponse.fromJson(send("PUT", "/v1/programs/${segment(id)}/stripe-credits", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
  * Save a reward rule. PUT /v1/rewards/rules/{key}
  *
  * Creates or replaces a rule: the amount, the reason, an optional program and an optional `event` it rewards (one rule per event).
@@ -5074,6 +5414,16 @@ suspend fun ReferalliClient.putProgramsIdRefereeReward(id: String, body: PutProg
  */
 suspend fun ReferalliClient.putRewardsRulesKey(key: String, body: PutRewardsRulesKeyBody, idempotencyKey: String? = null): PutRewardsRulesKeyResponse =
     PutRewardsRulesKeyResponse.fromJson(send("PUT", "/v1/rewards/rules/${segment(key)}", emptyList(), body.toJson(), idempotencyKey, "json"))
+
+/**
+ * Connect a Stripe key for balance credits. PUT /v1/stripe-credits/connection
+ *
+ * Stores your own Stripe restricted key (`rk_…`, with Customers write) for the balance credit rail, encrypted and never echoed. Without one the rail uses the secret key of your Stripe payout connection, if any. Owner or admin, recent sign-in. Audited.
+ *
+ * **Auth:** an API key with `payouts:write` (or `full`), or a session with role `owner`, `admin`.
+ */
+suspend fun ReferalliClient.putStripeCreditsConnection(body: PutStripeCreditsConnectionBody, idempotencyKey: String? = null): GetStripeCreditsConnectionResponse =
+    GetStripeCreditsConnectionResponse.fromJson(send("PUT", "/v1/stripe-credits/connection", emptyList(), body.toJson(), idempotencyKey, "json"))
 
 /**
  * Connect a support tool. PUT /v1/support/apps/{adapter}
@@ -5098,6 +5448,7 @@ suspend fun ReferalliClient.call(operationId: String, path: Map<String, String> 
         ?: call8(operationId, path, query, body, idempotencyKey)
         ?: call9(operationId, path, query, body, idempotencyKey)
         ?: call10(operationId, path, query, body, idempotencyKey)
+        ?: call11(operationId, path, query, body, idempotencyKey)
         ?: throw IllegalArgumentException("unknown operation $operationId")
 
 private suspend fun ReferalliClient.call0(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
@@ -5114,11 +5465,15 @@ private suspend fun ReferalliClient.call0(operationId: String, path: Map<String,
         "deleteIntegrationsKind" -> deleteIntegrationsKind(kind = path.getValue("kind"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "deleteOrgMembersUserId" -> deleteOrgMembersUserId(userId = path.getValue("userId"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "deleteOrgSsoDirect" -> deleteOrgSsoDirect(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "deletePartnerApiTokensId" -> deletePartnerApiTokensId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "deletePartnersId" -> deletePartnersId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "deletePayoutConnectionsProvider" -> deletePayoutConnectionsProvider(provider = path.getValue("provider"), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "deletePortalThemeDraft" -> deletePortalThemeDraft(idempotencyKey = idempotencyKey).let { it.toJson() }
         "deletePrivacyExecutorsAdapter" -> deletePrivacyExecutorsAdapter(adapter = path.getValue("adapter"), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "deleteProductLinksId" -> deleteProductLinksId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "deleteProfitabilityProductsProductRef" -> deleteProfitabilityProductsProductRef(productRef = path.getValue("productRef"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "deleteRewardsRulesKey" -> deleteRewardsRulesKey(key = path.getValue("key"), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "deleteStripeCreditsConnection" -> deleteStripeCreditsConnection(idempotencyKey = idempotencyKey).let { it.toJson() }
         "deleteSupportAppsAdapter" -> deleteSupportAppsAdapter(adapter = path.getValue("adapter"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "deleteWebhookEndpointsId" -> deleteWebhookEndpointsId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "deleteZapierHooksId" -> deleteZapierHooksId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5138,15 +5493,15 @@ private suspend fun ReferalliClient.call0(operationId: String, path: Map<String,
         "getAssets" -> getAssets(programId = query["programId"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getAssistantSuggestions" -> getAssistantSuggestions(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getAuditLogs" -> getAuditLogs(actor = query["actor"]?.queryString(), actorType = query["actorType"]?.queryString(), action = query["action"]?.queryString(), subjectType = query["subjectType"]?.queryString(), subjectId = query["subjectId"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
-        "getAuthConnections" -> getAuthConnections(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
-        "getAuthConnectionsIdExport" -> getAuthConnectionsIdExport(id = path.getValue("id"), customerRef = query["customerRef"]?.queryString()!!, idempotencyKey = idempotencyKey).let { it.toJson() }
-        "getAuthConnectionsProviders" -> getAuthConnectionsProviders(idempotencyKey = idempotencyKey).let { it.toJson() }
-        "getAuthProviders" -> getAuthProviders(idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }
 
 private suspend fun ReferalliClient.call1(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "getAuthConnections" -> getAuthConnections(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
+        "getAuthConnectionsIdExport" -> getAuthConnectionsIdExport(id = path.getValue("id"), customerRef = query["customerRef"]?.queryString()!!, idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getAuthConnectionsProviders" -> getAuthConnectionsProviders(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getAuthProviders" -> getAuthProviders(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getBillingConnections" -> getBillingConnections(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getBillingConnectionsId" -> getBillingConnectionsId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getBillingEvents" -> getBillingEvents(customerRef = query["customerRef"]?.queryString(), status = query["status"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
@@ -5173,7 +5528,6 @@ private suspend fun ReferalliClient.call1(operationId: String, path: Map<String,
         "getDisputes" -> getDisputes(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getEmailSettings" -> getEmailSettings(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getEmailTemplates" -> getEmailTemplates(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
-        "getEmbed" -> getEmbed(token = query["token"]?.queryString()!!, idempotencyKey = idempotencyKey).let { it.toJson() }
         "getEmbedSummary" -> getEmbedSummary(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getEvents" -> getEvents(since = query["since"]?.queryString(), topics = query["topics"]?.queryString(), after = query["after"]?.queryString(), limit = query["limit"]?.queryLong(), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getExportAccounting" -> getExportAccounting(format = query["format"]?.queryString(), year = query["year"]?.queryLong()!!, idempotencyKey = idempotencyKey).let { JsonValue.Str(it) }
@@ -5182,16 +5536,17 @@ private suspend fun ReferalliClient.call1(operationId: String, path: Map<String,
         "getFxRates" -> getFxRates(base = query["base"]?.queryString(), quote = query["quote"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getGraphql" -> getGraphql(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getHealth" -> getHealth(idempotencyKey = idempotencyKey).let { it.toJson() }
-        "getHostsCurrent" -> getHostsCurrent(idempotencyKey = idempotencyKey).let { it }
-        "getHostsCurrentThemeCss" -> getHostsCurrentThemeCss(idempotencyKey = idempotencyKey).let { JsonValue.Str(it) }
-        "getIncrementality" -> getIncrementality(programId = query["programId"]?.queryString()!!, idempotencyKey = idempotencyKey).let { it.toJson() }
-        "getIntegrationHealth" -> getIntegrationHealth(idempotencyKey = idempotencyKey).let { it.toJson() }
-        "getIntegrations" -> getIntegrations(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getHostsCurrent" -> getHostsCurrent(themePreview = query["themePreview"]?.queryString(), idempotencyKey = idempotencyKey).let { it }
+        "getHostsCurrentChatIdentity" -> getHostsCurrentChatIdentity(idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }
 
 private suspend fun ReferalliClient.call2(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
     when (operationId) {
+        "getHostsCurrentThemeCss" -> getHostsCurrentThemeCss(themePreview = query["themePreview"]?.queryString(), idempotencyKey = idempotencyKey).let { JsonValue.Str(it) }
+        "getIncrementality" -> getIncrementality(programId = query["programId"]?.queryString()!!, idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getIntegrationHealth" -> getIntegrationHealth(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getIntegrations" -> getIntegrations(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getIntegrationsDeliveries" -> getIntegrationsDeliveries(kind = query["kind"]?.queryString(), status = query["status"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getInvitations" -> getInvitations(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getLinks" -> getLinks(programId = query["programId"]?.queryString(), partnerId = query["partnerId"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
@@ -5206,6 +5561,8 @@ private suspend fun ReferalliClient.call2(operationId: String, path: Map<String,
         "getOpenapiJson" -> getOpenapiJson(idempotencyKey = idempotencyKey).let { JsonValue.Obj(it.mapValues { it.value }) }
         "getOpenapiYaml" -> getOpenapiYaml(idempotencyKey = idempotencyKey).let { JsonValue.Str(it) }
         "getOrg" -> getOrg(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getOrgConsentPartnersCookiemunch" -> getOrgConsentPartnersCookiemunch(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getOrgConsentPartnersCookiemunchEvents" -> getOrgConsentPartnersCookiemunchEvents(stamp = query["stamp"]?.queryString(), limit = query["limit"]?.queryLong(), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getOrgFxFeed" -> getOrgFxFeed(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getOrgHostedPages" -> getOrgHostedPages(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getOrgMembers" -> getOrgMembers(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
@@ -5221,10 +5578,16 @@ private suspend fun ReferalliClient.call2(operationId: String, path: Map<String,
         "getPartnerAchievements" -> getPartnerAchievements(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerAdvance" -> getPartnerAdvance(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerAdvanceOffer" -> getPartnerAdvanceOffer(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getPartnerApiTokens" -> getPartnerApiTokens(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPartnerAssets" -> getPartnerAssets(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerContracts" -> getPartnerContracts(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerDeals" -> getPartnerDeals(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerDisputes" -> getPartnerDisputes(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call3(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
         "getPartnerGroups" -> getPartnerGroups(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerInvitations" -> getPartnerInvitations(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerKycStatus" -> getPartnerKycStatus(idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5232,11 +5595,6 @@ private suspend fun ReferalliClient.call2(operationId: String, path: Map<String,
         "getPartnerLinksIdQr" -> getPartnerLinksIdQr(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { JsonValue.Str(it) }
         "getPartnerMarketplace" -> getPartnerMarketplace(category = query["category"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerMe" -> getPartnerMe(idempotencyKey = idempotencyKey).let { it.toJson() }
-        else -> null
-    }
-
-private suspend fun ReferalliClient.call3(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
-    when (operationId) {
         "getPartnerNotifications" -> getPartnerNotifications(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerOrgsOrgIdSelfBilling" -> getPartnerOrgsOrgIdSelfBilling(orgId = path.getValue("orgId"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPartnerPassport" -> getPartnerPassport(idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5251,11 +5609,13 @@ private suspend fun ReferalliClient.call3(operationId: String, path: Map<String,
         "getPartnerReferralsIdTransparency" -> getPartnerReferralsIdTransparency(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPartners" -> getPartners(email = query["email"]?.queryString(), externalRef = query["externalRef"]?.queryString(), status = query["status"]?.queryString(), includeArchived = query["includeArchived"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerSecurity" -> getPartnerSecurity(idempotencyKey = idempotencyKey).let { it.toJson() }
-        "getPartnersId" -> getPartnersId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it }
+        "getPartnersId" -> getPartnersId(id = path.getValue("id"), programId = query["programId"]?.queryString(), idempotencyKey = idempotencyKey).let { it }
         "getPartnersIdBalances" -> getPartnersIdBalances(id = path.getValue("id"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnersIdEnrollments" -> getPartnersIdEnrollments(id = path.getValue("id"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnersIdPayoutProfile" -> getPartnersIdPayoutProfile(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPartnersIdQuality" -> getPartnersIdQuality(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getPartnersIdStats" -> getPartnersIdStats(id = path.getValue("id"), programId = query["programId"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getPartnersIdSummary" -> getPartnersIdSummary(id = path.getValue("id"), programId = query["programId"]?.queryString()!!, idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPartnerStats" -> getPartnerStats(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerTaxDocuments" -> getPartnerTaxDocuments(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPartnerTaxDocumentsId" -> getPartnerTaxDocumentsId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { JsonValue.Str(it) }
@@ -5267,30 +5627,37 @@ private suspend fun ReferalliClient.call3(operationId: String, path: Map<String,
         "getPayoutsIdInvoice" -> getPayoutsIdInvoice(id = path.getValue("id"), format = query["format"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPlans" -> getPlans(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPortalAuthCurrent" -> getPortalAuthCurrent(org = query["org"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getPortalTheme" -> getPortalTheme(idempotencyKey = idempotencyKey).let { it.toJson() }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call4(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
+        "getPortalThemeCompiled" -> getPortalThemeCompiled(which = query["which"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getPortalThemeSchema" -> getPortalThemeSchema(idempotencyKey = idempotencyKey).let { JsonValue.Obj(it.mapValues { it.value }) }
+        "getPortalThemeVersions" -> getPortalThemeVersions(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPrivacyExecutorRequests" -> getPrivacyExecutorRequests(idempotencyKey = idempotencyKey).let { JsonValue.Arr(it.map { it.toJson() }) }
         "getPrivacyExecutors" -> getPrivacyExecutors(idempotencyKey = idempotencyKey).let { JsonValue.Arr(it.map { it.toJson() }) }
         "getPrivacyExport" -> getPrivacyExport(customerRef = query["customerRef"]?.queryString()!!, idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPrivacyRequests" -> getPrivacyRequests(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPrivacyRequestsId" -> getPrivacyRequestsId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getPrivacyRequestsIdResult" -> getPrivacyRequestsIdResult(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getProductLinks" -> getProductLinks(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProfitabilityProducts" -> getProfitabilityProducts(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProfitabilityProductsProductRef" -> getProfitabilityProductsProductRef(productRef = path.getValue("productRef"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProfitabilityRebuildJobId" -> getProfitabilityRebuildJobId(jobId = path.getValue("jobId"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProfitabilitySettings" -> getProfitabilitySettings(programId = query["programId"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
-        else -> null
-    }
-
-private suspend fun ReferalliClient.call4(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
-    when (operationId) {
-        "getPrograms" -> getPrograms(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
+        "getPrograms" -> getPrograms(slug = query["slug"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getProgramsId" -> getProgramsId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProgramsIdAutopricing" -> getProgramsIdAutopricing(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
-        "getProgramsIdEnrollments" -> getProgramsIdEnrollments(id = path.getValue("id"), status = query["status"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
+        "getProgramsIdEnrollments" -> getProgramsIdEnrollments(id = path.getValue("id"), status = query["status"]?.queryString(), partnerId = query["partnerId"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getProgramsIdGraph" -> getProgramsIdGraph(id = path.getValue("id"), root = query["root"]?.queryString()!!, depth = query["depth"]?.queryLong(), idempotencyKey = idempotencyKey).let { it }
         "getProgramsIdGroups" -> getProgramsIdGroups(id = path.getValue("id"), includeArchived = query["includeArchived"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getProgramsIdNegotiationPolicy" -> getProgramsIdNegotiationPolicy(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getProgramsIdPromotions" -> getProgramsIdPromotions(id = path.getValue("id"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getProgramsIdRefereeReward" -> getProgramsIdRefereeReward(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getProgramsIdStripeCredits" -> getProgramsIdStripeCredits(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getProgramsIdStripeCreditsLog" -> getProgramsIdStripeCreditsLog(id = path.getValue("id"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getProgramsIdTermsAcceptances" -> getProgramsIdTermsAcceptances(id = path.getValue("id"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getProspects" -> getProspects(status = query["status"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getPublicProgramsHandle" -> getPublicProgramsHandle(handle = path.getValue("handle"), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5306,6 +5673,11 @@ private suspend fun ReferalliClient.call4(operationId: String, path: Map<String,
         "getRoiBreakdown" -> getRoiBreakdown(from = query["from"]?.queryString(), to = query["to"]?.queryString(), programId = query["programId"]?.queryString(), partnerId = query["partnerId"]?.queryString(), windowDays = query["windowDays"]?.queryLong(), currency = query["currency"]?.queryString(), format = query["format"]?.queryString(), by = query["by"]?.queryString()!!, limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getRoiDataQuality" -> getRoiDataQuality(from = query["from"]?.queryString(), to = query["to"]?.queryString(), format = query["format"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getRoiGrants" -> getRoiGrants(from = query["from"]?.queryString(), to = query["to"]?.queryString(), programId = query["programId"]?.queryString(), partnerId = query["partnerId"]?.queryString(), windowDays = query["windowDays"]?.queryLong(), currency = query["currency"]?.queryString(), format = query["format"]?.queryString(), status = query["status"]?.queryString(), role = query["role"]?.queryString(), paidBack = query["paidBack"]?.queryString(), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call5(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
         "getRoiPartnersIdTrace" -> getRoiPartnersIdTrace(id = path.getValue("id"), windowDays = query["windowDays"]?.queryLong(), format = query["format"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
         "getRoiPatterns" -> getRoiPatterns(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getRoiPatternsPattern" -> getRoiPatternsPattern(pattern = path.getValue("pattern"), limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
@@ -5316,17 +5688,14 @@ private suspend fun ReferalliClient.call4(operationId: String, path: Map<String,
         "getStatusIncidents" -> getStatusIncidents(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getStatusIncidentsAtom" -> getStatusIncidentsAtom(idempotencyKey = idempotencyKey).let { JsonValue.Str(it) }
         "getStatusIncidentsId" -> getStatusIncidentsId(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getStripeCreditsConnection" -> getStripeCreditsConnection(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getSupportApps" -> getSupportApps(idempotencyKey = idempotencyKey).let { JsonValue.Arr(it.map { it.toJson() }) }
         "getSupportCardsOrgIdAdapter" -> getSupportCardsOrgIdAdapter(orgId = path.getValue("orgId"), adapter = path.getValue("adapter"), email = query["email"]?.queryString(), externalId = query["externalId"]?.queryString(), idempotencyKey = idempotencyKey).let { JsonValue.Obj(it.mapValues { it.value }) }
         "getSupportContext" -> getSupportContext(email = query["email"]?.queryString(), customerRef = query["customerRef"]?.queryString(), partnerExternalRef = query["partnerExternalRef"]?.queryString(), ext = query["ext"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "getSupportPlatformChatlyAnswers" -> getSupportPlatformChatlyAnswers(subject = query["subject"]?.queryString(), principal = query["principal"]?.queryString(), question = query["question"]?.queryString(), idempotencyKey = idempotencyKey).let { JsonValue.Obj(it.mapValues { it.value }) }
         "getTax1099" -> getTax1099(year = query["year"]?.queryLong()!!, limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getTax1099Filings" -> getTax1099Filings(year = query["year"]?.queryLong()!!, limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getTax1099Preview" -> getTax1099Preview(year = query["year"]?.queryLong()!!, idempotencyKey = idempotencyKey).let { it.toJson() }
-        else -> null
-    }
-
-private suspend fun ReferalliClient.call5(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
-    when (operationId) {
         "getTestClock" -> getTestClock(idempotencyKey = idempotencyKey).let { it.toJson() }
         "getTestEmails" -> getTestEmails(limit = query["limit"]?.queryLong(), startingAfter = query["starting_after"]?.queryString(), endingBefore = query["ending_before"]?.queryString(), createdGte = query["created[gte]"]?.queryString(), createdLte = query["created[lte]"]?.queryString(), idempotencyKey = idempotencyKey).let { it.toJson { it.toJson() } }
         "getValueImportJobId" -> getValueImportJobId(jobId = path.getValue("jobId"), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5349,6 +5718,12 @@ private suspend fun ReferalliClient.call5(operationId: String, path: Map<String,
         "patchPartnerGroupsId" -> patchPartnerGroupsId(id = path.getValue("id"), body = PatchPartnerGroupsIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchPartnersId" -> patchPartnersId(id = path.getValue("id"), body = PatchPartnersIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchPartnersIdPayoutProfile" -> patchPartnersIdPayoutProfile(id = path.getValue("id"), body = PatchPartnersIdPayoutProfileBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call6(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
+        "patchPortalThemeDraft" -> patchPortalThemeDraft(body = (body ?: JsonValue.Obj(emptyMap())).obj().mapValues { it.value }, idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchProgramsId" -> patchProgramsId(id = path.getValue("id"), body = PatchProgramsIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchReferralsId" -> patchReferralsId(id = path.getValue("id"), body = PatchReferralsIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "patchWebhookEndpointsId" -> patchWebhookEndpointsId(id = path.getValue("id"), body = PatchWebhookEndpointsIdBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it }
@@ -5367,11 +5742,6 @@ private suspend fun ReferalliClient.call5(operationId: String, path: Map<String,
         "postAttributionReplay" -> postAttributionReplay(body = PostAttributionReplayBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postAuthBackchannelLogout" -> postAuthBackchannelLogout(body = PostAuthBackchannelLogoutBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postAuthConnections" -> postAuthConnections(body = PostAuthConnectionsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
-        else -> null
-    }
-
-private suspend fun ReferalliClient.call6(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
-    when (operationId) {
         "postAuthConnectionsIdAliases" -> postAuthConnectionsIdAliases(id = path.getValue("id"), body = PostAuthConnectionsIdAliasesBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postAuthConnectionsIdErase" -> postAuthConnectionsIdErase(id = path.getValue("id"), body = PostAuthConnectionsIdEraseBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postAuthConnectionsIdPartners" -> postAuthConnectionsIdPartners(id = path.getValue("id"), body = PostAuthConnectionsIdPartnersBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5393,6 +5763,11 @@ private suspend fun ReferalliClient.call6(operationId: String, path: Map<String,
         "postBrandingDomain" -> postBrandingDomain(body = PostBrandingDomainBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postBrandingDomainVerify" -> postBrandingDomainVerify(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postBrandingLinkDomain" -> postBrandingLinkDomain(body = PostBrandingLinkDomainBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call7(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
         "postBrandingLinkDomainVerify" -> postBrandingLinkDomainVerify(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postCliDeviceCodes" -> postCliDeviceCodes(body = PostCliDeviceCodesBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postCliDeviceCodesToken" -> postCliDeviceCodesToken(body = PostCliDeviceCodesTokenBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5412,11 +5787,6 @@ private suspend fun ReferalliClient.call6(operationId: String, path: Map<String,
         "postDealsIdReject" -> postDealsIdReject(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postDealsIdWon" -> postDealsIdWon(id = path.getValue("id"), body = PostDealsIdWonBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postDiscoveryCorpus" -> postDiscoveryCorpus(body = PostDiscoveryCorpusBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
-        else -> null
-    }
-
-private suspend fun ReferalliClient.call7(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
-    when (operationId) {
         "postDiscoverySearch" -> postDiscoverySearch(body = PostDiscoverySearchBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postDisputesIdResolve" -> postDisputesIdResolve(id = path.getValue("id"), body = PostDisputesIdResolveBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postEmailPreview" -> postEmailPreview(body = PostEmailPreviewBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5438,12 +5808,19 @@ private suspend fun ReferalliClient.call7(operationId: String, path: Map<String,
         "postLinks" -> postLinks(body = PostLinksBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postMobilePurchases" -> postMobilePurchases(body = PostMobilePurchasesBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postNotificationsIdRead" -> postNotificationsIdRead(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
-        "postOauthToken" -> postOauthToken(body = PostOauthTokenBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call8(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
+        "postOauthToken" -> postOauthToken(body = (body ?: JsonValue.Obj(emptyMap())), idempotencyKey = idempotencyKey).let { it }
         "postOnchainConnections" -> postOnchainConnections(body = PostOnchainConnectionsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postOrgConsentPartnersCookiemunchStampsCheck" -> postOrgConsentPartnersCookiemunchStampsCheck(body = PostOrgConsentPartnersCookiemunchStampsCheckBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOrgHostedPagesCheck" -> postOrgHostedPagesCheck(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOrgMembers" -> postOrgMembers(body = PostOrgMembersBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOrgPortalAuthTest" -> postOrgPortalAuthTest(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOrgs" -> postOrgs(body = PostOrgsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postOrgsOrgIdPrivacyExecutorKey" -> postOrgsOrgIdPrivacyExecutorKey(orgId = path.getValue("orgId"), body = PostOrgsOrgIdPrivacyExecutorKeyBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOrgSsoDirectTest" -> postOrgSsoDirectTest(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOrgSsoLink" -> postOrgSsoLink(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOrgSsoTickets" -> postOrgSsoTickets(body = PostOrgSsoTicketsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5452,16 +5829,12 @@ private suspend fun ReferalliClient.call7(operationId: String, path: Map<String,
         "postOutreachIdApprove" -> postOutreachIdApprove(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postOutreachSendDue" -> postOutreachSendDue(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerAdvanceAccept" -> postPartnerAdvanceAccept(body = PostPartnerAdvanceAcceptBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postPartnerApiTokens" -> postPartnerApiTokens(body = PostPartnerApiTokensBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerAuthWalletNonce" -> postPartnerAuthWalletNonce(body = PostPartnerAuthWalletNonceBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerAuthWalletVerify" -> postPartnerAuthWalletVerify(body = PostPartnerAuthWalletVerifyBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerContractsIdAccept" -> postPartnerContractsIdAccept(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerContractsIdDecline" -> postPartnerContractsIdDecline(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerDeals" -> postPartnerDeals(body = PostPartnerDealsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
-        else -> null
-    }
-
-private suspend fun ReferalliClient.call8(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
-    when (operationId) {
         "postPartnerDisputes" -> postPartnerDisputes(body = PostPartnerDisputesBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerInvitationsIdAccept" -> postPartnerInvitationsIdAccept(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerInvitationsIdDecline" -> postPartnerInvitationsIdDecline(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5475,18 +5848,29 @@ private suspend fun ReferalliClient.call8(operationId: String, path: Map<String,
         "postPartnerSecurityTotpDisable" -> postPartnerSecurityTotpDisable(body = PostPartnerSecurityTotpDisableBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerSecurityTotpEnable" -> postPartnerSecurityTotpEnable(body = PostPartnerSecurityTotpEnableBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerSecurityTotpSetup" -> postPartnerSecurityTotpSetup(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postPartnersIdPortalLink" -> postPartnersIdPortalLink(id = path.getValue("id"), body = PostPartnersIdPortalLinkBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnersIdTaxForm" -> postPartnersIdTaxForm(id = path.getValue("id"), body = PostPartnersIdTaxFormBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPartnerTermsVersionIdAccept" -> postPartnerTermsVersionIdAccept(versionId = path.getValue("versionId"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPassportVerify" -> postPassportVerify(body = PostPassportVerifyBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPayoutRuns" -> postPayoutRuns(idempotencyKey = idempotencyKey).let { it.toJson() }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call9(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
         "postPayoutRunsIdCancel" -> postPayoutRunsIdCancel(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPayoutRunsIdExecute" -> postPayoutRunsIdExecute(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPayoutRunsRunScheduled" -> postPayoutRunsRunScheduled(idempotencyKey = idempotencyKey).let { JsonValue.Arr(it.map { it.toJson() }) }
+        "postPortalThemeImportBrand" -> postPortalThemeImportBrand(body = PostPortalThemeImportBrandBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postPortalThemePreview" -> postPortalThemePreview(idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postPortalThemePublish" -> postPortalThemePublish(body = PostPortalThemePublishBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postPortalThemeVersionsIdRestore" -> postPortalThemeVersionsIdRestore(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPrivacyExecutorKeys" -> postPrivacyExecutorKeys(body = PostPrivacyExecutorKeysBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPrivacyExecutorsAdapterCheck" -> postPrivacyExecutorsAdapterCheck(adapter = path.getValue("adapter"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPrivacyForget" -> postPrivacyForget(body = PostPrivacyForgetBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPrivacyLookup" -> postPrivacyLookup(body = PostPrivacyLookupBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPrivacyRequests" -> postPrivacyRequests(body = PostPrivacyRequestsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postProductLinks" -> postProductLinks(body = PostProductLinksBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postProfitabilityRebuild" -> postProfitabilityRebuild(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPrograms" -> postPrograms(body = PostProgramsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postProgramsIdApplyLeveling" -> postProgramsIdApplyLeveling(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5496,17 +5880,13 @@ private suspend fun ReferalliClient.call8(operationId: String, path: Map<String,
         "postProgramsIdEnrollmentsEnrollmentIdReject" -> postProgramsIdEnrollmentsEnrollmentIdReject(id = path.getValue("id"), enrollmentId = path.getValue("enrollmentId"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postProgramsIdGroups" -> postProgramsIdGroups(id = path.getValue("id"), body = PostProgramsIdGroupsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postProgramsIdPromotions" -> postProgramsIdPromotions(id = path.getValue("id"), body = PostProgramsIdPromotionsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "postProgramsIdReferrers" -> postProgramsIdReferrers(id = path.getValue("id"), body = PostProgramsIdReferrersBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPromotionsIdEnd" -> postPromotionsIdEnd(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postPublicProgramsHandleJoin" -> postPublicProgramsHandleJoin(handle = path.getValue("handle"), body = PostPublicProgramsHandleJoinBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postQualityRecompute" -> postQualityRecompute(idempotencyKey = idempotencyKey).let { it.toJson() }
         "postReferralsAssociate" -> postReferralsAssociate(body = PostReferralsAssociateBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postReferralsIdApprove" -> postReferralsIdApprove(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postReferralsIdReassign" -> postReferralsIdReassign(id = path.getValue("id"), body = PostReferralsIdReassignBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
-        else -> null
-    }
-
-private suspend fun ReferalliClient.call9(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
-    when (operationId) {
         "postReferralsIdVoid" -> postReferralsIdVoid(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postRewards" -> postRewards(body = PostRewardsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postRewardsIdRedeem" -> postRewardsIdRedeem(id = path.getValue("id"), body = PostRewardsIdRedeemBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5515,8 +5895,14 @@ private suspend fun ReferalliClient.call9(operationId: String, path: Map<String,
         "postSandboxSimulate" -> postSandboxSimulate(body = PostSandboxSimulateBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postSupportAppsAdapterTest" -> postSupportAppsAdapterTest(adapter = path.getValue("adapter"), body = PostSupportAppsAdapterTestBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postSupportCardsOrgIdAdapter" -> postSupportCardsOrgIdAdapter(orgId = path.getValue("orgId"), adapter = path.getValue("adapter"), body = (body ?: JsonValue.Obj(emptyMap())).obj().mapValues { it.value }, idempotencyKey = idempotencyKey).let { JsonValue.Obj(it.mapValues { it.value }) }
+        "postSupportPlatformChatlyCard" -> postSupportPlatformChatlyCard(body = (body ?: JsonValue.Obj(emptyMap())).obj().mapValues { it.value }, idempotencyKey = idempotencyKey).let { JsonValue.Obj(it.mapValues { it.value }) }
         "postTax1099DocumentsIdCorrect" -> postTax1099DocumentsIdCorrect(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postTax1099Filings" -> postTax1099Filings(body = PostTax1099FilingsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call10(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
         "postTax1099FilingsIdRefresh" -> postTax1099FilingsIdRefresh(id = path.getValue("id"), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postTestClockAdvance" -> postTestClockAdvance(body = PostTestClockAdvanceBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "postTrackEvents" -> postTrackEvents(body = (body ?: JsonValue.Obj(emptyMap())), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5543,15 +5929,11 @@ private suspend fun ReferalliClient.call9(operationId: String, path: Map<String,
         "putMeLocale" -> putMeLocale(body = PutMeLocaleBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putMeRoiDigest" -> putMeRoiDigest(body = PutMeRoiDigestBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putNetworkSettings" -> putNetworkSettings(body = PutNetworkSettingsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "putOrgConsentPartnersCookiemunch" -> putOrgConsentPartnersCookiemunch(body = PutOrgConsentPartnersCookiemunchBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgFxFeed" -> putOrgFxFeed(body = PutOrgFxFeedBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgHostedPages" -> putOrgHostedPages(body = PutOrgHostedPagesBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgPayoutSchedule" -> putOrgPayoutSchedule(body = PutOrgPayoutScheduleBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgPortalAuth" -> putOrgPortalAuth(body = (body ?: JsonValue.Obj(emptyMap())), idempotencyKey = idempotencyKey).let { it.toJson() }
-        else -> null
-    }
-
-private suspend fun ReferalliClient.call10(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
-    when (operationId) {
         "putOrgReferralParams" -> putOrgReferralParams(body = PutOrgReferralParamsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgRetention" -> putOrgRetention(body = PutOrgRetentionBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putOrgSsoDirect" -> putOrgSsoDirect(body = (body ?: JsonValue.Obj(emptyMap())), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5561,11 +5943,17 @@ private suspend fun ReferalliClient.call10(operationId: String, path: Map<String
         "putPartnerLocale" -> putPartnerLocale(body = PutPartnerLocaleBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putPartnerOrgsOrgIdPayoutProfile" -> putPartnerOrgsOrgIdPayoutProfile(orgId = path.getValue("orgId"), body = PutPartnerOrgsOrgIdPayoutProfileBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putPartnerOrgsOrgIdPostback" -> putPartnerOrgsOrgIdPostback(orgId = path.getValue("orgId"), body = PutPartnerOrgsOrgIdPostbackBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        else -> null
+    }
+
+private suspend fun ReferalliClient.call11(operationId: String, path: Map<String, String>, query: Map<String, JsonValue>, body: JsonValue?, idempotencyKey: String?): JsonValue? =
+    when (operationId) {
         "putPartnerOrgsOrgIdVat" -> putPartnerOrgsOrgIdVat(orgId = path.getValue("orgId"), body = PutPartnerOrgsOrgIdVatBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putPartnerProfile" -> putPartnerProfile(body = PutPartnerProfileBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putPartnersIdPayoutProfile" -> putPartnersIdPayoutProfile(id = path.getValue("id"), body = PutPartnersIdPayoutProfileBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putPartnersIdVat" -> putPartnersIdVat(id = path.getValue("id"), body = PutPartnersIdVatBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putPayoutConnectionsProvider" -> putPayoutConnectionsProvider(provider = path.getValue("provider"), body = (body ?: JsonValue.Obj(emptyMap())), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "putPortalThemeDraft" -> putPortalThemeDraft(body = (body ?: JsonValue.Obj(emptyMap())).obj().mapValues { it.value }, idempotencyKey = idempotencyKey).let { it.toJson() }
         "putProfitabilityProductsProductRef" -> putProfitabilityProductsProductRef(productRef = path.getValue("productRef"), body = PutProfitabilityProductsProductRefBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putProfitabilitySettings" -> putProfitabilitySettings(body = PutProfitabilitySettingsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putProgramsIdAutopricing" -> putProgramsIdAutopricing(id = path.getValue("id"), body = PutProgramsIdAutopricingBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
@@ -5574,7 +5962,9 @@ private suspend fun ReferalliClient.call10(operationId: String, path: Map<String
         "putProgramsIdPartnersPartnerIdGroup" -> putProgramsIdPartnersPartnerIdGroup(id = path.getValue("id"), partnerId = path.getValue("partnerId"), body = PutProgramsIdPartnersPartnerIdGroupBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putProgramsIdPayoutSchedule" -> putProgramsIdPayoutSchedule(id = path.getValue("id"), body = PutProgramsIdPayoutScheduleBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putProgramsIdRefereeReward" -> putProgramsIdRefereeReward(id = path.getValue("id"), body = PutProgramsIdRefereeRewardBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "putProgramsIdStripeCredits" -> putProgramsIdStripeCredits(id = path.getValue("id"), body = PutProgramsIdStripeCreditsBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putRewardsRulesKey" -> putRewardsRulesKey(key = path.getValue("key"), body = PutRewardsRulesKeyBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
+        "putStripeCreditsConnection" -> putStripeCreditsConnection(body = PutStripeCreditsConnectionBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         "putSupportAppsAdapter" -> putSupportAppsAdapter(adapter = path.getValue("adapter"), body = PutSupportAppsAdapterBody.fromJson((body ?: JsonValue.Obj(emptyMap()))), idempotencyKey = idempotencyKey).let { it.toJson() }
         else -> null
     }

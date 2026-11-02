@@ -390,12 +390,14 @@ data class Enrollment(
     val id: String,
     val programId: String,
     val partnerId: String,
+    val externalRef: String? = null,
     val status: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@Enrollment.id))
         put("programId", JsonValue.Str(this@Enrollment.programId))
         put("partnerId", JsonValue.Str(this@Enrollment.partnerId))
+        put("externalRef", (this@Enrollment.externalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("status", JsonValue.Str(this@Enrollment.status))
     })
 
@@ -406,6 +408,7 @@ data class Enrollment(
                 id = o.field("id").string(),
                 programId = o.field("programId").string(),
                 partnerId = o.field("partnerId").string(),
+                externalRef = o.field("externalRef").orNull()?.let { it.string() },
                 status = o.field("status").string(),
             )
         }
@@ -1354,6 +1357,7 @@ data class BillingConnection(
     val hasCredentials: Boolean,
     val valueMapping: ValueMapping? = null,
     val filter: BillingFilter? = null,
+    val customerRefMetadataKey: String? = null,
     val rotation: BillingConnectionRotation,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -1367,6 +1371,7 @@ data class BillingConnection(
         put("hasCredentials", JsonValue.Bool(this@BillingConnection.hasCredentials))
         put("valueMapping", (this@BillingConnection.valueMapping?.let { it.toJson() } ?: JsonValue.Null))
         put("filter", (this@BillingConnection.filter?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@BillingConnection.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@BillingConnection.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("rotation", this@BillingConnection.rotation.toJson())
     })
 
@@ -1384,6 +1389,7 @@ data class BillingConnection(
                 hasCredentials = o.field("hasCredentials").bool(),
                 valueMapping = o.field("valueMapping").orNull()?.let { ValueMapping.fromJson(it) },
                 filter = o.field("filter").orNull()?.let { BillingFilter.fromJson(it) },
+                customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
                 rotation = BillingConnectionRotation.fromJson(o.field("rotation")),
             )
         }
@@ -1396,6 +1402,7 @@ data class CreatedBillingConnection(
     val webhookSecret: String,
     val webhookUrl: String,
     val filter: BillingFilter? = null,
+    val customerRefMetadataKey: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@CreatedBillingConnection.id))
@@ -1403,6 +1410,7 @@ data class CreatedBillingConnection(
         put("webhookSecret", JsonValue.Str(this@CreatedBillingConnection.webhookSecret))
         put("webhookUrl", JsonValue.Str(this@CreatedBillingConnection.webhookUrl))
         put("filter", (this@CreatedBillingConnection.filter?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@CreatedBillingConnection.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@CreatedBillingConnection.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -1414,6 +1422,7 @@ data class CreatedBillingConnection(
                 webhookSecret = o.field("webhookSecret").string(),
                 webhookUrl = o.field("webhookUrl").string(),
                 filter = o.field("filter").orNull()?.let { BillingFilter.fromJson(it) },
+                customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -2309,6 +2318,48 @@ data class FxRate(
     }
 }
 
+/** The plan's caps (null: unlimited). A test org runs on its live org's plan. */
+data class OrgLimits(
+    val programs: Long? = null,
+    val partners: Long? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("programs", (this@OrgLimits.programs?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("partners", (this@OrgLimits.partners?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): OrgLimits {
+            val o = json.obj()
+            return OrgLimits(
+                programs = o.field("programs").orNull()?.let { it.long() },
+                partners = o.field("partners").orNull()?.let { it.long() },
+            )
+        }
+    }
+}
+
+/** What counts against the caps: programs that are not archived, and partners. */
+data class OrgUsage(
+    val programs: Long,
+    val partners: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("programs", JsonValue.Num(this@OrgUsage.programs.toDouble()))
+        put("partners", JsonValue.Num(this@OrgUsage.partners.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): OrgUsage {
+            val o = json.obj()
+            return OrgUsage(
+                programs = o.field("programs").long(),
+                partners = o.field("partners").long(),
+            )
+        }
+    }
+}
+
 data class Org(
     val id: String,
     val name: String,
@@ -2317,6 +2368,9 @@ data class Org(
     val trackingToken: String,
     val payoutKycRequired: Boolean,
     val livemode: Boolean,
+    val limits: OrgLimits,
+    val usage: OrgUsage,
+    val portalUrl: String,
     val liveOrgId: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -2327,6 +2381,9 @@ data class Org(
         put("trackingToken", JsonValue.Str(this@Org.trackingToken))
         put("payoutKycRequired", JsonValue.Bool(this@Org.payoutKycRequired))
         put("livemode", JsonValue.Bool(this@Org.livemode))
+        put("limits", this@Org.limits.toJson())
+        put("usage", this@Org.usage.toJson())
+        put("portalUrl", JsonValue.Str(this@Org.portalUrl))
         if (this@Org.liveOrgId != null) put("liveOrgId", (this@Org.liveOrgId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
@@ -2341,6 +2398,9 @@ data class Org(
                 trackingToken = o.field("trackingToken").string(),
                 payoutKycRequired = o.field("payoutKycRequired").bool(),
                 livemode = o.field("livemode").bool(),
+                limits = OrgLimits.fromJson(o.field("limits")),
+                usage = OrgUsage.fromJson(o.field("usage")),
+                portalUrl = o.field("portalUrl").string(),
                 liveOrgId = o["liveOrgId"]?.orNull()?.let { it.string() },
             )
         }
@@ -2384,6 +2444,7 @@ data class IssuedApiKey(
     val owner: String? = null,
     val expiresAt: String? = null,
     val pairId: String? = null,
+    val programIds: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@IssuedApiKey.id))
@@ -2396,6 +2457,7 @@ data class IssuedApiKey(
         put("owner", (this@IssuedApiKey.owner?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("expiresAt", (this@IssuedApiKey.expiresAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("pairId", (this@IssuedApiKey.pairId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("programIds", (this@IssuedApiKey.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -2412,6 +2474,7 @@ data class IssuedApiKey(
                 owner = o.field("owner").orNull()?.let { it.string() },
                 expiresAt = o.field("expiresAt").orNull()?.let { it.string() },
                 pairId = o.field("pairId").orNull()?.let { it.string() },
+                programIds = o.field("programIds").orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -2448,6 +2511,7 @@ data class ApiKey(
     val livemode: Boolean,
     val owner: String? = null,
     val pairId: String? = null,
+    val programIds: List<String>? = null,
     val createdBy: ApiKeyCreatedByOption1? = null,
     val expiresAt: String? = null,
     val expired: Boolean,
@@ -2466,6 +2530,7 @@ data class ApiKey(
         put("livemode", JsonValue.Bool(this@ApiKey.livemode))
         put("owner", (this@ApiKey.owner?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("pairId", (this@ApiKey.pairId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("programIds", (this@ApiKey.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
         put("createdBy", (this@ApiKey.createdBy?.let { it.toJson() } ?: JsonValue.Null))
         put("expiresAt", (this@ApiKey.expiresAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("expired", JsonValue.Bool(this@ApiKey.expired))
@@ -2488,6 +2553,7 @@ data class ApiKey(
                 livemode = o.field("livemode").bool(),
                 owner = o.field("owner").orNull()?.let { it.string() },
                 pairId = o.field("pairId").orNull()?.let { it.string() },
+                programIds = o.field("programIds").orNull()?.let { it.array().map { it.string() } },
                 createdBy = o.field("createdBy").orNull()?.let { ApiKeyCreatedByOption1.fromJson(it) },
                 expiresAt = o.field("expiresAt").orNull()?.let { it.string() },
                 expired = o.field("expired").bool(),
@@ -2528,6 +2594,7 @@ data class AuthConnection(
     val createdAt: String,
     val rotation: AuthConnectionRotation,
     val instanceId: String? = null,
+    val appId: String? = null,
     val autoEnrollUsers: Boolean? = null,
     val destinationUrl: String? = null,
     val signatureVersion: String? = null,
@@ -2542,6 +2609,7 @@ data class AuthConnection(
         put("createdAt", JsonValue.Str(this@AuthConnection.createdAt))
         put("rotation", this@AuthConnection.rotation.toJson())
         if (this@AuthConnection.instanceId != null) put("instanceId", (this@AuthConnection.instanceId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@AuthConnection.appId != null) put("appId", (this@AuthConnection.appId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@AuthConnection.autoEnrollUsers != null) put("autoEnrollUsers", (this@AuthConnection.autoEnrollUsers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@AuthConnection.destinationUrl != null) put("destinationUrl", (this@AuthConnection.destinationUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@AuthConnection.signatureVersion != null) put("signatureVersion", (this@AuthConnection.signatureVersion?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -2560,6 +2628,7 @@ data class AuthConnection(
                 createdAt = o.field("createdAt").string(),
                 rotation = AuthConnectionRotation.fromJson(o.field("rotation")),
                 instanceId = o["instanceId"]?.orNull()?.let { it.string() },
+                appId = o["appId"]?.orNull()?.let { it.string() },
                 autoEnrollUsers = o["autoEnrollUsers"]?.orNull()?.let { it.bool() },
                 destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
                 signatureVersion = o["signatureVersion"]?.orNull()?.let { it.string() },
@@ -2578,6 +2647,7 @@ data class CreatedAuthConnection(
     val metadataKeys: Map<String, String>? = null,
     val programId: String? = null,
     val instanceId: String? = null,
+    val appId: String? = null,
     val autoEnrollUsers: Boolean? = null,
     val destinationUrl: String? = null,
     val signupsUrl: String? = null,
@@ -2593,6 +2663,7 @@ data class CreatedAuthConnection(
         if (this@CreatedAuthConnection.metadataKeys != null) put("metadataKeys", (this@CreatedAuthConnection.metadataKeys?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.programId != null) put("programId", (this@CreatedAuthConnection.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.instanceId != null) put("instanceId", (this@CreatedAuthConnection.instanceId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@CreatedAuthConnection.appId != null) put("appId", (this@CreatedAuthConnection.appId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.autoEnrollUsers != null) put("autoEnrollUsers", (this@CreatedAuthConnection.autoEnrollUsers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.destinationUrl != null) put("destinationUrl", (this@CreatedAuthConnection.destinationUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@CreatedAuthConnection.signupsUrl != null) put("signupsUrl", (this@CreatedAuthConnection.signupsUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -2612,6 +2683,7 @@ data class CreatedAuthConnection(
                 metadataKeys = o["metadataKeys"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
                 programId = o["programId"]?.orNull()?.let { it.string() },
                 instanceId = o["instanceId"]?.orNull()?.let { it.string() },
+                appId = o["appId"]?.orNull()?.let { it.string() },
                 autoEnrollUsers = o["autoEnrollUsers"]?.orNull()?.let { it.bool() },
                 destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
                 signupsUrl = o["signupsUrl"]?.orNull()?.let { it.string() },
@@ -5314,6 +5386,12 @@ data class CommissionSettledEventData(
     val currency: String,
     val method: String,
     val reference: String,
+    val customerRef: String? = null,
+    val billingEventId: String? = null,
+    val providerEventId: String? = null,
+    val invoiceRef: String? = null,
+    val customerExternalRef: String? = null,
+    val partnerExternalRef: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("commissionId", JsonValue.Str(this@CommissionSettledEventData.commissionId))
@@ -5324,6 +5402,12 @@ data class CommissionSettledEventData(
         put("currency", JsonValue.Str(this@CommissionSettledEventData.currency))
         put("method", JsonValue.Str(this@CommissionSettledEventData.method))
         put("reference", JsonValue.Str(this@CommissionSettledEventData.reference))
+        put("customerRef", (this@CommissionSettledEventData.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("billingEventId", (this@CommissionSettledEventData.billingEventId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("providerEventId", (this@CommissionSettledEventData.providerEventId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("invoiceRef", (this@CommissionSettledEventData.invoiceRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerExternalRef", (this@CommissionSettledEventData.customerExternalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("partnerExternalRef", (this@CommissionSettledEventData.partnerExternalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -5338,6 +5422,12 @@ data class CommissionSettledEventData(
                 currency = o.field("currency").string(),
                 method = o.field("method").string(),
                 reference = o.field("reference").string(),
+                customerRef = o.field("customerRef").orNull()?.let { it.string() },
+                billingEventId = o.field("billingEventId").orNull()?.let { it.string() },
+                providerEventId = o.field("providerEventId").orNull()?.let { it.string() },
+                invoiceRef = o.field("invoiceRef").orNull()?.let { it.string() },
+                customerExternalRef = o.field("customerExternalRef").orNull()?.let { it.string() },
+                partnerExternalRef = o.field("partnerExternalRef").orNull()?.let { it.string() },
             )
         }
     }
@@ -6666,6 +6756,198 @@ data class WebhookEndpointFailingEvent(
     }
 }
 
+/** `data` of a `stripe_credit.applied` event: The Stripe balance credit rail applied a credit (or a reversal debit) to a Stripe customer balance with your key. `stripeBalanceTransactionId` is the Stripe balance transaction. */
+data class StripeCreditAppliedEventData(
+    val id: String,
+    val programId: String,
+    val sourceEventId: String,
+    val kind: String,
+    val commissionId: String? = null,
+    val partnerId: String? = null,
+    val customerRef: String? = null,
+    val amountMinor: Long,
+    val currency: String,
+    val stripeCustomerId: String? = null,
+    val status: String,
+    val attempts: Long,
+    val stripeBalanceTransactionId: String? = null,
+    val lastError: String? = null,
+    val createdAt: String,
+    val updatedAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@StripeCreditAppliedEventData.id))
+        put("programId", JsonValue.Str(this@StripeCreditAppliedEventData.programId))
+        put("sourceEventId", JsonValue.Str(this@StripeCreditAppliedEventData.sourceEventId))
+        put("kind", JsonValue.Str(this@StripeCreditAppliedEventData.kind))
+        put("commissionId", (this@StripeCreditAppliedEventData.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("partnerId", (this@StripeCreditAppliedEventData.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerRef", (this@StripeCreditAppliedEventData.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@StripeCreditAppliedEventData.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@StripeCreditAppliedEventData.currency))
+        put("stripeCustomerId", (this@StripeCreditAppliedEventData.stripeCustomerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@StripeCreditAppliedEventData.status))
+        put("attempts", JsonValue.Num(this@StripeCreditAppliedEventData.attempts.toDouble()))
+        put("stripeBalanceTransactionId", (this@StripeCreditAppliedEventData.stripeBalanceTransactionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("lastError", (this@StripeCreditAppliedEventData.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createdAt", JsonValue.Str(this@StripeCreditAppliedEventData.createdAt))
+        put("updatedAt", JsonValue.Str(this@StripeCreditAppliedEventData.updatedAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): StripeCreditAppliedEventData {
+            val o = json.obj()
+            return StripeCreditAppliedEventData(
+                id = o.field("id").string(),
+                programId = o.field("programId").string(),
+                sourceEventId = o.field("sourceEventId").string(),
+                kind = o.field("kind").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                partnerId = o.field("partnerId").orNull()?.let { it.string() },
+                customerRef = o.field("customerRef").orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                stripeCustomerId = o.field("stripeCustomerId").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+                attempts = o.field("attempts").long(),
+                stripeBalanceTransactionId = o.field("stripeBalanceTransactionId").orNull()?.let { it.string() },
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+                createdAt = o.field("createdAt").string(),
+                updatedAt = o.field("updatedAt").string(),
+            )
+        }
+    }
+}
+
+/** A Stripe balance credit or debit was applied: the `stripe_credit.applied` delivery body. */
+data class StripeCreditAppliedEvent(
+    val id: String,
+    val topic: String,
+    val orgId: String,
+    val livemode: Boolean,
+    val createdAt: String,
+    val data: StripeCreditAppliedEventData,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@StripeCreditAppliedEvent.id))
+        put("topic", JsonValue.Str(this@StripeCreditAppliedEvent.topic))
+        put("orgId", JsonValue.Str(this@StripeCreditAppliedEvent.orgId))
+        put("livemode", JsonValue.Bool(this@StripeCreditAppliedEvent.livemode))
+        put("createdAt", JsonValue.Str(this@StripeCreditAppliedEvent.createdAt))
+        put("data", this@StripeCreditAppliedEvent.data.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): StripeCreditAppliedEvent {
+            val o = json.obj()
+            return StripeCreditAppliedEvent(
+                id = o.field("id").string(),
+                topic = o.field("topic").string(),
+                orgId = o.field("orgId").string(),
+                livemode = o.field("livemode").bool(),
+                createdAt = o.field("createdAt").string(),
+                data = StripeCreditAppliedEventData.fromJson(o.field("data")),
+            )
+        }
+    }
+}
+
+/** `data` of a `stripe_credit.failed` event: The Stripe balance credit rail stopped retrying a credit or debit after its last attempt: no Stripe customer matched (`no_customer`) or Stripe refused it (`failed`). `lastError` says why. */
+data class StripeCreditFailedEventData(
+    val id: String,
+    val programId: String,
+    val sourceEventId: String,
+    val kind: String,
+    val commissionId: String? = null,
+    val partnerId: String? = null,
+    val customerRef: String? = null,
+    val amountMinor: Long,
+    val currency: String,
+    val stripeCustomerId: String? = null,
+    val status: String,
+    val attempts: Long,
+    val stripeBalanceTransactionId: String? = null,
+    val lastError: String? = null,
+    val createdAt: String,
+    val updatedAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@StripeCreditFailedEventData.id))
+        put("programId", JsonValue.Str(this@StripeCreditFailedEventData.programId))
+        put("sourceEventId", JsonValue.Str(this@StripeCreditFailedEventData.sourceEventId))
+        put("kind", JsonValue.Str(this@StripeCreditFailedEventData.kind))
+        put("commissionId", (this@StripeCreditFailedEventData.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("partnerId", (this@StripeCreditFailedEventData.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerRef", (this@StripeCreditFailedEventData.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@StripeCreditFailedEventData.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@StripeCreditFailedEventData.currency))
+        put("stripeCustomerId", (this@StripeCreditFailedEventData.stripeCustomerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@StripeCreditFailedEventData.status))
+        put("attempts", JsonValue.Num(this@StripeCreditFailedEventData.attempts.toDouble()))
+        put("stripeBalanceTransactionId", (this@StripeCreditFailedEventData.stripeBalanceTransactionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("lastError", (this@StripeCreditFailedEventData.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createdAt", JsonValue.Str(this@StripeCreditFailedEventData.createdAt))
+        put("updatedAt", JsonValue.Str(this@StripeCreditFailedEventData.updatedAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): StripeCreditFailedEventData {
+            val o = json.obj()
+            return StripeCreditFailedEventData(
+                id = o.field("id").string(),
+                programId = o.field("programId").string(),
+                sourceEventId = o.field("sourceEventId").string(),
+                kind = o.field("kind").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                partnerId = o.field("partnerId").orNull()?.let { it.string() },
+                customerRef = o.field("customerRef").orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                stripeCustomerId = o.field("stripeCustomerId").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+                attempts = o.field("attempts").long(),
+                stripeBalanceTransactionId = o.field("stripeBalanceTransactionId").orNull()?.let { it.string() },
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+                createdAt = o.field("createdAt").string(),
+                updatedAt = o.field("updatedAt").string(),
+            )
+        }
+    }
+}
+
+/** A Stripe balance credit or debit gave up: the `stripe_credit.failed` delivery body. */
+data class StripeCreditFailedEvent(
+    val id: String,
+    val topic: String,
+    val orgId: String,
+    val livemode: Boolean,
+    val createdAt: String,
+    val data: StripeCreditFailedEventData,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@StripeCreditFailedEvent.id))
+        put("topic", JsonValue.Str(this@StripeCreditFailedEvent.topic))
+        put("orgId", JsonValue.Str(this@StripeCreditFailedEvent.orgId))
+        put("livemode", JsonValue.Bool(this@StripeCreditFailedEvent.livemode))
+        put("createdAt", JsonValue.Str(this@StripeCreditFailedEvent.createdAt))
+        put("data", this@StripeCreditFailedEvent.data.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): StripeCreditFailedEvent {
+            val o = json.obj()
+            return StripeCreditFailedEvent(
+                id = o.field("id").string(),
+                topic = o.field("topic").string(),
+                orgId = o.field("orgId").string(),
+                livemode = o.field("livemode").bool(),
+                createdAt = o.field("createdAt").string(),
+                data = StripeCreditFailedEventData.fromJson(o.field("data")),
+            )
+        }
+    }
+}
+
 /** `data` of a `webhook_endpoint.recovered` event: Sent to your active endpoints, including the recovered one, when a delivery succeeds after the endpoint was failing. */
 data class WebhookEndpointRecoveredEventData(
     val endpointId: String,
@@ -7047,6 +7329,97 @@ data class PostTOrgTokenMobileInstallResponse(
     }
 }
 
+data class GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem(
+    val name: String,
+    val type: String,
+    val category: String,
+    val lifetime: String,
+    val purpose: Map<String, String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("name", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem.name))
+        put("type", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem.type))
+        put("category", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem.category))
+        put("lifetime", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem.lifetime))
+        put("purpose", JsonValue.Obj(this@GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem.purpose.mapValues { JsonValue.Str(it.value) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem {
+            val o = json.obj()
+            return GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem(
+                name = o.field("name").string(),
+                type = o.field("type").string(),
+                category = o.field("category").string(),
+                lifetime = o.field("lifetime").string(),
+                purpose = o.field("purpose").obj().mapValues { it.value.string() },
+            )
+        }
+    }
+}
+
+data class GetWellKnownReferalliEmbedJsonResponseSurfacesValue(
+    val csp: Map<String, List<String>>,
+    val consentCategory: String,
+    val storage: List<GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("csp", JsonValue.Obj(this@GetWellKnownReferalliEmbedJsonResponseSurfacesValue.csp.mapValues { JsonValue.Arr(it.value.map { JsonValue.Str(it) }) }))
+        put("consentCategory", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponseSurfacesValue.consentCategory))
+        put("storage", JsonValue.Arr(this@GetWellKnownReferalliEmbedJsonResponseSurfacesValue.storage.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownReferalliEmbedJsonResponseSurfacesValue {
+            val o = json.obj()
+            return GetWellKnownReferalliEmbedJsonResponseSurfacesValue(
+                csp = o.field("csp").obj().mapValues { it.value.array().map { it.string() } },
+                consentCategory = o.field("consentCategory").string(),
+                storage = o.field("storage").array().map { GetWellKnownReferalliEmbedJsonResponseSurfacesValueStorageItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+/** An embed-v1 manifest (https://cookiemunch.net/schemas/embed-v1.json). */
+data class GetWellKnownReferalliEmbedJsonResponse(
+    val schema: String,
+    val product: String,
+    val updated: String,
+    val openapi: String,
+    val status: String,
+    val docs: String,
+    val surfaces: Map<String, GetWellKnownReferalliEmbedJsonResponseSurfacesValue>,
+    val changes: List<JsonValue>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("schema", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponse.schema))
+        put("product", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponse.product))
+        put("updated", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponse.updated))
+        put("openapi", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponse.openapi))
+        put("status", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponse.status))
+        put("docs", JsonValue.Str(this@GetWellKnownReferalliEmbedJsonResponse.docs))
+        put("surfaces", JsonValue.Obj(this@GetWellKnownReferalliEmbedJsonResponse.surfaces.mapValues { it.value.toJson() }))
+        put("changes", JsonValue.Arr(this@GetWellKnownReferalliEmbedJsonResponse.changes.map { it }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetWellKnownReferalliEmbedJsonResponse {
+            val o = json.obj()
+            return GetWellKnownReferalliEmbedJsonResponse(
+                schema = o.field("schema").string(),
+                product = o.field("product").string(),
+                updated = o.field("updated").string(),
+                openapi = o.field("openapi").string(),
+                status = o.field("status").string(),
+                docs = o.field("docs").string(),
+                surfaces = o.field("surfaces").obj().mapValues { GetWellKnownReferalliEmbedJsonResponseSurfacesValue.fromJson(it.value) },
+                changes = o.field("changes").array().map { it },
+            )
+        }
+    }
+}
+
 data class GetWellKnownAppleAppSiteAssociationResponseApplinksDetailsItemComponentsItem(
     val value: String,
 ) {
@@ -7162,307 +7535,6 @@ data class GetWellKnownAssetlinksJsonResponseValueItem(
 }
 
 typealias GetWellKnownAssetlinksJsonResponse = List<GetWellKnownAssetlinksJsonResponseValueItem>
-
-data class GetWellKnownForgedeckEmbedJsonResponseCheckers(
-    val userAgent: String,
-    val egress: List<String>,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("userAgent", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseCheckers.userAgent))
-        put("egress", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponseCheckers.egress.map { JsonValue.Str(it) }))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseCheckers {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseCheckers(
-                userAgent = o.field("userAgent").string(),
-                egress = o.field("egress").array().map { it.string() },
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2(
-    val default: Long,
-    val max: Long,
-    val note: String,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("default", JsonValue.Num(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2.default.toDouble()))
-        put("max", JsonValue.Num(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2.max.toDouble()))
-        put("note", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2.note))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2 {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetCookieDaysOption2(
-                default = o.field("default").long(),
-                max = o.field("max").long(),
-                note = o.field("note").string(),
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose(
-    val en: String,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("en", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose.en))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose(
-                en = o.field("en").string(),
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem(
-    val name: String,
-    val type: String,
-    val category: String,
-    val lifetime: String,
-    val purpose: GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose,
-    val legacy: Boolean? = null,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("name", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.name))
-        put("type", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.type))
-        put("category", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.category))
-        put("lifetime", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.lifetime))
-        put("purpose", this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.purpose.toJson())
-        if (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.legacy != null) put("legacy", (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.legacy?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem(
-                name = o.field("name").string(),
-                type = o.field("type").string(),
-                category = o.field("category").string(),
-                lifetime = o.field("lifetime").string(),
-                purpose = GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItemPurpose.fromJson(o.field("purpose")),
-                legacy = o["legacy"]?.orNull()?.let { it.bool() },
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet(
-    val script: String,
-    val csp: Map<String, List<String>>,
-    val consentCategory: String,
-    val consentFallbackCategory: String,
-    val consentAdapters: List<String>,
-    val consentDefault: Map<String, JsonValue>? = null,
-    val cookieDays: JsonValue,
-    val storage: List<GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem>,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("script", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.script))
-        put("csp", JsonValue.Obj(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.csp.mapValues { JsonValue.Arr(it.value.map { JsonValue.Str(it) }) }))
-        put("consentCategory", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentCategory))
-        put("consentFallbackCategory", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentFallbackCategory))
-        put("consentAdapters", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentAdapters.map { JsonValue.Str(it) }))
-        if (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentDefault != null) put("consentDefault", (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.consentDefault?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
-        put("cookieDays", this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.cookieDays)
-        put("storage", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.storage.map { it.toJson() }))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet(
-                script = o.field("script").string(),
-                csp = o.field("csp").obj().mapValues { it.value.array().map { it.string() } },
-                consentCategory = o.field("consentCategory").string(),
-                consentFallbackCategory = o.field("consentFallbackCategory").string(),
-                consentAdapters = o.field("consentAdapters").array().map { it.string() },
-                consentDefault = o["consentDefault"]?.orNull()?.let { it.obj().mapValues { it.value } },
-                cookieDays = o.field("cookieDays"),
-                storage = o.field("storage").array().map { GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippetStorageItem.fromJson(it) },
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose(
-    val en: String,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("en", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose.en))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose(
-                en = o.field("en").string(),
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem(
-    val name: String,
-    val type: String,
-    val category: String,
-    val lifetime: String,
-    val purpose: GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose,
-    val legacy: Boolean? = null,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("name", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.name))
-        put("type", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.type))
-        put("category", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.category))
-        put("lifetime", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.lifetime))
-        put("purpose", this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.purpose.toJson())
-        if (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.legacy != null) put("legacy", (this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.legacy?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem(
-                name = o.field("name").string(),
-                type = o.field("type").string(),
-                category = o.field("category").string(),
-                lifetime = o.field("lifetime").string(),
-                purpose = GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItemPurpose.fromJson(o.field("purpose")),
-                legacy = o["legacy"]?.orNull()?.let { it.bool() },
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed(
-    val script: String,
-    val csp: Map<String, List<String>>,
-    val consentCategory: String,
-    val storage: List<GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem>,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("script", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.script))
-        put("csp", JsonValue.Obj(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.csp.mapValues { JsonValue.Arr(it.value.map { JsonValue.Str(it) }) }))
-        put("consentCategory", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.consentCategory))
-        put("storage", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.storage.map { it.toJson() }))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed(
-                script = o.field("script").string(),
-                csp = o.field("csp").obj().mapValues { it.value.array().map { it.string() } },
-                consentCategory = o.field("consentCategory").string(),
-                storage = o.field("storage").array().map { GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbedStorageItem.fromJson(it) },
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseSurfaces(
-    val trackingSnippet: GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet,
-    val portalEmbed: GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("tracking-snippet", this@GetWellKnownForgedeckEmbedJsonResponseSurfaces.trackingSnippet.toJson())
-        put("portal-embed", this@GetWellKnownForgedeckEmbedJsonResponseSurfaces.portalEmbed.toJson())
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseSurfaces {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseSurfaces(
-                trackingSnippet = GetWellKnownForgedeckEmbedJsonResponseSurfacesTrackingSnippet.fromJson(o.field("tracking-snippet")),
-                portalEmbed = GetWellKnownForgedeckEmbedJsonResponseSurfacesPortalEmbed.fromJson(o.field("portal-embed")),
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponseChangesItem(
-    val effective: String,
-    val surface: String,
-    val add: List<String>? = null,
-    val remove: List<String>? = null,
-    val note: String,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("effective", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.effective))
-        put("surface", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.surface))
-        if (this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.add != null) put("add", (this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.add?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
-        if (this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.remove != null) put("remove", (this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.remove?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
-        put("note", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponseChangesItem.note))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponseChangesItem {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponseChangesItem(
-                effective = o.field("effective").string(),
-                surface = o.field("surface").string(),
-                add = o["add"]?.orNull()?.let { it.array().map { it.string() } },
-                remove = o["remove"]?.orNull()?.let { it.array().map { it.string() } },
-                note = o.field("note").string(),
-            )
-        }
-    }
-}
-
-data class GetWellKnownForgedeckEmbedJsonResponse(
-    val schema: String,
-    val product: String,
-    val updated: String,
-    val openapi: String,
-    val llms: String,
-    val status: String,
-    val docs: String,
-    val checkers: GetWellKnownForgedeckEmbedJsonResponseCheckers,
-    val org: String? = null,
-    val surfaces: GetWellKnownForgedeckEmbedJsonResponseSurfaces,
-    val changes: List<GetWellKnownForgedeckEmbedJsonResponseChangesItem>,
-) {
-    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("schema", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.schema))
-        put("product", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.product))
-        put("updated", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.updated))
-        put("openapi", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.openapi))
-        put("llms", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.llms))
-        put("status", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.status))
-        put("docs", JsonValue.Str(this@GetWellKnownForgedeckEmbedJsonResponse.docs))
-        put("checkers", this@GetWellKnownForgedeckEmbedJsonResponse.checkers.toJson())
-        if (this@GetWellKnownForgedeckEmbedJsonResponse.org != null) put("org", (this@GetWellKnownForgedeckEmbedJsonResponse.org?.let { JsonValue.Str(it) } ?: JsonValue.Null))
-        put("surfaces", this@GetWellKnownForgedeckEmbedJsonResponse.surfaces.toJson())
-        put("changes", JsonValue.Arr(this@GetWellKnownForgedeckEmbedJsonResponse.changes.map { it.toJson() }))
-    })
-
-    companion object {
-        fun fromJson(json: JsonValue): GetWellKnownForgedeckEmbedJsonResponse {
-            val o = json.obj()
-            return GetWellKnownForgedeckEmbedJsonResponse(
-                schema = o.field("schema").string(),
-                product = o.field("product").string(),
-                updated = o.field("updated").string(),
-                openapi = o.field("openapi").string(),
-                llms = o.field("llms").string(),
-                status = o.field("status").string(),
-                docs = o.field("docs").string(),
-                checkers = GetWellKnownForgedeckEmbedJsonResponseCheckers.fromJson(o.field("checkers")),
-                org = o["org"]?.orNull()?.let { it.string() },
-                surfaces = GetWellKnownForgedeckEmbedJsonResponseSurfaces.fromJson(o.field("surfaces")),
-                changes = o.field("changes").array().map { GetWellKnownForgedeckEmbedJsonResponseChangesItem.fromJson(it) },
-            )
-        }
-    }
-}
 
 data class PostAgentsRegisterResponse(
     val agentId: String,
@@ -7765,6 +7837,7 @@ data class GetMeResponseApiKey(
     val publishable: Boolean,
     val owner: String? = null,
     val expiresAt: String? = null,
+    val programIds: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@GetMeResponseApiKey.id))
@@ -7776,6 +7849,7 @@ data class GetMeResponseApiKey(
         put("publishable", JsonValue.Bool(this@GetMeResponseApiKey.publishable))
         put("owner", (this@GetMeResponseApiKey.owner?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("expiresAt", (this@GetMeResponseApiKey.expiresAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("programIds", (this@GetMeResponseApiKey.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -7791,6 +7865,7 @@ data class GetMeResponseApiKey(
                 publishable = o.field("publishable").bool(),
                 owner = o.field("owner").orNull()?.let { it.string() },
                 expiresAt = o.field("expiresAt").orNull()?.let { it.string() },
+                programIds = o.field("programIds").orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -8197,6 +8272,7 @@ data class GetHostsCurrentResponseValueOption1(
     val orgName: String,
     val branding: GetHostsCurrentResponseValueOption1Branding,
     val programs: List<GetHostsCurrentResponseValueOption1ProgramsItem>,
+    val portalTheme: Map<String, JsonValue>,
     val consent: GetHostsCurrentResponseValueOption1Consent,
     val chat: GetHostsCurrentResponseValueOption1ChatOption1? = null,
     val csp: String,
@@ -8207,6 +8283,7 @@ data class GetHostsCurrentResponseValueOption1(
         put("orgName", JsonValue.Str(this@GetHostsCurrentResponseValueOption1.orgName))
         put("branding", this@GetHostsCurrentResponseValueOption1.branding.toJson())
         put("programs", JsonValue.Arr(this@GetHostsCurrentResponseValueOption1.programs.map { it.toJson() }))
+        put("portalTheme", JsonValue.Obj(this@GetHostsCurrentResponseValueOption1.portalTheme.mapValues { it.value }))
         put("consent", this@GetHostsCurrentResponseValueOption1.consent.toJson())
         put("chat", (this@GetHostsCurrentResponseValueOption1.chat?.let { it.toJson() } ?: JsonValue.Null))
         put("csp", JsonValue.Str(this@GetHostsCurrentResponseValueOption1.csp))
@@ -8221,6 +8298,7 @@ data class GetHostsCurrentResponseValueOption1(
                 orgName = o.field("orgName").string(),
                 branding = GetHostsCurrentResponseValueOption1Branding.fromJson(o.field("branding")),
                 programs = o.field("programs").array().map { GetHostsCurrentResponseValueOption1ProgramsItem.fromJson(it) },
+                portalTheme = o.field("portalTheme").obj().mapValues { it.value },
                 consent = GetHostsCurrentResponseValueOption1Consent.fromJson(o.field("consent")),
                 chat = o.field("chat").orNull()?.let { GetHostsCurrentResponseValueOption1ChatOption1.fromJson(it) },
                 csp = o.field("csp").string(),
@@ -8270,15 +8348,11 @@ typealias GetHostsCurrentResponse = JsonValue
 
 data class GetChatlyIdentityResponseIdentityOption1(
     val externalId: String,
-    val email: String,
-    val name: String? = null,
-    val userHash: String,
+    val userToken: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("externalId", JsonValue.Str(this@GetChatlyIdentityResponseIdentityOption1.externalId))
-        put("email", JsonValue.Str(this@GetChatlyIdentityResponseIdentityOption1.email))
-        if (this@GetChatlyIdentityResponseIdentityOption1.name != null) put("name", (this@GetChatlyIdentityResponseIdentityOption1.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
-        put("userHash", JsonValue.Str(this@GetChatlyIdentityResponseIdentityOption1.userHash))
+        put("userToken", JsonValue.Str(this@GetChatlyIdentityResponseIdentityOption1.userToken))
     })
 
     companion object {
@@ -8286,9 +8360,7 @@ data class GetChatlyIdentityResponseIdentityOption1(
             val o = json.obj()
             return GetChatlyIdentityResponseIdentityOption1(
                 externalId = o.field("externalId").string(),
-                email = o.field("email").string(),
-                name = o["name"]?.orNull()?.let { it.string() },
-                userHash = o.field("userHash").string(),
+                userToken = o.field("userToken").string(),
             )
         }
     }
@@ -8984,11 +9056,41 @@ data class GetProgramsResponse(
     }
 }
 
+data class PostProgramsIdReferrersResponse(
+    val partnerId: String,
+    val programId: String,
+    val externalRef: String,
+    val code: String,
+    val linkUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partnerId", JsonValue.Str(this@PostProgramsIdReferrersResponse.partnerId))
+        put("programId", JsonValue.Str(this@PostProgramsIdReferrersResponse.programId))
+        put("externalRef", JsonValue.Str(this@PostProgramsIdReferrersResponse.externalRef))
+        put("code", JsonValue.Str(this@PostProgramsIdReferrersResponse.code))
+        put("linkUrl", (this@PostProgramsIdReferrersResponse.linkUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostProgramsIdReferrersResponse {
+            val o = json.obj()
+            return PostProgramsIdReferrersResponse(
+                partnerId = o.field("partnerId").string(),
+                programId = o.field("programId").string(),
+                externalRef = o.field("externalRef").string(),
+                code = o.field("code").string(),
+                linkUrl = o.field("linkUrl").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
 data class GetProgramsIdEnrollmentsResponseDataItem(
     val id: String,
     val partnerId: String,
     val partnerEmail: String,
     val partnerName: String,
+    val externalRef: String? = null,
     val status: String,
     val createdAt: String,
     val networkWarning: NetworkWarning,
@@ -8998,6 +9100,7 @@ data class GetProgramsIdEnrollmentsResponseDataItem(
         put("partnerId", JsonValue.Str(this@GetProgramsIdEnrollmentsResponseDataItem.partnerId))
         put("partnerEmail", JsonValue.Str(this@GetProgramsIdEnrollmentsResponseDataItem.partnerEmail))
         put("partnerName", JsonValue.Str(this@GetProgramsIdEnrollmentsResponseDataItem.partnerName))
+        put("externalRef", (this@GetProgramsIdEnrollmentsResponseDataItem.externalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("status", JsonValue.Str(this@GetProgramsIdEnrollmentsResponseDataItem.status))
         put("createdAt", JsonValue.Str(this@GetProgramsIdEnrollmentsResponseDataItem.createdAt))
         put("networkWarning", this@GetProgramsIdEnrollmentsResponseDataItem.networkWarning.toJson())
@@ -9011,6 +9114,7 @@ data class GetProgramsIdEnrollmentsResponseDataItem(
                 partnerId = o.field("partnerId").string(),
                 partnerEmail = o.field("partnerEmail").string(),
                 partnerName = o.field("partnerName").string(),
+                externalRef = o.field("externalRef").orNull()?.let { it.string() },
                 status = o.field("status").string(),
                 createdAt = o.field("createdAt").string(),
                 networkWarning = NetworkWarning.fromJson(o.field("networkWarning")),
@@ -9119,6 +9223,7 @@ data class GetPartnersIdEnrollmentsResponseDataItem(
     val programName: String,
     val status: String,
     val groupId: String? = null,
+    val externalRef: String? = null,
     val createdAt: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
@@ -9127,6 +9232,7 @@ data class GetPartnersIdEnrollmentsResponseDataItem(
         put("programName", JsonValue.Str(this@GetPartnersIdEnrollmentsResponseDataItem.programName))
         put("status", JsonValue.Str(this@GetPartnersIdEnrollmentsResponseDataItem.status))
         put("groupId", (this@GetPartnersIdEnrollmentsResponseDataItem.groupId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("externalRef", (this@GetPartnersIdEnrollmentsResponseDataItem.externalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("createdAt", JsonValue.Str(this@GetPartnersIdEnrollmentsResponseDataItem.createdAt))
     })
 
@@ -9139,6 +9245,7 @@ data class GetPartnersIdEnrollmentsResponseDataItem(
                 programName = o.field("programName").string(),
                 status = o.field("status").string(),
                 groupId = o.field("groupId").orNull()?.let { it.string() },
+                externalRef = o.field("externalRef").orNull()?.let { it.string() },
                 createdAt = o.field("createdAt").string(),
             )
         }
@@ -9230,12 +9337,14 @@ data class PatchApiKeysIdResponse(
     val apiVersion: String,
     val owner: String? = null,
     val expiresAt: String? = null,
+    val programIds: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@PatchApiKeysIdResponse.id))
         put("apiVersion", JsonValue.Str(this@PatchApiKeysIdResponse.apiVersion))
         put("owner", (this@PatchApiKeysIdResponse.owner?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         put("expiresAt", (this@PatchApiKeysIdResponse.expiresAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("programIds", (this@PatchApiKeysIdResponse.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -9246,6 +9355,7 @@ data class PatchApiKeysIdResponse(
                 apiVersion = o.field("apiVersion").string(),
                 owner = o.field("owner").orNull()?.let { it.string() },
                 expiresAt = o.field("expiresAt").orNull()?.let { it.string() },
+                programIds = o.field("programIds").orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -10111,6 +10221,134 @@ data class GetPartnersIdBalancesResponse(
                 data = o.field("data").array().map { Balance.fromJson(it) },
                 hasMore = o.field("has_more").bool(),
                 nextCursor = o.field("next_cursor").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPartnersIdStatsResponseReferrals(
+    val total: Long,
+    val active: Long,
+    val pendingReview: Long,
+    val paused: Long,
+    val void: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("total", JsonValue.Num(this@GetPartnersIdStatsResponseReferrals.total.toDouble()))
+        put("active", JsonValue.Num(this@GetPartnersIdStatsResponseReferrals.active.toDouble()))
+        put("pendingReview", JsonValue.Num(this@GetPartnersIdStatsResponseReferrals.pendingReview.toDouble()))
+        put("paused", JsonValue.Num(this@GetPartnersIdStatsResponseReferrals.paused.toDouble()))
+        put("void", JsonValue.Num(this@GetPartnersIdStatsResponseReferrals.void.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPartnersIdStatsResponseReferrals {
+            val o = json.obj()
+            return GetPartnersIdStatsResponseReferrals(
+                total = o.field("total").long(),
+                active = o.field("active").long(),
+                pendingReview = o.field("pendingReview").long(),
+                paused = o.field("paused").long(),
+                void = o.field("void").long(),
+            )
+        }
+    }
+}
+
+data class GetPartnersIdStatsResponse(
+    val partnerId: String,
+    val programId: String? = null,
+    val clicks: Long,
+    val referrals: GetPartnersIdStatsResponseReferrals,
+    val convertedCustomers: Long,
+    val balances: List<Balance>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partnerId", JsonValue.Str(this@GetPartnersIdStatsResponse.partnerId))
+        put("programId", (this@GetPartnersIdStatsResponse.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("clicks", JsonValue.Num(this@GetPartnersIdStatsResponse.clicks.toDouble()))
+        put("referrals", this@GetPartnersIdStatsResponse.referrals.toJson())
+        put("convertedCustomers", JsonValue.Num(this@GetPartnersIdStatsResponse.convertedCustomers.toDouble()))
+        put("balances", JsonValue.Arr(this@GetPartnersIdStatsResponse.balances.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPartnersIdStatsResponse {
+            val o = json.obj()
+            return GetPartnersIdStatsResponse(
+                partnerId = o.field("partnerId").string(),
+                programId = o.field("programId").orNull()?.let { it.string() },
+                clicks = o.field("clicks").long(),
+                referrals = GetPartnersIdStatsResponseReferrals.fromJson(o.field("referrals")),
+                convertedCustomers = o.field("convertedCustomers").long(),
+                balances = o.field("balances").array().map { Balance.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPartnersIdSummaryResponseReferrals(
+    val total: Long,
+    val active: Long,
+    val pendingReview: Long,
+    val paused: Long,
+    val void: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("total", JsonValue.Num(this@GetPartnersIdSummaryResponseReferrals.total.toDouble()))
+        put("active", JsonValue.Num(this@GetPartnersIdSummaryResponseReferrals.active.toDouble()))
+        put("pendingReview", JsonValue.Num(this@GetPartnersIdSummaryResponseReferrals.pendingReview.toDouble()))
+        put("paused", JsonValue.Num(this@GetPartnersIdSummaryResponseReferrals.paused.toDouble()))
+        put("void", JsonValue.Num(this@GetPartnersIdSummaryResponseReferrals.void.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPartnersIdSummaryResponseReferrals {
+            val o = json.obj()
+            return GetPartnersIdSummaryResponseReferrals(
+                total = o.field("total").long(),
+                active = o.field("active").long(),
+                pendingReview = o.field("pendingReview").long(),
+                paused = o.field("paused").long(),
+                void = o.field("void").long(),
+            )
+        }
+    }
+}
+
+data class GetPartnersIdSummaryResponse(
+    val partnerId: String,
+    val programId: String? = null,
+    val clicks: Long,
+    val referrals: GetPartnersIdSummaryResponseReferrals,
+    val convertedCustomers: Long,
+    val balances: List<Balance>,
+    val code: String? = null,
+    val linkUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partnerId", JsonValue.Str(this@GetPartnersIdSummaryResponse.partnerId))
+        put("programId", (this@GetPartnersIdSummaryResponse.programId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("clicks", JsonValue.Num(this@GetPartnersIdSummaryResponse.clicks.toDouble()))
+        put("referrals", this@GetPartnersIdSummaryResponse.referrals.toJson())
+        put("convertedCustomers", JsonValue.Num(this@GetPartnersIdSummaryResponse.convertedCustomers.toDouble()))
+        put("balances", JsonValue.Arr(this@GetPartnersIdSummaryResponse.balances.map { it.toJson() }))
+        put("code", (this@GetPartnersIdSummaryResponse.code?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("linkUrl", (this@GetPartnersIdSummaryResponse.linkUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPartnersIdSummaryResponse {
+            val o = json.obj()
+            return GetPartnersIdSummaryResponse(
+                partnerId = o.field("partnerId").string(),
+                programId = o.field("programId").orNull()?.let { it.string() },
+                clicks = o.field("clicks").long(),
+                referrals = GetPartnersIdSummaryResponseReferrals.fromJson(o.field("referrals")),
+                convertedCustomers = o.field("convertedCustomers").long(),
+                balances = o.field("balances").array().map { Balance.fromJson(it) },
+                code = o.field("code").orNull()?.let { it.string() },
+                linkUrl = o.field("linkUrl").orNull()?.let { it.string() },
             )
         }
     }
@@ -12097,6 +12335,38 @@ data class GetPartnerMeResponseAccount(
     }
 }
 
+data class GetPartnerMeResponseRestricted(
+    val orgId: String,
+    val orgName: String,
+    val partnerId: String,
+    val partnerName: String,
+    val programId: String,
+    val programName: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("orgId", JsonValue.Str(this@GetPartnerMeResponseRestricted.orgId))
+        put("orgName", JsonValue.Str(this@GetPartnerMeResponseRestricted.orgName))
+        put("partnerId", JsonValue.Str(this@GetPartnerMeResponseRestricted.partnerId))
+        put("partnerName", JsonValue.Str(this@GetPartnerMeResponseRestricted.partnerName))
+        put("programId", JsonValue.Str(this@GetPartnerMeResponseRestricted.programId))
+        put("programName", JsonValue.Str(this@GetPartnerMeResponseRestricted.programName))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPartnerMeResponseRestricted {
+            val o = json.obj()
+            return GetPartnerMeResponseRestricted(
+                orgId = o.field("orgId").string(),
+                orgName = o.field("orgName").string(),
+                partnerId = o.field("partnerId").string(),
+                partnerName = o.field("partnerName").string(),
+                programId = o.field("programId").string(),
+                programName = o.field("programName").string(),
+            )
+        }
+    }
+}
+
 data class GetPartnerMeResponseMembershipsItemProgramsItem(
     val programId: String,
     val name: String,
@@ -12154,10 +12424,12 @@ data class GetPartnerMeResponseMembershipsItem(
 
 data class GetPartnerMeResponse(
     val account: GetPartnerMeResponseAccount? = null,
+    val restricted: GetPartnerMeResponseRestricted? = null,
     val memberships: List<GetPartnerMeResponseMembershipsItem>,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@GetPartnerMeResponse.account != null) put("account", (this@GetPartnerMeResponse.account?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPartnerMeResponse.restricted != null) put("restricted", (this@GetPartnerMeResponse.restricted?.let { it.toJson() } ?: JsonValue.Null))
         put("memberships", JsonValue.Arr(this@GetPartnerMeResponse.memberships.map { it.toJson() }))
     })
 
@@ -12166,6 +12438,7 @@ data class GetPartnerMeResponse(
             val o = json.obj()
             return GetPartnerMeResponse(
                 account = o["account"]?.orNull()?.let { GetPartnerMeResponseAccount.fromJson(it) },
+                restricted = o["restricted"]?.orNull()?.let { GetPartnerMeResponseRestricted.fromJson(it) },
                 memberships = o.field("memberships").array().map { GetPartnerMeResponseMembershipsItem.fromJson(it) },
             )
         }
@@ -12707,6 +12980,142 @@ data class PostPartnerProgramsProgramIdApplyResponse(
             return PostPartnerProgramsProgramIdApplyResponse(
                 enrollmentId = o.field("enrollmentId").string(),
                 status = o.field("status").string(),
+            )
+        }
+    }
+}
+
+data class GetPartnerApiTokensResponseDataItem(
+    val id: String,
+    val name: String,
+    val prefix: String,
+    val scopes: List<String>,
+    val createdAt: String,
+    val lastUsedAt: String? = null,
+    val expiresAt: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetPartnerApiTokensResponseDataItem.id))
+        put("name", JsonValue.Str(this@GetPartnerApiTokensResponseDataItem.name))
+        put("prefix", JsonValue.Str(this@GetPartnerApiTokensResponseDataItem.prefix))
+        put("scopes", JsonValue.Arr(this@GetPartnerApiTokensResponseDataItem.scopes.map { JsonValue.Str(it) }))
+        put("createdAt", JsonValue.Str(this@GetPartnerApiTokensResponseDataItem.createdAt))
+        put("lastUsedAt", (this@GetPartnerApiTokensResponseDataItem.lastUsedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("expiresAt", (this@GetPartnerApiTokensResponseDataItem.expiresAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPartnerApiTokensResponseDataItem {
+            val o = json.obj()
+            return GetPartnerApiTokensResponseDataItem(
+                id = o.field("id").string(),
+                name = o.field("name").string(),
+                prefix = o.field("prefix").string(),
+                scopes = o.field("scopes").array().map { it.string() },
+                createdAt = o.field("createdAt").string(),
+                lastUsedAt = o.field("lastUsedAt").orNull()?.let { it.string() },
+                expiresAt = o.field("expiresAt").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPartnerApiTokensResponse(
+    val `object`: String,
+    val data: List<GetPartnerApiTokensResponseDataItem>,
+    val hasMore: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("object", JsonValue.Str(this@GetPartnerApiTokensResponse.`object`))
+        put("data", JsonValue.Arr(this@GetPartnerApiTokensResponse.data.map { it.toJson() }))
+        put("has_more", JsonValue.Bool(this@GetPartnerApiTokensResponse.hasMore))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPartnerApiTokensResponse {
+            val o = json.obj()
+            return GetPartnerApiTokensResponse(
+                `object` = o.field("object").string(),
+                data = o.field("data").array().map { GetPartnerApiTokensResponseDataItem.fromJson(it) },
+                hasMore = o.field("has_more").bool(),
+            )
+        }
+    }
+}
+
+data class PostPartnerApiTokensResponse(
+    val id: String,
+    val name: String,
+    val prefix: String,
+    val scopes: List<String>,
+    val createdAt: String,
+    val lastUsedAt: String? = null,
+    val expiresAt: String? = null,
+    val token: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostPartnerApiTokensResponse.id))
+        put("name", JsonValue.Str(this@PostPartnerApiTokensResponse.name))
+        put("prefix", JsonValue.Str(this@PostPartnerApiTokensResponse.prefix))
+        put("scopes", JsonValue.Arr(this@PostPartnerApiTokensResponse.scopes.map { JsonValue.Str(it) }))
+        put("createdAt", JsonValue.Str(this@PostPartnerApiTokensResponse.createdAt))
+        put("lastUsedAt", (this@PostPartnerApiTokensResponse.lastUsedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("expiresAt", (this@PostPartnerApiTokensResponse.expiresAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("token", JsonValue.Str(this@PostPartnerApiTokensResponse.token))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPartnerApiTokensResponse {
+            val o = json.obj()
+            return PostPartnerApiTokensResponse(
+                id = o.field("id").string(),
+                name = o.field("name").string(),
+                prefix = o.field("prefix").string(),
+                scopes = o.field("scopes").array().map { it.string() },
+                createdAt = o.field("createdAt").string(),
+                lastUsedAt = o.field("lastUsedAt").orNull()?.let { it.string() },
+                expiresAt = o.field("expiresAt").orNull()?.let { it.string() },
+                token = o.field("token").string(),
+            )
+        }
+    }
+}
+
+data class DeletePartnerApiTokensIdResponse(
+    val id: String,
+    val revoked: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@DeletePartnerApiTokensIdResponse.id))
+        put("revoked", JsonValue.Bool(this@DeletePartnerApiTokensIdResponse.revoked))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): DeletePartnerApiTokensIdResponse {
+            val o = json.obj()
+            return DeletePartnerApiTokensIdResponse(
+                id = o.field("id").string(),
+                revoked = o.field("revoked").bool(),
+            )
+        }
+    }
+}
+
+data class PostPartnersIdPortalLinkResponse(
+    val url: String,
+    val expiresAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("url", JsonValue.Str(this@PostPartnersIdPortalLinkResponse.url))
+        put("expiresAt", JsonValue.Str(this@PostPartnersIdPortalLinkResponse.expiresAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPartnersIdPortalLinkResponse {
+            val o = json.obj()
+            return PostPartnersIdPortalLinkResponse(
+                url = o.field("url").string(),
+                expiresAt = o.field("expiresAt").string(),
             )
         }
     }
@@ -17641,6 +18050,24 @@ data class GetAuthConnectionsIdExportResponse(
     }
 }
 
+/** What the connection takes beyond sign-ups: `partners` is user-chosen referral codes through `/partners`. */
+data class PostAuthConnectionsIdPingResponseCapabilities(
+    val partners: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partners", JsonValue.Bool(this@PostAuthConnectionsIdPingResponseCapabilities.partners))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostAuthConnectionsIdPingResponseCapabilities {
+            val o = json.obj()
+            return PostAuthConnectionsIdPingResponseCapabilities(
+                partners = o.field("partners").bool(),
+            )
+        }
+    }
+}
+
 data class PostAuthConnectionsIdPingResponse(
     val ok: Boolean,
     val connectionId: String,
@@ -17648,6 +18075,7 @@ data class PostAuthConnectionsIdPingResponse(
     val orgName: String,
     val autoEnrollUsers: Boolean,
     val serverTime: String,
+    val capabilities: PostAuthConnectionsIdPingResponseCapabilities,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("ok", JsonValue.Bool(this@PostAuthConnectionsIdPingResponse.ok))
@@ -17656,6 +18084,7 @@ data class PostAuthConnectionsIdPingResponse(
         put("orgName", JsonValue.Str(this@PostAuthConnectionsIdPingResponse.orgName))
         put("autoEnrollUsers", JsonValue.Bool(this@PostAuthConnectionsIdPingResponse.autoEnrollUsers))
         put("serverTime", JsonValue.Str(this@PostAuthConnectionsIdPingResponse.serverTime))
+        put("capabilities", this@PostAuthConnectionsIdPingResponse.capabilities.toJson())
     })
 
     companion object {
@@ -17668,6 +18097,7 @@ data class PostAuthConnectionsIdPingResponse(
                 orgName = o.field("orgName").string(),
                 autoEnrollUsers = o.field("autoEnrollUsers").bool(),
                 serverTime = o.field("serverTime").string(),
+                capabilities = PostAuthConnectionsIdPingResponseCapabilities.fromJson(o.field("capabilities")),
             )
         }
     }
@@ -17912,7 +18342,7 @@ data class PostAuthConnectionsInstallResponse(
     }
 }
 
-data class PostOauthTokenResponse(
+data class PostOauthTokenResponseValueOption1(
     val tokenType: String,
     val connectionId: String,
     val provider: String,
@@ -17924,25 +18354,31 @@ data class PostOauthTokenResponse(
     val partnersUrl: String,
     val eraseUrl: String,
     val exportUrl: String,
+    val accessToken: String,
+    val expiresIn: Long,
+    val scope: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("token_type", JsonValue.Str(this@PostOauthTokenResponse.tokenType))
-        put("connectionId", JsonValue.Str(this@PostOauthTokenResponse.connectionId))
-        put("provider", JsonValue.Str(this@PostOauthTokenResponse.provider))
-        put("instanceId", JsonValue.Str(this@PostOauthTokenResponse.instanceId))
-        put("programId", JsonValue.Str(this@PostOauthTokenResponse.programId))
-        put("secret", JsonValue.Str(this@PostOauthTokenResponse.secret))
-        put("reinstalled", JsonValue.Bool(this@PostOauthTokenResponse.reinstalled))
-        put("signupsUrl", JsonValue.Str(this@PostOauthTokenResponse.signupsUrl))
-        put("partnersUrl", JsonValue.Str(this@PostOauthTokenResponse.partnersUrl))
-        put("eraseUrl", JsonValue.Str(this@PostOauthTokenResponse.eraseUrl))
-        put("exportUrl", JsonValue.Str(this@PostOauthTokenResponse.exportUrl))
+        put("token_type", JsonValue.Str(this@PostOauthTokenResponseValueOption1.tokenType))
+        put("connectionId", JsonValue.Str(this@PostOauthTokenResponseValueOption1.connectionId))
+        put("provider", JsonValue.Str(this@PostOauthTokenResponseValueOption1.provider))
+        put("instanceId", JsonValue.Str(this@PostOauthTokenResponseValueOption1.instanceId))
+        put("programId", JsonValue.Str(this@PostOauthTokenResponseValueOption1.programId))
+        put("secret", JsonValue.Str(this@PostOauthTokenResponseValueOption1.secret))
+        put("reinstalled", JsonValue.Bool(this@PostOauthTokenResponseValueOption1.reinstalled))
+        put("signupsUrl", JsonValue.Str(this@PostOauthTokenResponseValueOption1.signupsUrl))
+        put("partnersUrl", JsonValue.Str(this@PostOauthTokenResponseValueOption1.partnersUrl))
+        put("eraseUrl", JsonValue.Str(this@PostOauthTokenResponseValueOption1.eraseUrl))
+        put("exportUrl", JsonValue.Str(this@PostOauthTokenResponseValueOption1.exportUrl))
+        put("access_token", JsonValue.Str(this@PostOauthTokenResponseValueOption1.accessToken))
+        put("expires_in", JsonValue.Num(this@PostOauthTokenResponseValueOption1.expiresIn.toDouble()))
+        put("scope", JsonValue.Str(this@PostOauthTokenResponseValueOption1.scope))
     })
 
     companion object {
-        fun fromJson(json: JsonValue): PostOauthTokenResponse {
+        fun fromJson(json: JsonValue): PostOauthTokenResponseValueOption1 {
             val o = json.obj()
-            return PostOauthTokenResponse(
+            return PostOauthTokenResponseValueOption1(
                 tokenType = o.field("token_type").string(),
                 connectionId = o.field("connectionId").string(),
                 provider = o.field("provider").string(),
@@ -17954,6 +18390,181 @@ data class PostOauthTokenResponse(
                 partnersUrl = o.field("partnersUrl").string(),
                 eraseUrl = o.field("eraseUrl").string(),
                 exportUrl = o.field("exportUrl").string(),
+                accessToken = o.field("access_token").string(),
+                expiresIn = o.field("expires_in").long(),
+                scope = o.field("scope").string(),
+            )
+        }
+    }
+}
+
+data class PostOauthTokenResponseValueOption2(
+    val accessToken: String,
+    val tokenType: String,
+    val expiresIn: Long,
+    val scope: String,
+    val issuedTokenType: String? = null,
+    val resource: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("access_token", JsonValue.Str(this@PostOauthTokenResponseValueOption2.accessToken))
+        put("token_type", JsonValue.Str(this@PostOauthTokenResponseValueOption2.tokenType))
+        put("expires_in", JsonValue.Num(this@PostOauthTokenResponseValueOption2.expiresIn.toDouble()))
+        put("scope", JsonValue.Str(this@PostOauthTokenResponseValueOption2.scope))
+        if (this@PostOauthTokenResponseValueOption2.issuedTokenType != null) put("issued_token_type", (this@PostOauthTokenResponseValueOption2.issuedTokenType?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOauthTokenResponseValueOption2.resource != null) put("resource", (this@PostOauthTokenResponseValueOption2.resource?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOauthTokenResponseValueOption2 {
+            val o = json.obj()
+            return PostOauthTokenResponseValueOption2(
+                accessToken = o.field("access_token").string(),
+                tokenType = o.field("token_type").string(),
+                expiresIn = o.field("expires_in").long(),
+                scope = o.field("scope").string(),
+                issuedTokenType = o["issued_token_type"]?.orNull()?.let { it.string() },
+                resource = o["resource"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+typealias PostOauthTokenResponse = JsonValue
+
+data class GetProductLinksResponse(
+    val `object`: String,
+    val data: List<DeleteProductLinksIdResponse>,
+    val nextCursor: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("object", JsonValue.Str(this@GetProductLinksResponse.`object`))
+        put("data", JsonValue.Arr(this@GetProductLinksResponse.data.map { it.toJson() }))
+        put("next_cursor", (this@GetProductLinksResponse.nextCursor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProductLinksResponse {
+            val o = json.obj()
+            return GetProductLinksResponse(
+                `object` = o.field("object").string(),
+                data = o.field("data").array().map { DeleteProductLinksIdResponse.fromJson(it) },
+                nextCursor = o.field("next_cursor").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostProductLinksResponse(
+    val `object`: String,
+    val id: String,
+    val clientId: String,
+    val partner: String,
+    val name: String? = null,
+    val scopes: List<String>,
+    val clientSecretPrefix: String,
+    val tokenEndpoint: String,
+    val authMethods: List<String>,
+    val status: String,
+    val expiresAt: Long,
+    val revokedAt: Long? = null,
+    val lastUsedAt: Long? = null,
+    val createdAt: Long,
+    val clientSecret: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("object", JsonValue.Str(this@PostProductLinksResponse.`object`))
+        put("id", JsonValue.Str(this@PostProductLinksResponse.id))
+        put("client_id", JsonValue.Str(this@PostProductLinksResponse.clientId))
+        put("partner", JsonValue.Str(this@PostProductLinksResponse.partner))
+        put("name", (this@PostProductLinksResponse.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("scopes", JsonValue.Arr(this@PostProductLinksResponse.scopes.map { JsonValue.Str(it) }))
+        put("client_secret_prefix", JsonValue.Str(this@PostProductLinksResponse.clientSecretPrefix))
+        put("token_endpoint", JsonValue.Str(this@PostProductLinksResponse.tokenEndpoint))
+        put("auth_methods", JsonValue.Arr(this@PostProductLinksResponse.authMethods.map { JsonValue.Str(it) }))
+        put("status", JsonValue.Str(this@PostProductLinksResponse.status))
+        put("expires_at", JsonValue.Num(this@PostProductLinksResponse.expiresAt.toDouble()))
+        put("revoked_at", (this@PostProductLinksResponse.revokedAt?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("last_used_at", (this@PostProductLinksResponse.lastUsedAt?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("created_at", JsonValue.Num(this@PostProductLinksResponse.createdAt.toDouble()))
+        put("client_secret", JsonValue.Str(this@PostProductLinksResponse.clientSecret))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostProductLinksResponse {
+            val o = json.obj()
+            return PostProductLinksResponse(
+                `object` = o.field("object").string(),
+                id = o.field("id").string(),
+                clientId = o.field("client_id").string(),
+                partner = o.field("partner").string(),
+                name = o.field("name").orNull()?.let { it.string() },
+                scopes = o.field("scopes").array().map { it.string() },
+                clientSecretPrefix = o.field("client_secret_prefix").string(),
+                tokenEndpoint = o.field("token_endpoint").string(),
+                authMethods = o.field("auth_methods").array().map { it.string() },
+                status = o.field("status").string(),
+                expiresAt = o.field("expires_at").long(),
+                revokedAt = o.field("revoked_at").orNull()?.let { it.long() },
+                lastUsedAt = o.field("last_used_at").orNull()?.let { it.long() },
+                createdAt = o.field("created_at").long(),
+                clientSecret = o.field("client_secret").string(),
+            )
+        }
+    }
+}
+
+data class DeleteProductLinksIdResponse(
+    val `object`: String,
+    val id: String,
+    val clientId: String,
+    val partner: String,
+    val name: String? = null,
+    val scopes: List<String>,
+    val clientSecretPrefix: String,
+    val tokenEndpoint: String,
+    val authMethods: List<String>,
+    val status: String,
+    val expiresAt: Long,
+    val revokedAt: Long? = null,
+    val lastUsedAt: Long? = null,
+    val createdAt: Long,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("object", JsonValue.Str(this@DeleteProductLinksIdResponse.`object`))
+        put("id", JsonValue.Str(this@DeleteProductLinksIdResponse.id))
+        put("client_id", JsonValue.Str(this@DeleteProductLinksIdResponse.clientId))
+        put("partner", JsonValue.Str(this@DeleteProductLinksIdResponse.partner))
+        put("name", (this@DeleteProductLinksIdResponse.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("scopes", JsonValue.Arr(this@DeleteProductLinksIdResponse.scopes.map { JsonValue.Str(it) }))
+        put("client_secret_prefix", JsonValue.Str(this@DeleteProductLinksIdResponse.clientSecretPrefix))
+        put("token_endpoint", JsonValue.Str(this@DeleteProductLinksIdResponse.tokenEndpoint))
+        put("auth_methods", JsonValue.Arr(this@DeleteProductLinksIdResponse.authMethods.map { JsonValue.Str(it) }))
+        put("status", JsonValue.Str(this@DeleteProductLinksIdResponse.status))
+        put("expires_at", JsonValue.Num(this@DeleteProductLinksIdResponse.expiresAt.toDouble()))
+        put("revoked_at", (this@DeleteProductLinksIdResponse.revokedAt?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("last_used_at", (this@DeleteProductLinksIdResponse.lastUsedAt?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        put("created_at", JsonValue.Num(this@DeleteProductLinksIdResponse.createdAt.toDouble()))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): DeleteProductLinksIdResponse {
+            val o = json.obj()
+            return DeleteProductLinksIdResponse(
+                `object` = o.field("object").string(),
+                id = o.field("id").string(),
+                clientId = o.field("client_id").string(),
+                partner = o.field("partner").string(),
+                name = o.field("name").orNull()?.let { it.string() },
+                scopes = o.field("scopes").array().map { it.string() },
+                clientSecretPrefix = o.field("client_secret_prefix").string(),
+                tokenEndpoint = o.field("token_endpoint").string(),
+                authMethods = o.field("auth_methods").array().map { it.string() },
+                status = o.field("status").string(),
+                expiresAt = o.field("expires_at").long(),
+                revokedAt = o.field("revoked_at").orNull()?.let { it.long() },
+                lastUsedAt = o.field("last_used_at").orNull()?.let { it.long() },
+                createdAt = o.field("created_at").long(),
             )
         }
     }
@@ -18948,7 +19559,7 @@ data class PostSupportAppsAdapterTestResponse(
     }
 }
 
-typealias PostSupportCardsOrgIdAdapterResponse = Map<String, JsonValue>
+typealias GetSupportPlatformChatlyAnswersResponse = Map<String, JsonValue>
 
 data class GetPrivacyExecutorsResponseValueItemInstall(
     val kind: String? = null,
@@ -19375,6 +19986,326 @@ data class GetOrgTrackingConsentResponse(
     }
 }
 
+data class GetOrgConsentPartnersCookiemunchResponseStampCheck(
+    val status: String,
+    val detail: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("status", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchResponseStampCheck.status))
+        put("detail", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchResponseStampCheck.detail))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgConsentPartnersCookiemunchResponseStampCheck {
+            val o = json.obj()
+            return GetOrgConsentPartnersCookiemunchResponseStampCheck(
+                status = o.field("status").string(),
+                detail = o.field("detail").string(),
+            )
+        }
+    }
+}
+
+data class GetOrgConsentPartnersCookiemunchResponseGrantsItem(
+    val cbid: String,
+    val state: String,
+    val linkId: String? = null,
+    val label: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("cbid", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchResponseGrantsItem.cbid))
+        put("state", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchResponseGrantsItem.state))
+        put("linkId", (this@GetOrgConsentPartnersCookiemunchResponseGrantsItem.linkId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("label", (this@GetOrgConsentPartnersCookiemunchResponseGrantsItem.label?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgConsentPartnersCookiemunchResponseGrantsItem {
+            val o = json.obj()
+            return GetOrgConsentPartnersCookiemunchResponseGrantsItem(
+                cbid = o.field("cbid").string(),
+                state = o.field("state").string(),
+                linkId = o.field("linkId").orNull()?.let { it.string() },
+                label = o.field("label").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetOrgConsentPartnersCookiemunchResponseGrantCheck(
+    val status: String,
+    val detail: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("status", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchResponseGrantCheck.status))
+        put("detail", (this@GetOrgConsentPartnersCookiemunchResponseGrantCheck.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgConsentPartnersCookiemunchResponseGrantCheck {
+            val o = json.obj()
+            return GetOrgConsentPartnersCookiemunchResponseGrantCheck(
+                status = o.field("status").string(),
+                detail = o.field("detail").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetOrgConsentPartnersCookiemunchResponse(
+    val provider: String,
+    val externalId: String,
+    val receiverUrl: String,
+    val sites: List<String>,
+    val stampCheck: GetOrgConsentPartnersCookiemunchResponseStampCheck,
+    val grants: List<GetOrgConsentPartnersCookiemunchResponseGrantsItem>,
+    val grantCheck: GetOrgConsentPartnersCookiemunchResponseGrantCheck,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("provider", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchResponse.provider))
+        put("externalId", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchResponse.externalId))
+        put("receiverUrl", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchResponse.receiverUrl))
+        put("sites", JsonValue.Arr(this@GetOrgConsentPartnersCookiemunchResponse.sites.map { JsonValue.Str(it) }))
+        put("stampCheck", this@GetOrgConsentPartnersCookiemunchResponse.stampCheck.toJson())
+        put("grants", JsonValue.Arr(this@GetOrgConsentPartnersCookiemunchResponse.grants.map { it.toJson() }))
+        put("grantCheck", this@GetOrgConsentPartnersCookiemunchResponse.grantCheck.toJson())
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgConsentPartnersCookiemunchResponse {
+            val o = json.obj()
+            return GetOrgConsentPartnersCookiemunchResponse(
+                provider = o.field("provider").string(),
+                externalId = o.field("externalId").string(),
+                receiverUrl = o.field("receiverUrl").string(),
+                sites = o.field("sites").array().map { it.string() },
+                stampCheck = GetOrgConsentPartnersCookiemunchResponseStampCheck.fromJson(o.field("stampCheck")),
+                grants = o.field("grants").array().map { GetOrgConsentPartnersCookiemunchResponseGrantsItem.fromJson(it) },
+                grantCheck = GetOrgConsentPartnersCookiemunchResponseGrantCheck.fromJson(o.field("grantCheck")),
+            )
+        }
+    }
+}
+
+data class GetOrgConsentPartnersCookiemunchEventsResponseDataItem(
+    val id: String,
+    val eventId: String,
+    val type: String,
+    val cbid: String,
+    val stamp: String? = null,
+    val choices: Map<String, Boolean>,
+    val withdrawn: List<String>,
+    val region: String? = null,
+    val keyId: String,
+    val occurredAt: String,
+    val receivedAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.id))
+        put("eventId", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.eventId))
+        put("type", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.type))
+        put("cbid", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.cbid))
+        put("stamp", (this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.stamp?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("choices", JsonValue.Obj(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.choices.mapValues { JsonValue.Bool(it.value) }))
+        put("withdrawn", JsonValue.Arr(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.withdrawn.map { JsonValue.Str(it) }))
+        put("region", (this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.region?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("keyId", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.keyId))
+        put("occurredAt", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.occurredAt))
+        put("receivedAt", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseDataItem.receivedAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgConsentPartnersCookiemunchEventsResponseDataItem {
+            val o = json.obj()
+            return GetOrgConsentPartnersCookiemunchEventsResponseDataItem(
+                id = o.field("id").string(),
+                eventId = o.field("eventId").string(),
+                type = o.field("type").string(),
+                cbid = o.field("cbid").string(),
+                stamp = o.field("stamp").orNull()?.let { it.string() },
+                choices = o.field("choices").obj().mapValues { it.value.bool() },
+                withdrawn = o.field("withdrawn").array().map { it.string() },
+                region = o.field("region").orNull()?.let { it.string() },
+                keyId = o.field("keyId").string(),
+                occurredAt = o.field("occurredAt").string(),
+                receivedAt = o.field("receivedAt").string(),
+            )
+        }
+    }
+}
+
+data class GetOrgConsentPartnersCookiemunchEventsResponseStampCheck(
+    val status: String,
+    val detail: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("status", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseStampCheck.status))
+        put("detail", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseStampCheck.detail))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgConsentPartnersCookiemunchEventsResponseStampCheck {
+            val o = json.obj()
+            return GetOrgConsentPartnersCookiemunchEventsResponseStampCheck(
+                status = o.field("status").string(),
+                detail = o.field("detail").string(),
+            )
+        }
+    }
+}
+
+data class GetOrgConsentPartnersCookiemunchEventsResponseChecksItem(
+    val cbid: String,
+    val verdict: String,
+    val categories: Map<String, Boolean>,
+    val withdrawn: List<String>,
+    val withdrawnAt: String? = null,
+    val decidedAt: String? = null,
+    val detail: String? = null,
+    val checkedAt: String,
+    val stamp: String,
+    val credited: Boolean,
+    val clickId: String? = null,
+    val eventId: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("cbid", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.cbid))
+        put("verdict", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.verdict))
+        put("categories", JsonValue.Obj(this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.categories.mapValues { JsonValue.Bool(it.value) }))
+        put("withdrawn", JsonValue.Arr(this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.withdrawn.map { JsonValue.Str(it) }))
+        put("withdrawnAt", (this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.withdrawnAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("decidedAt", (this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.decidedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("detail", (this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("checkedAt", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.checkedAt))
+        put("stamp", JsonValue.Str(this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.stamp))
+        put("credited", JsonValue.Bool(this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.credited))
+        put("clickId", (this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.clickId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("eventId", (this@GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.eventId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgConsentPartnersCookiemunchEventsResponseChecksItem {
+            val o = json.obj()
+            return GetOrgConsentPartnersCookiemunchEventsResponseChecksItem(
+                cbid = o.field("cbid").string(),
+                verdict = o.field("verdict").string(),
+                categories = o.field("categories").obj().mapValues { it.value.bool() },
+                withdrawn = o.field("withdrawn").array().map { it.string() },
+                withdrawnAt = o.field("withdrawnAt").orNull()?.let { it.string() },
+                decidedAt = o.field("decidedAt").orNull()?.let { it.string() },
+                detail = o.field("detail").orNull()?.let { it.string() },
+                checkedAt = o.field("checkedAt").string(),
+                stamp = o.field("stamp").string(),
+                credited = o.field("credited").bool(),
+                clickId = o.field("clickId").orNull()?.let { it.string() },
+                eventId = o.field("eventId").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetOrgConsentPartnersCookiemunchEventsResponse(
+    val data: List<GetOrgConsentPartnersCookiemunchEventsResponseDataItem>,
+    val stampCheck: GetOrgConsentPartnersCookiemunchEventsResponseStampCheck,
+    val checks: List<GetOrgConsentPartnersCookiemunchEventsResponseChecksItem>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("data", JsonValue.Arr(this@GetOrgConsentPartnersCookiemunchEventsResponse.data.map { it.toJson() }))
+        put("stampCheck", this@GetOrgConsentPartnersCookiemunchEventsResponse.stampCheck.toJson())
+        if (this@GetOrgConsentPartnersCookiemunchEventsResponse.checks != null) put("checks", (this@GetOrgConsentPartnersCookiemunchEventsResponse.checks?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetOrgConsentPartnersCookiemunchEventsResponse {
+            val o = json.obj()
+            return GetOrgConsentPartnersCookiemunchEventsResponse(
+                data = o.field("data").array().map { GetOrgConsentPartnersCookiemunchEventsResponseDataItem.fromJson(it) },
+                stampCheck = GetOrgConsentPartnersCookiemunchEventsResponseStampCheck.fromJson(o.field("stampCheck")),
+                checks = o["checks"]?.orNull()?.let { it.array().map { GetOrgConsentPartnersCookiemunchEventsResponseChecksItem.fromJson(it) } },
+            )
+        }
+    }
+}
+
+data class PostOrgConsentPartnersCookiemunchStampsCheckResponse(
+    val stamp: String,
+    val credited: Boolean,
+    val cbid: String,
+    val verdict: String,
+    val categories: Map<String, Boolean>,
+    val withdrawn: List<String>,
+    val withdrawnAt: String? = null,
+    val decidedAt: String? = null,
+    val detail: String? = null,
+    val checkedAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("stamp", JsonValue.Str(this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.stamp))
+        put("credited", JsonValue.Bool(this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.credited))
+        put("cbid", JsonValue.Str(this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.cbid))
+        put("verdict", JsonValue.Str(this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.verdict))
+        put("categories", JsonValue.Obj(this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.categories.mapValues { JsonValue.Bool(it.value) }))
+        put("withdrawn", JsonValue.Arr(this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.withdrawn.map { JsonValue.Str(it) }))
+        put("withdrawnAt", (this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.withdrawnAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("decidedAt", (this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.decidedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("detail", (this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("checkedAt", JsonValue.Str(this@PostOrgConsentPartnersCookiemunchStampsCheckResponse.checkedAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOrgConsentPartnersCookiemunchStampsCheckResponse {
+            val o = json.obj()
+            return PostOrgConsentPartnersCookiemunchStampsCheckResponse(
+                stamp = o.field("stamp").string(),
+                credited = o.field("credited").bool(),
+                cbid = o.field("cbid").string(),
+                verdict = o.field("verdict").string(),
+                categories = o.field("categories").obj().mapValues { it.value.bool() },
+                withdrawn = o.field("withdrawn").array().map { it.string() },
+                withdrawnAt = o.field("withdrawnAt").orNull()?.let { it.string() },
+                decidedAt = o.field("decidedAt").orNull()?.let { it.string() },
+                detail = o.field("detail").orNull()?.let { it.string() },
+                checkedAt = o.field("checkedAt").string(),
+            )
+        }
+    }
+}
+
+data class PostOrgsOrgIdPrivacyExecutorKeyResponse(
+    val secret: String,
+    val executorUrl: String,
+    val contract: String,
+    val orgId: String,
+    val linkId: String,
+    val cbid: String,
+    val rotated: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("secret", JsonValue.Str(this@PostOrgsOrgIdPrivacyExecutorKeyResponse.secret))
+        put("executorUrl", JsonValue.Str(this@PostOrgsOrgIdPrivacyExecutorKeyResponse.executorUrl))
+        put("contract", JsonValue.Str(this@PostOrgsOrgIdPrivacyExecutorKeyResponse.contract))
+        put("orgId", JsonValue.Str(this@PostOrgsOrgIdPrivacyExecutorKeyResponse.orgId))
+        put("linkId", JsonValue.Str(this@PostOrgsOrgIdPrivacyExecutorKeyResponse.linkId))
+        put("cbid", JsonValue.Str(this@PostOrgsOrgIdPrivacyExecutorKeyResponse.cbid))
+        put("rotated", JsonValue.Bool(this@PostOrgsOrgIdPrivacyExecutorKeyResponse.rotated))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOrgsOrgIdPrivacyExecutorKeyResponse {
+            val o = json.obj()
+            return PostOrgsOrgIdPrivacyExecutorKeyResponse(
+                secret = o.field("secret").string(),
+                executorUrl = o.field("executorUrl").string(),
+                contract = o.field("contract").string(),
+                orgId = o.field("orgId").string(),
+                linkId = o.field("linkId").string(),
+                cbid = o.field("cbid").string(),
+                rotated = o.field("rotated").bool(),
+            )
+        }
+    }
+}
+
 data class GetOrgHostedPagesResponseConsent(
     val adapter: String,
     val config: Map<String, JsonValue>,
@@ -19735,6 +20666,4646 @@ data class PostOrgHostedPagesCheckResponse(
     }
 }
 
+data class GetHostsCurrentChatIdentityResponseTagsItem(
+    val tag: String,
+    val attrs: Map<String, JsonValue>,
+    val inline: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("tag", JsonValue.Str(this@GetHostsCurrentChatIdentityResponseTagsItem.tag))
+        put("attrs", JsonValue.Obj(this@GetHostsCurrentChatIdentityResponseTagsItem.attrs.mapValues { it.value }))
+        if (this@GetHostsCurrentChatIdentityResponseTagsItem.inline != null) put("inline", (this@GetHostsCurrentChatIdentityResponseTagsItem.inline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetHostsCurrentChatIdentityResponseTagsItem {
+            val o = json.obj()
+            return GetHostsCurrentChatIdentityResponseTagsItem(
+                tag = o.field("tag").string(),
+                attrs = o.field("attrs").obj().mapValues { it.value },
+                inline = o["inline"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetHostsCurrentChatIdentityResponse(
+    val provider: String? = null,
+    val tags: List<GetHostsCurrentChatIdentityResponseTagsItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("provider", (this@GetHostsCurrentChatIdentityResponse.provider?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("tags", JsonValue.Arr(this@GetHostsCurrentChatIdentityResponse.tags.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetHostsCurrentChatIdentityResponse {
+            val o = json.obj()
+            return GetHostsCurrentChatIdentityResponse(
+                provider = o.field("provider").orNull()?.let { it.string() },
+                tags = o.field("tags").array().map { GetHostsCurrentChatIdentityResponseTagsItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPalette(
+    val background: String? = null,
+    val surface: String? = null,
+    val surfaceAlt: String? = null,
+    val ink: String? = null,
+    val muted: String? = null,
+    val faint: String? = null,
+    val line: String? = null,
+    val lineStrong: String? = null,
+    val primary: String? = null,
+    val onPrimary: String? = null,
+    val primarySoft: String? = null,
+    val headerBackground: String? = null,
+    val headerPrimary: String? = null,
+    val sidebar: String? = null,
+    val footerBackground: String? = null,
+    val footerPrimary: String? = null,
+    val success: String? = null,
+    val warning: String? = null,
+    val danger: String? = null,
+    val info: String? = null,
+    val chart: String? = null,
+    val money: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedPalette.background != null) put("background", (this@GetPortalThemeResponsePublishedPalette.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.surface != null) put("surface", (this@GetPortalThemeResponsePublishedPalette.surface?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.surfaceAlt != null) put("surfaceAlt", (this@GetPortalThemeResponsePublishedPalette.surfaceAlt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.ink != null) put("ink", (this@GetPortalThemeResponsePublishedPalette.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.muted != null) put("muted", (this@GetPortalThemeResponsePublishedPalette.muted?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.faint != null) put("faint", (this@GetPortalThemeResponsePublishedPalette.faint?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.line != null) put("line", (this@GetPortalThemeResponsePublishedPalette.line?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.lineStrong != null) put("lineStrong", (this@GetPortalThemeResponsePublishedPalette.lineStrong?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.primary != null) put("primary", (this@GetPortalThemeResponsePublishedPalette.primary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.onPrimary != null) put("onPrimary", (this@GetPortalThemeResponsePublishedPalette.onPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.primarySoft != null) put("primarySoft", (this@GetPortalThemeResponsePublishedPalette.primarySoft?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.headerBackground != null) put("header_background", (this@GetPortalThemeResponsePublishedPalette.headerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.headerPrimary != null) put("header_primary", (this@GetPortalThemeResponsePublishedPalette.headerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.sidebar != null) put("sidebar", (this@GetPortalThemeResponsePublishedPalette.sidebar?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.footerBackground != null) put("footer_background", (this@GetPortalThemeResponsePublishedPalette.footerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.footerPrimary != null) put("footer_primary", (this@GetPortalThemeResponsePublishedPalette.footerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.success != null) put("success", (this@GetPortalThemeResponsePublishedPalette.success?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.warning != null) put("warning", (this@GetPortalThemeResponsePublishedPalette.warning?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.danger != null) put("danger", (this@GetPortalThemeResponsePublishedPalette.danger?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.info != null) put("info", (this@GetPortalThemeResponsePublishedPalette.info?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.chart != null) put("chart", (this@GetPortalThemeResponsePublishedPalette.chart?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPalette.money != null) put("money", (this@GetPortalThemeResponsePublishedPalette.money?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPalette {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPalette(
+                background = o["background"]?.orNull()?.let { it.string() },
+                surface = o["surface"]?.orNull()?.let { it.string() },
+                surfaceAlt = o["surfaceAlt"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                muted = o["muted"]?.orNull()?.let { it.string() },
+                faint = o["faint"]?.orNull()?.let { it.string() },
+                line = o["line"]?.orNull()?.let { it.string() },
+                lineStrong = o["lineStrong"]?.orNull()?.let { it.string() },
+                primary = o["primary"]?.orNull()?.let { it.string() },
+                onPrimary = o["onPrimary"]?.orNull()?.let { it.string() },
+                primarySoft = o["primarySoft"]?.orNull()?.let { it.string() },
+                headerBackground = o["header_background"]?.orNull()?.let { it.string() },
+                headerPrimary = o["header_primary"]?.orNull()?.let { it.string() },
+                sidebar = o["sidebar"]?.orNull()?.let { it.string() },
+                footerBackground = o["footer_background"]?.orNull()?.let { it.string() },
+                footerPrimary = o["footer_primary"]?.orNull()?.let { it.string() },
+                success = o["success"]?.orNull()?.let { it.string() },
+                warning = o["warning"]?.orNull()?.let { it.string() },
+                danger = o["danger"]?.orNull()?.let { it.string() },
+                info = o["info"]?.orNull()?.let { it.string() },
+                chart = o["chart"]?.orNull()?.let { it.string() },
+                money = o["money"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPaletteDark(
+    val background: String? = null,
+    val surface: String? = null,
+    val surfaceAlt: String? = null,
+    val ink: String? = null,
+    val muted: String? = null,
+    val faint: String? = null,
+    val line: String? = null,
+    val lineStrong: String? = null,
+    val primary: String? = null,
+    val onPrimary: String? = null,
+    val primarySoft: String? = null,
+    val headerBackground: String? = null,
+    val headerPrimary: String? = null,
+    val sidebar: String? = null,
+    val footerBackground: String? = null,
+    val footerPrimary: String? = null,
+    val success: String? = null,
+    val warning: String? = null,
+    val danger: String? = null,
+    val info: String? = null,
+    val chart: String? = null,
+    val money: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedPaletteDark.background != null) put("background", (this@GetPortalThemeResponsePublishedPaletteDark.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.surface != null) put("surface", (this@GetPortalThemeResponsePublishedPaletteDark.surface?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.surfaceAlt != null) put("surfaceAlt", (this@GetPortalThemeResponsePublishedPaletteDark.surfaceAlt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.ink != null) put("ink", (this@GetPortalThemeResponsePublishedPaletteDark.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.muted != null) put("muted", (this@GetPortalThemeResponsePublishedPaletteDark.muted?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.faint != null) put("faint", (this@GetPortalThemeResponsePublishedPaletteDark.faint?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.line != null) put("line", (this@GetPortalThemeResponsePublishedPaletteDark.line?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.lineStrong != null) put("lineStrong", (this@GetPortalThemeResponsePublishedPaletteDark.lineStrong?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.primary != null) put("primary", (this@GetPortalThemeResponsePublishedPaletteDark.primary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.onPrimary != null) put("onPrimary", (this@GetPortalThemeResponsePublishedPaletteDark.onPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.primarySoft != null) put("primarySoft", (this@GetPortalThemeResponsePublishedPaletteDark.primarySoft?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.headerBackground != null) put("header_background", (this@GetPortalThemeResponsePublishedPaletteDark.headerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.headerPrimary != null) put("header_primary", (this@GetPortalThemeResponsePublishedPaletteDark.headerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.sidebar != null) put("sidebar", (this@GetPortalThemeResponsePublishedPaletteDark.sidebar?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.footerBackground != null) put("footer_background", (this@GetPortalThemeResponsePublishedPaletteDark.footerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.footerPrimary != null) put("footer_primary", (this@GetPortalThemeResponsePublishedPaletteDark.footerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.success != null) put("success", (this@GetPortalThemeResponsePublishedPaletteDark.success?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.warning != null) put("warning", (this@GetPortalThemeResponsePublishedPaletteDark.warning?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.danger != null) put("danger", (this@GetPortalThemeResponsePublishedPaletteDark.danger?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.info != null) put("info", (this@GetPortalThemeResponsePublishedPaletteDark.info?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.chart != null) put("chart", (this@GetPortalThemeResponsePublishedPaletteDark.chart?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPaletteDark.money != null) put("money", (this@GetPortalThemeResponsePublishedPaletteDark.money?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPaletteDark {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPaletteDark(
+                background = o["background"]?.orNull()?.let { it.string() },
+                surface = o["surface"]?.orNull()?.let { it.string() },
+                surfaceAlt = o["surfaceAlt"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                muted = o["muted"]?.orNull()?.let { it.string() },
+                faint = o["faint"]?.orNull()?.let { it.string() },
+                line = o["line"]?.orNull()?.let { it.string() },
+                lineStrong = o["lineStrong"]?.orNull()?.let { it.string() },
+                primary = o["primary"]?.orNull()?.let { it.string() },
+                onPrimary = o["onPrimary"]?.orNull()?.let { it.string() },
+                primarySoft = o["primarySoft"]?.orNull()?.let { it.string() },
+                headerBackground = o["header_background"]?.orNull()?.let { it.string() },
+                headerPrimary = o["header_primary"]?.orNull()?.let { it.string() },
+                sidebar = o["sidebar"]?.orNull()?.let { it.string() },
+                footerBackground = o["footer_background"]?.orNull()?.let { it.string() },
+                footerPrimary = o["footer_primary"]?.orNull()?.let { it.string() },
+                success = o["success"]?.orNull()?.let { it.string() },
+                warning = o["warning"]?.orNull()?.let { it.string() },
+                danger = o["danger"]?.orNull()?.let { it.string() },
+                info = o["info"]?.orNull()?.let { it.string() },
+                chart = o["chart"]?.orNull()?.let { it.string() },
+                money = o["money"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedFontsFacesItem(
+    val family: String,
+    val src: String,
+    val format: String? = null,
+    val weight: JsonValue? = null,
+    val style: String? = null,
+    val display: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("family", JsonValue.Str(this@GetPortalThemeResponsePublishedFontsFacesItem.family))
+        put("src", JsonValue.Str(this@GetPortalThemeResponsePublishedFontsFacesItem.src))
+        if (this@GetPortalThemeResponsePublishedFontsFacesItem.format != null) put("format", (this@GetPortalThemeResponsePublishedFontsFacesItem.format?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedFontsFacesItem.weight != null) put("weight", (this@GetPortalThemeResponsePublishedFontsFacesItem.weight?.let { it } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedFontsFacesItem.style != null) put("style", (this@GetPortalThemeResponsePublishedFontsFacesItem.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedFontsFacesItem.display != null) put("display", (this@GetPortalThemeResponsePublishedFontsFacesItem.display?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedFontsFacesItem {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedFontsFacesItem(
+                family = o.field("family").string(),
+                src = o.field("src").string(),
+                format = o["format"]?.orNull()?.let { it.string() },
+                weight = o["weight"]?.orNull()?.let { it },
+                style = o["style"]?.orNull()?.let { it.string() },
+                display = o["display"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedFonts(
+    val faces: List<GetPortalThemeResponsePublishedFontsFacesItem>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedFonts.faces != null) put("faces", (this@GetPortalThemeResponsePublishedFonts.faces?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedFonts {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedFonts(
+                faces = o["faces"]?.orNull()?.let { it.array().map { GetPortalThemeResponsePublishedFontsFacesItem.fromJson(it) } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedTypography(
+    val baseSize: Double? = null,
+    val headingScale: Double? = null,
+    val headingWeight: Long? = null,
+    val bodyWeight: Long? = null,
+    val headingTransform: String? = null,
+    val headingTracking: Double? = null,
+    val bodyLeading: Double? = null,
+    val numerals: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedTypography.baseSize != null) put("baseSize", (this@GetPortalThemeResponsePublishedTypography.baseSize?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedTypography.headingScale != null) put("headingScale", (this@GetPortalThemeResponsePublishedTypography.headingScale?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedTypography.headingWeight != null) put("headingWeight", (this@GetPortalThemeResponsePublishedTypography.headingWeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedTypography.bodyWeight != null) put("bodyWeight", (this@GetPortalThemeResponsePublishedTypography.bodyWeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedTypography.headingTransform != null) put("headingTransform", (this@GetPortalThemeResponsePublishedTypography.headingTransform?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedTypography.headingTracking != null) put("headingTracking", (this@GetPortalThemeResponsePublishedTypography.headingTracking?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedTypography.bodyLeading != null) put("bodyLeading", (this@GetPortalThemeResponsePublishedTypography.bodyLeading?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedTypography.numerals != null) put("numerals", (this@GetPortalThemeResponsePublishedTypography.numerals?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedTypography {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedTypography(
+                baseSize = o["baseSize"]?.orNull()?.let { it.double() },
+                headingScale = o["headingScale"]?.orNull()?.let { it.double() },
+                headingWeight = o["headingWeight"]?.orNull()?.let { it.long() },
+                bodyWeight = o["bodyWeight"]?.orNull()?.let { it.long() },
+                headingTransform = o["headingTransform"]?.orNull()?.let { it.string() },
+                headingTracking = o["headingTracking"]?.orNull()?.let { it.double() },
+                bodyLeading = o["bodyLeading"]?.orNull()?.let { it.double() },
+                numerals = o["numerals"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedComponentsCards(
+    val border: Boolean? = null,
+    val elevation: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedComponentsCards.border != null) put("border", (this@GetPortalThemeResponsePublishedComponentsCards.border?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponentsCards.elevation != null) put("elevation", (this@GetPortalThemeResponsePublishedComponentsCards.elevation?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedComponentsCards {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedComponentsCards(
+                border = o["border"]?.orNull()?.let { it.bool() },
+                elevation = o["elevation"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedComponentsButtons(
+    val radius: Double? = null,
+    val case: String? = null,
+    val weight: Long? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedComponentsButtons.radius != null) put("radius", (this@GetPortalThemeResponsePublishedComponentsButtons.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponentsButtons.case != null) put("case", (this@GetPortalThemeResponsePublishedComponentsButtons.case?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponentsButtons.weight != null) put("weight", (this@GetPortalThemeResponsePublishedComponentsButtons.weight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponentsButtons.style != null) put("style", (this@GetPortalThemeResponsePublishedComponentsButtons.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedComponentsButtons {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedComponentsButtons(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                case = o["case"]?.orNull()?.let { it.string() },
+                weight = o["weight"]?.orNull()?.let { it.long() },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedComponentsInputs(
+    val radius: Double? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedComponentsInputs.radius != null) put("radius", (this@GetPortalThemeResponsePublishedComponentsInputs.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponentsInputs.style != null) put("style", (this@GetPortalThemeResponsePublishedComponentsInputs.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedComponentsInputs {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedComponentsInputs(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedComponentsFocusRing(
+    val color: String? = null,
+    val width: Double? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedComponentsFocusRing.color != null) put("color", (this@GetPortalThemeResponsePublishedComponentsFocusRing.color?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponentsFocusRing.width != null) put("width", (this@GetPortalThemeResponsePublishedComponentsFocusRing.width?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedComponentsFocusRing {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedComponentsFocusRing(
+                color = o["color"]?.orNull()?.let { it.string() },
+                width = o["width"]?.orNull()?.let { it.double() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedComponentsLinks(
+    val underline: String? = null,
+    val color: String? = null,
+    val colorDark: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedComponentsLinks.underline != null) put("underline", (this@GetPortalThemeResponsePublishedComponentsLinks.underline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponentsLinks.color != null) put("color", (this@GetPortalThemeResponsePublishedComponentsLinks.color?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponentsLinks.colorDark != null) put("colorDark", (this@GetPortalThemeResponsePublishedComponentsLinks.colorDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedComponentsLinks {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedComponentsLinks(
+                underline = o["underline"]?.orNull()?.let { it.string() },
+                color = o["color"]?.orNull()?.let { it.string() },
+                colorDark = o["colorDark"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedComponents(
+    val radius: Double? = null,
+    val radiusSmall: Double? = null,
+    val shadow: String? = null,
+    val cards: GetPortalThemeResponsePublishedComponentsCards? = null,
+    val buttons: GetPortalThemeResponsePublishedComponentsButtons? = null,
+    val inputs: GetPortalThemeResponsePublishedComponentsInputs? = null,
+    val focusRing: GetPortalThemeResponsePublishedComponentsFocusRing? = null,
+    val links: GetPortalThemeResponsePublishedComponentsLinks? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedComponents.radius != null) put("radius", (this@GetPortalThemeResponsePublishedComponents.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponents.radiusSmall != null) put("radiusSmall", (this@GetPortalThemeResponsePublishedComponents.radiusSmall?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponents.shadow != null) put("shadow", (this@GetPortalThemeResponsePublishedComponents.shadow?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponents.cards != null) put("cards", (this@GetPortalThemeResponsePublishedComponents.cards?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponents.buttons != null) put("buttons", (this@GetPortalThemeResponsePublishedComponents.buttons?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponents.inputs != null) put("inputs", (this@GetPortalThemeResponsePublishedComponents.inputs?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponents.focusRing != null) put("focusRing", (this@GetPortalThemeResponsePublishedComponents.focusRing?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedComponents.links != null) put("links", (this@GetPortalThemeResponsePublishedComponents.links?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedComponents {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedComponents(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                radiusSmall = o["radiusSmall"]?.orNull()?.let { it.double() },
+                shadow = o["shadow"]?.orNull()?.let { it.string() },
+                cards = o["cards"]?.orNull()?.let { GetPortalThemeResponsePublishedComponentsCards.fromJson(it) },
+                buttons = o["buttons"]?.orNull()?.let { GetPortalThemeResponsePublishedComponentsButtons.fromJson(it) },
+                inputs = o["inputs"]?.orNull()?.let { GetPortalThemeResponsePublishedComponentsInputs.fromJson(it) },
+                focusRing = o["focusRing"]?.orNull()?.let { GetPortalThemeResponsePublishedComponentsFocusRing.fromJson(it) },
+                links = o["links"]?.orNull()?.let { GetPortalThemeResponsePublishedComponentsLinks.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedAnnouncementLink(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponsePublishedAnnouncementLink.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponsePublishedAnnouncementLink.href))
+        if (this@GetPortalThemeResponsePublishedAnnouncementLink.newTab != null) put("newTab", (this@GetPortalThemeResponsePublishedAnnouncementLink.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedAnnouncementLink.translations != null) put("translations", (this@GetPortalThemeResponsePublishedAnnouncementLink.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedAnnouncementLink {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedAnnouncementLink(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedAnnouncement(
+    val text: String,
+    val level: String? = null,
+    val link: GetPortalThemeResponsePublishedAnnouncementLink? = null,
+    val dismissible: Boolean? = null,
+    val background: String? = null,
+    val ink: String? = null,
+    val startsAt: String? = null,
+    val endsAt: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("text", JsonValue.Str(this@GetPortalThemeResponsePublishedAnnouncement.text))
+        if (this@GetPortalThemeResponsePublishedAnnouncement.level != null) put("level", (this@GetPortalThemeResponsePublishedAnnouncement.level?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedAnnouncement.link != null) put("link", (this@GetPortalThemeResponsePublishedAnnouncement.link?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedAnnouncement.dismissible != null) put("dismissible", (this@GetPortalThemeResponsePublishedAnnouncement.dismissible?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedAnnouncement.background != null) put("background", (this@GetPortalThemeResponsePublishedAnnouncement.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedAnnouncement.ink != null) put("ink", (this@GetPortalThemeResponsePublishedAnnouncement.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedAnnouncement.startsAt != null) put("startsAt", (this@GetPortalThemeResponsePublishedAnnouncement.startsAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedAnnouncement.endsAt != null) put("endsAt", (this@GetPortalThemeResponsePublishedAnnouncement.endsAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedAnnouncement {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedAnnouncement(
+                text = o.field("text").string(),
+                level = o["level"]?.orNull()?.let { it.string() },
+                link = o["link"]?.orNull()?.let { GetPortalThemeResponsePublishedAnnouncementLink.fromJson(it) },
+                dismissible = o["dismissible"]?.orNull()?.let { it.bool() },
+                background = o["background"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                startsAt = o["startsAt"]?.orNull()?.let { it.string() },
+                endsAt = o["endsAt"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedChromeHeaderLinksItem(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeHeaderLinksItem.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeHeaderLinksItem.href))
+        if (this@GetPortalThemeResponsePublishedChromeHeaderLinksItem.newTab != null) put("newTab", (this@GetPortalThemeResponsePublishedChromeHeaderLinksItem.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeHeaderLinksItem.translations != null) put("translations", (this@GetPortalThemeResponsePublishedChromeHeaderLinksItem.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedChromeHeaderLinksItem {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedChromeHeaderLinksItem(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedChromeHeaderCta(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeHeaderCta.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeHeaderCta.href))
+        if (this@GetPortalThemeResponsePublishedChromeHeaderCta.newTab != null) put("newTab", (this@GetPortalThemeResponsePublishedChromeHeaderCta.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeHeaderCta.translations != null) put("translations", (this@GetPortalThemeResponsePublishedChromeHeaderCta.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedChromeHeaderCta {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedChromeHeaderCta(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedChromeHeader(
+    val links: List<GetPortalThemeResponsePublishedChromeHeaderLinksItem>? = null,
+    val cta: GetPortalThemeResponsePublishedChromeHeaderCta? = null,
+    val sticky: Boolean? = null,
+    val showLocaleSwitcher: Boolean? = null,
+    val showThemeToggle: Boolean? = null,
+    val brandAlign: String? = null,
+    val border: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedChromeHeader.links != null) put("links", (this@GetPortalThemeResponsePublishedChromeHeader.links?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeHeader.cta != null) put("cta", (this@GetPortalThemeResponsePublishedChromeHeader.cta?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeHeader.sticky != null) put("sticky", (this@GetPortalThemeResponsePublishedChromeHeader.sticky?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeHeader.showLocaleSwitcher != null) put("showLocaleSwitcher", (this@GetPortalThemeResponsePublishedChromeHeader.showLocaleSwitcher?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeHeader.showThemeToggle != null) put("showThemeToggle", (this@GetPortalThemeResponsePublishedChromeHeader.showThemeToggle?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeHeader.brandAlign != null) put("brandAlign", (this@GetPortalThemeResponsePublishedChromeHeader.brandAlign?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeHeader.border != null) put("border", (this@GetPortalThemeResponsePublishedChromeHeader.border?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedChromeHeader {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedChromeHeader(
+                links = o["links"]?.orNull()?.let { it.array().map { GetPortalThemeResponsePublishedChromeHeaderLinksItem.fromJson(it) } },
+                cta = o["cta"]?.orNull()?.let { GetPortalThemeResponsePublishedChromeHeaderCta.fromJson(it) },
+                sticky = o["sticky"]?.orNull()?.let { it.bool() },
+                showLocaleSwitcher = o["showLocaleSwitcher"]?.orNull()?.let { it.bool() },
+                showThemeToggle = o["showThemeToggle"]?.orNull()?.let { it.bool() },
+                brandAlign = o["brandAlign"]?.orNull()?.let { it.string() },
+                border = o["border"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem.href))
+        if (this@GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem.newTab != null) put("newTab", (this@GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem.translations != null) put("translations", (this@GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedChromeFooterColumnsItem(
+    val heading: String,
+    val links: List<GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("heading", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeFooterColumnsItem.heading))
+        put("links", JsonValue.Arr(this@GetPortalThemeResponsePublishedChromeFooterColumnsItem.links.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedChromeFooterColumnsItem {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedChromeFooterColumnsItem(
+                heading = o.field("heading").string(),
+                links = o.field("links").array().map { GetPortalThemeResponsePublishedChromeFooterColumnsItemLinksItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedChromeFooterSocialItem(
+    val platform: String,
+    val href: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("platform", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeFooterSocialItem.platform))
+        put("href", JsonValue.Str(this@GetPortalThemeResponsePublishedChromeFooterSocialItem.href))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedChromeFooterSocialItem {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedChromeFooterSocialItem(
+                platform = o.field("platform").string(),
+                href = o.field("href").string(),
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedChromeFooter(
+    val columns: List<GetPortalThemeResponsePublishedChromeFooterColumnsItem>? = null,
+    val text: String? = null,
+    val social: List<GetPortalThemeResponsePublishedChromeFooterSocialItem>? = null,
+    val showPoweredBy: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedChromeFooter.columns != null) put("columns", (this@GetPortalThemeResponsePublishedChromeFooter.columns?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeFooter.text != null) put("text", (this@GetPortalThemeResponsePublishedChromeFooter.text?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeFooter.social != null) put("social", (this@GetPortalThemeResponsePublishedChromeFooter.social?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChromeFooter.showPoweredBy != null) put("showPoweredBy", (this@GetPortalThemeResponsePublishedChromeFooter.showPoweredBy?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedChromeFooter {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedChromeFooter(
+                columns = o["columns"]?.orNull()?.let { it.array().map { GetPortalThemeResponsePublishedChromeFooterColumnsItem.fromJson(it) } },
+                text = o["text"]?.orNull()?.let { it.string() },
+                social = o["social"]?.orNull()?.let { it.array().map { GetPortalThemeResponsePublishedChromeFooterSocialItem.fromJson(it) } },
+                showPoweredBy = o["showPoweredBy"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedChrome(
+    val header: GetPortalThemeResponsePublishedChromeHeader? = null,
+    val footer: GetPortalThemeResponsePublishedChromeFooter? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedChrome.header != null) put("header", (this@GetPortalThemeResponsePublishedChrome.header?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedChrome.footer != null) put("footer", (this@GetPortalThemeResponsePublishedChrome.footer?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedChrome {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedChrome(
+                header = o["header"]?.orNull()?.let { GetPortalThemeResponsePublishedChromeHeader.fromJson(it) },
+                footer = o["footer"]?.orNull()?.let { GetPortalThemeResponsePublishedChromeFooter.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPortalSectionsItem(
+    val id: String,
+    val enabled: Boolean? = null,
+    val title: String? = null,
+    val description: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetPortalThemeResponsePublishedPortalSectionsItem.id))
+        if (this@GetPortalThemeResponsePublishedPortalSectionsItem.enabled != null) put("enabled", (this@GetPortalThemeResponsePublishedPortalSectionsItem.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalSectionsItem.title != null) put("title", (this@GetPortalThemeResponsePublishedPortalSectionsItem.title?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalSectionsItem.description != null) put("description", (this@GetPortalThemeResponsePublishedPortalSectionsItem.description?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPortalSectionsItem {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPortalSectionsItem(
+                id = o.field("id").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                title = o["title"]?.orNull()?.let { it.string() },
+                description = o["description"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPortalWelcomeCta(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponsePublishedPortalWelcomeCta.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponsePublishedPortalWelcomeCta.href))
+        if (this@GetPortalThemeResponsePublishedPortalWelcomeCta.newTab != null) put("newTab", (this@GetPortalThemeResponsePublishedPortalWelcomeCta.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalWelcomeCta.translations != null) put("translations", (this@GetPortalThemeResponsePublishedPortalWelcomeCta.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPortalWelcomeCta {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPortalWelcomeCta(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPortalWelcome(
+    val title: String,
+    val body: String? = null,
+    val image: String? = null,
+    val cta: GetPortalThemeResponsePublishedPortalWelcomeCta? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("title", JsonValue.Str(this@GetPortalThemeResponsePublishedPortalWelcome.title))
+        if (this@GetPortalThemeResponsePublishedPortalWelcome.body != null) put("body", (this@GetPortalThemeResponsePublishedPortalWelcome.body?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalWelcome.image != null) put("image", (this@GetPortalThemeResponsePublishedPortalWelcome.image?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalWelcome.cta != null) put("cta", (this@GetPortalThemeResponsePublishedPortalWelcome.cta?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPortalWelcome {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPortalWelcome(
+                title = o.field("title").string(),
+                body = o["body"]?.orNull()?.let { it.string() },
+                image = o["image"]?.orNull()?.let { it.string() },
+                cta = o["cta"]?.orNull()?.let { GetPortalThemeResponsePublishedPortalWelcomeCta.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPortalNavigation(
+    val primary: List<String>? = null,
+    val hidden: List<String>? = null,
+    val labels: Map<String, String>? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedPortalNavigation.primary != null) put("primary", (this@GetPortalThemeResponsePublishedPortalNavigation.primary?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalNavigation.hidden != null) put("hidden", (this@GetPortalThemeResponsePublishedPortalNavigation.hidden?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalNavigation.labels != null) put("labels", (this@GetPortalThemeResponsePublishedPortalNavigation.labels?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalNavigation.style != null) put("style", (this@GetPortalThemeResponsePublishedPortalNavigation.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPortalNavigation {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPortalNavigation(
+                primary = o["primary"]?.orNull()?.let { it.array().map { it.string() } },
+                hidden = o["hidden"]?.orNull()?.let { it.array().map { it.string() } },
+                labels = o["labels"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPortalSignIn(
+    val title: String? = null,
+    val subtitle: String? = null,
+    val image: String? = null,
+    val layout: String? = null,
+    val footnote: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedPortalSignIn.title != null) put("title", (this@GetPortalThemeResponsePublishedPortalSignIn.title?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalSignIn.subtitle != null) put("subtitle", (this@GetPortalThemeResponsePublishedPortalSignIn.subtitle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalSignIn.image != null) put("image", (this@GetPortalThemeResponsePublishedPortalSignIn.image?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalSignIn.layout != null) put("layout", (this@GetPortalThemeResponsePublishedPortalSignIn.layout?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalSignIn.footnote != null) put("footnote", (this@GetPortalThemeResponsePublishedPortalSignIn.footnote?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPortalSignIn {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPortalSignIn(
+                title = o["title"]?.orNull()?.let { it.string() },
+                subtitle = o["subtitle"]?.orNull()?.let { it.string() },
+                image = o["image"]?.orNull()?.let { it.string() },
+                layout = o["layout"]?.orNull()?.let { it.string() },
+                footnote = o["footnote"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPortalMoney(
+    val showCurrencyCode: Boolean? = null,
+    val compact: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedPortalMoney.showCurrencyCode != null) put("showCurrencyCode", (this@GetPortalThemeResponsePublishedPortalMoney.showCurrencyCode?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortalMoney.compact != null) put("compact", (this@GetPortalThemeResponsePublishedPortalMoney.compact?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPortalMoney {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPortalMoney(
+                showCurrencyCode = o["showCurrencyCode"]?.orNull()?.let { it.bool() },
+                compact = o["compact"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedPortal(
+    val sections: List<GetPortalThemeResponsePublishedPortalSectionsItem>? = null,
+    val welcome: GetPortalThemeResponsePublishedPortalWelcome? = null,
+    val navigation: GetPortalThemeResponsePublishedPortalNavigation? = null,
+    val signIn: GetPortalThemeResponsePublishedPortalSignIn? = null,
+    val money: GetPortalThemeResponsePublishedPortalMoney? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedPortal.sections != null) put("sections", (this@GetPortalThemeResponsePublishedPortal.sections?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortal.welcome != null) put("welcome", (this@GetPortalThemeResponsePublishedPortal.welcome?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortal.navigation != null) put("navigation", (this@GetPortalThemeResponsePublishedPortal.navigation?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortal.signIn != null) put("signIn", (this@GetPortalThemeResponsePublishedPortal.signIn?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedPortal.money != null) put("money", (this@GetPortalThemeResponsePublishedPortal.money?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedPortal {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedPortal(
+                sections = o["sections"]?.orNull()?.let { it.array().map { GetPortalThemeResponsePublishedPortalSectionsItem.fromJson(it) } },
+                welcome = o["welcome"]?.orNull()?.let { GetPortalThemeResponsePublishedPortalWelcome.fromJson(it) },
+                navigation = o["navigation"]?.orNull()?.let { GetPortalThemeResponsePublishedPortalNavigation.fromJson(it) },
+                signIn = o["signIn"]?.orNull()?.let { GetPortalThemeResponsePublishedPortalSignIn.fromJson(it) },
+                money = o["money"]?.orNull()?.let { GetPortalThemeResponsePublishedPortalMoney.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedSettingsSchemaItem(
+    val key: String,
+    val type: String,
+    val label: String? = null,
+    val default: JsonValue? = null,
+    val options: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("key", JsonValue.Str(this@GetPortalThemeResponsePublishedSettingsSchemaItem.key))
+        put("type", JsonValue.Str(this@GetPortalThemeResponsePublishedSettingsSchemaItem.type))
+        if (this@GetPortalThemeResponsePublishedSettingsSchemaItem.label != null) put("label", (this@GetPortalThemeResponsePublishedSettingsSchemaItem.label?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedSettingsSchemaItem.default != null) put("default", (this@GetPortalThemeResponsePublishedSettingsSchemaItem.default?.let { it } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedSettingsSchemaItem.options != null) put("options", (this@GetPortalThemeResponsePublishedSettingsSchemaItem.options?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedSettingsSchemaItem {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedSettingsSchemaItem(
+                key = o.field("key").string(),
+                type = o.field("type").string(),
+                label = o["label"]?.orNull()?.let { it.string() },
+                default = o["default"]?.orNull()?.let { it },
+                options = o["options"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedCssSnippetsItem(
+    val name: String,
+    val css: String,
+    val enabled: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("name", JsonValue.Str(this@GetPortalThemeResponsePublishedCssSnippetsItem.name))
+        put("css", JsonValue.Str(this@GetPortalThemeResponsePublishedCssSnippetsItem.css))
+        if (this@GetPortalThemeResponsePublishedCssSnippetsItem.enabled != null) put("enabled", (this@GetPortalThemeResponsePublishedCssSnippetsItem.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedCssSnippetsItem {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedCssSnippetsItem(
+                name = o.field("name").string(),
+                css = o.field("css").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedMobile(
+    val fontScale: Double? = null,
+    val density: String? = null,
+    val logoUrl: String? = null,
+    val hideSections: List<String>? = null,
+    val css: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedMobile.fontScale != null) put("fontScale", (this@GetPortalThemeResponsePublishedMobile.fontScale?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedMobile.density != null) put("density", (this@GetPortalThemeResponsePublishedMobile.density?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedMobile.logoUrl != null) put("logoUrl", (this@GetPortalThemeResponsePublishedMobile.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedMobile.hideSections != null) put("hideSections", (this@GetPortalThemeResponsePublishedMobile.hideSections?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedMobile.css != null) put("css", (this@GetPortalThemeResponsePublishedMobile.css?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedMobile {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedMobile(
+                fontScale = o["fontScale"]?.orNull()?.let { it.double() },
+                density = o["density"]?.orNull()?.let { it.string() },
+                logoUrl = o["logoUrl"]?.orNull()?.let { it.string() },
+                hideSections = o["hideSections"]?.orNull()?.let { it.array().map { it.string() } },
+                css = o["css"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponsePublishedEmbed(
+    val enabled: Boolean? = null,
+    val allowedOrigins: List<String>? = null,
+    val hideChrome: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublishedEmbed.enabled != null) put("enabled", (this@GetPortalThemeResponsePublishedEmbed.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedEmbed.allowedOrigins != null) put("allowedOrigins", (this@GetPortalThemeResponsePublishedEmbed.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublishedEmbed.hideChrome != null) put("hideChrome", (this@GetPortalThemeResponsePublishedEmbed.hideChrome?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublishedEmbed {
+            val o = json.obj()
+            return GetPortalThemeResponsePublishedEmbed(
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
+                hideChrome = o["hideChrome"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+/** What partners see now. */
+data class GetPortalThemeResponsePublished(
+    val primaryColor: String? = null,
+    val primaryColorDark: String? = null,
+    val accentColor: String? = null,
+    val palette: GetPortalThemeResponsePublishedPalette? = null,
+    val paletteDark: GetPortalThemeResponsePublishedPaletteDark? = null,
+    val colorScheme: String? = null,
+    val colorSchemeStrict: Boolean? = null,
+    val contentWidth: String? = null,
+    val density: String? = null,
+    val font: String? = null,
+    val customFontUrl: String? = null,
+    val customFontFamily: String? = null,
+    val headingFontFamily: String? = null,
+    val bodyFontFamily: String? = null,
+    val moneyFontFamily: String? = null,
+    val monoFontFamily: String? = null,
+    val fonts: GetPortalThemeResponsePublishedFonts? = null,
+    val typography: GetPortalThemeResponsePublishedTypography? = null,
+    val brandName: JsonValue? = null,
+    val logoUrl: String? = null,
+    val logoUrlLight: String? = null,
+    val logoUrlDark: String? = null,
+    val logoMark: String? = null,
+    val logoIncludesName: Boolean? = null,
+    val logoDarkMode: String? = null,
+    val logoHeight: Double? = null,
+    val faviconUrl: String? = null,
+    val pageTitle: String? = null,
+    val components: GetPortalThemeResponsePublishedComponents? = null,
+    val announcement: GetPortalThemeResponsePublishedAnnouncement? = null,
+    val chrome: GetPortalThemeResponsePublishedChrome? = null,
+    val portal: GetPortalThemeResponsePublishedPortal? = null,
+    val stringOverrides: Map<String, Map<String, String>>? = null,
+    val settingsSchema: List<GetPortalThemeResponsePublishedSettingsSchemaItem>? = null,
+    val settings: Map<String, JsonValue>? = null,
+    val customCss: String? = null,
+    val cssSnippets: List<GetPortalThemeResponsePublishedCssSnippetsItem>? = null,
+    val mobile: GetPortalThemeResponsePublishedMobile? = null,
+    val embed: GetPortalThemeResponsePublishedEmbed? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponsePublished.primaryColor != null) put("primaryColor", (this@GetPortalThemeResponsePublished.primaryColor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.primaryColorDark != null) put("primaryColorDark", (this@GetPortalThemeResponsePublished.primaryColorDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.accentColor != null) put("accentColor", (this@GetPortalThemeResponsePublished.accentColor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.palette != null) put("palette", (this@GetPortalThemeResponsePublished.palette?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.paletteDark != null) put("paletteDark", (this@GetPortalThemeResponsePublished.paletteDark?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.colorScheme != null) put("colorScheme", (this@GetPortalThemeResponsePublished.colorScheme?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.colorSchemeStrict != null) put("colorSchemeStrict", (this@GetPortalThemeResponsePublished.colorSchemeStrict?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.contentWidth != null) put("contentWidth", (this@GetPortalThemeResponsePublished.contentWidth?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.density != null) put("density", (this@GetPortalThemeResponsePublished.density?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.font != null) put("font", (this@GetPortalThemeResponsePublished.font?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.customFontUrl != null) put("customFontUrl", (this@GetPortalThemeResponsePublished.customFontUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.customFontFamily != null) put("customFontFamily", (this@GetPortalThemeResponsePublished.customFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.headingFontFamily != null) put("headingFontFamily", (this@GetPortalThemeResponsePublished.headingFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.bodyFontFamily != null) put("bodyFontFamily", (this@GetPortalThemeResponsePublished.bodyFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.moneyFontFamily != null) put("moneyFontFamily", (this@GetPortalThemeResponsePublished.moneyFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.monoFontFamily != null) put("monoFontFamily", (this@GetPortalThemeResponsePublished.monoFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.fonts != null) put("fonts", (this@GetPortalThemeResponsePublished.fonts?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.typography != null) put("typography", (this@GetPortalThemeResponsePublished.typography?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.brandName != null) put("brandName", (this@GetPortalThemeResponsePublished.brandName?.let { it } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.logoUrl != null) put("logoUrl", (this@GetPortalThemeResponsePublished.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.logoUrlLight != null) put("logoUrlLight", (this@GetPortalThemeResponsePublished.logoUrlLight?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.logoUrlDark != null) put("logoUrlDark", (this@GetPortalThemeResponsePublished.logoUrlDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.logoMark != null) put("logoMark", (this@GetPortalThemeResponsePublished.logoMark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.logoIncludesName != null) put("logoIncludesName", (this@GetPortalThemeResponsePublished.logoIncludesName?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.logoDarkMode != null) put("logoDarkMode", (this@GetPortalThemeResponsePublished.logoDarkMode?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.logoHeight != null) put("logoHeight", (this@GetPortalThemeResponsePublished.logoHeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.faviconUrl != null) put("faviconUrl", (this@GetPortalThemeResponsePublished.faviconUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.pageTitle != null) put("pageTitle", (this@GetPortalThemeResponsePublished.pageTitle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.components != null) put("components", (this@GetPortalThemeResponsePublished.components?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.announcement != null) put("announcement", (this@GetPortalThemeResponsePublished.announcement?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.chrome != null) put("chrome", (this@GetPortalThemeResponsePublished.chrome?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.portal != null) put("portal", (this@GetPortalThemeResponsePublished.portal?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.stringOverrides != null) put("stringOverrides", (this@GetPortalThemeResponsePublished.stringOverrides?.let { JsonValue.Obj(it.mapValues { JsonValue.Obj(it.value.mapValues { JsonValue.Str(it.value) }) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.settingsSchema != null) put("settingsSchema", (this@GetPortalThemeResponsePublished.settingsSchema?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.settings != null) put("settings", (this@GetPortalThemeResponsePublished.settings?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.customCss != null) put("customCss", (this@GetPortalThemeResponsePublished.customCss?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.cssSnippets != null) put("cssSnippets", (this@GetPortalThemeResponsePublished.cssSnippets?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.mobile != null) put("mobile", (this@GetPortalThemeResponsePublished.mobile?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponsePublished.embed != null) put("embed", (this@GetPortalThemeResponsePublished.embed?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponsePublished {
+            val o = json.obj()
+            return GetPortalThemeResponsePublished(
+                primaryColor = o["primaryColor"]?.orNull()?.let { it.string() },
+                primaryColorDark = o["primaryColorDark"]?.orNull()?.let { it.string() },
+                accentColor = o["accentColor"]?.orNull()?.let { it.string() },
+                palette = o["palette"]?.orNull()?.let { GetPortalThemeResponsePublishedPalette.fromJson(it) },
+                paletteDark = o["paletteDark"]?.orNull()?.let { GetPortalThemeResponsePublishedPaletteDark.fromJson(it) },
+                colorScheme = o["colorScheme"]?.orNull()?.let { it.string() },
+                colorSchemeStrict = o["colorSchemeStrict"]?.orNull()?.let { it.bool() },
+                contentWidth = o["contentWidth"]?.orNull()?.let { it.string() },
+                density = o["density"]?.orNull()?.let { it.string() },
+                font = o["font"]?.orNull()?.let { it.string() },
+                customFontUrl = o["customFontUrl"]?.orNull()?.let { it.string() },
+                customFontFamily = o["customFontFamily"]?.orNull()?.let { it.string() },
+                headingFontFamily = o["headingFontFamily"]?.orNull()?.let { it.string() },
+                bodyFontFamily = o["bodyFontFamily"]?.orNull()?.let { it.string() },
+                moneyFontFamily = o["moneyFontFamily"]?.orNull()?.let { it.string() },
+                monoFontFamily = o["monoFontFamily"]?.orNull()?.let { it.string() },
+                fonts = o["fonts"]?.orNull()?.let { GetPortalThemeResponsePublishedFonts.fromJson(it) },
+                typography = o["typography"]?.orNull()?.let { GetPortalThemeResponsePublishedTypography.fromJson(it) },
+                brandName = o["brandName"]?.orNull()?.let { it },
+                logoUrl = o["logoUrl"]?.orNull()?.let { it.string() },
+                logoUrlLight = o["logoUrlLight"]?.orNull()?.let { it.string() },
+                logoUrlDark = o["logoUrlDark"]?.orNull()?.let { it.string() },
+                logoMark = o["logoMark"]?.orNull()?.let { it.string() },
+                logoIncludesName = o["logoIncludesName"]?.orNull()?.let { it.bool() },
+                logoDarkMode = o["logoDarkMode"]?.orNull()?.let { it.string() },
+                logoHeight = o["logoHeight"]?.orNull()?.let { it.double() },
+                faviconUrl = o["faviconUrl"]?.orNull()?.let { it.string() },
+                pageTitle = o["pageTitle"]?.orNull()?.let { it.string() },
+                components = o["components"]?.orNull()?.let { GetPortalThemeResponsePublishedComponents.fromJson(it) },
+                announcement = o["announcement"]?.orNull()?.let { GetPortalThemeResponsePublishedAnnouncement.fromJson(it) },
+                chrome = o["chrome"]?.orNull()?.let { GetPortalThemeResponsePublishedChrome.fromJson(it) },
+                portal = o["portal"]?.orNull()?.let { GetPortalThemeResponsePublishedPortal.fromJson(it) },
+                stringOverrides = o["stringOverrides"]?.orNull()?.let { it.obj().mapValues { it.value.obj().mapValues { it.value.string() } } },
+                settingsSchema = o["settingsSchema"]?.orNull()?.let { it.array().map { GetPortalThemeResponsePublishedSettingsSchemaItem.fromJson(it) } },
+                settings = o["settings"]?.orNull()?.let { it.obj().mapValues { it.value } },
+                customCss = o["customCss"]?.orNull()?.let { it.string() },
+                cssSnippets = o["cssSnippets"]?.orNull()?.let { it.array().map { GetPortalThemeResponsePublishedCssSnippetsItem.fromJson(it) } },
+                mobile = o["mobile"]?.orNull()?.let { GetPortalThemeResponsePublishedMobile.fromJson(it) },
+                embed = o["embed"]?.orNull()?.let { GetPortalThemeResponsePublishedEmbed.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Palette(
+    val background: String? = null,
+    val surface: String? = null,
+    val surfaceAlt: String? = null,
+    val ink: String? = null,
+    val muted: String? = null,
+    val faint: String? = null,
+    val line: String? = null,
+    val lineStrong: String? = null,
+    val primary: String? = null,
+    val onPrimary: String? = null,
+    val primarySoft: String? = null,
+    val headerBackground: String? = null,
+    val headerPrimary: String? = null,
+    val sidebar: String? = null,
+    val footerBackground: String? = null,
+    val footerPrimary: String? = null,
+    val success: String? = null,
+    val warning: String? = null,
+    val danger: String? = null,
+    val info: String? = null,
+    val chart: String? = null,
+    val money: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1Palette.background != null) put("background", (this@GetPortalThemeResponseDraftOption1Palette.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.surface != null) put("surface", (this@GetPortalThemeResponseDraftOption1Palette.surface?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.surfaceAlt != null) put("surfaceAlt", (this@GetPortalThemeResponseDraftOption1Palette.surfaceAlt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.ink != null) put("ink", (this@GetPortalThemeResponseDraftOption1Palette.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.muted != null) put("muted", (this@GetPortalThemeResponseDraftOption1Palette.muted?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.faint != null) put("faint", (this@GetPortalThemeResponseDraftOption1Palette.faint?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.line != null) put("line", (this@GetPortalThemeResponseDraftOption1Palette.line?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.lineStrong != null) put("lineStrong", (this@GetPortalThemeResponseDraftOption1Palette.lineStrong?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.primary != null) put("primary", (this@GetPortalThemeResponseDraftOption1Palette.primary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.onPrimary != null) put("onPrimary", (this@GetPortalThemeResponseDraftOption1Palette.onPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.primarySoft != null) put("primarySoft", (this@GetPortalThemeResponseDraftOption1Palette.primarySoft?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.headerBackground != null) put("header_background", (this@GetPortalThemeResponseDraftOption1Palette.headerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.headerPrimary != null) put("header_primary", (this@GetPortalThemeResponseDraftOption1Palette.headerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.sidebar != null) put("sidebar", (this@GetPortalThemeResponseDraftOption1Palette.sidebar?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.footerBackground != null) put("footer_background", (this@GetPortalThemeResponseDraftOption1Palette.footerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.footerPrimary != null) put("footer_primary", (this@GetPortalThemeResponseDraftOption1Palette.footerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.success != null) put("success", (this@GetPortalThemeResponseDraftOption1Palette.success?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.warning != null) put("warning", (this@GetPortalThemeResponseDraftOption1Palette.warning?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.danger != null) put("danger", (this@GetPortalThemeResponseDraftOption1Palette.danger?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.info != null) put("info", (this@GetPortalThemeResponseDraftOption1Palette.info?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.chart != null) put("chart", (this@GetPortalThemeResponseDraftOption1Palette.chart?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Palette.money != null) put("money", (this@GetPortalThemeResponseDraftOption1Palette.money?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Palette {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Palette(
+                background = o["background"]?.orNull()?.let { it.string() },
+                surface = o["surface"]?.orNull()?.let { it.string() },
+                surfaceAlt = o["surfaceAlt"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                muted = o["muted"]?.orNull()?.let { it.string() },
+                faint = o["faint"]?.orNull()?.let { it.string() },
+                line = o["line"]?.orNull()?.let { it.string() },
+                lineStrong = o["lineStrong"]?.orNull()?.let { it.string() },
+                primary = o["primary"]?.orNull()?.let { it.string() },
+                onPrimary = o["onPrimary"]?.orNull()?.let { it.string() },
+                primarySoft = o["primarySoft"]?.orNull()?.let { it.string() },
+                headerBackground = o["header_background"]?.orNull()?.let { it.string() },
+                headerPrimary = o["header_primary"]?.orNull()?.let { it.string() },
+                sidebar = o["sidebar"]?.orNull()?.let { it.string() },
+                footerBackground = o["footer_background"]?.orNull()?.let { it.string() },
+                footerPrimary = o["footer_primary"]?.orNull()?.let { it.string() },
+                success = o["success"]?.orNull()?.let { it.string() },
+                warning = o["warning"]?.orNull()?.let { it.string() },
+                danger = o["danger"]?.orNull()?.let { it.string() },
+                info = o["info"]?.orNull()?.let { it.string() },
+                chart = o["chart"]?.orNull()?.let { it.string() },
+                money = o["money"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1PaletteDark(
+    val background: String? = null,
+    val surface: String? = null,
+    val surfaceAlt: String? = null,
+    val ink: String? = null,
+    val muted: String? = null,
+    val faint: String? = null,
+    val line: String? = null,
+    val lineStrong: String? = null,
+    val primary: String? = null,
+    val onPrimary: String? = null,
+    val primarySoft: String? = null,
+    val headerBackground: String? = null,
+    val headerPrimary: String? = null,
+    val sidebar: String? = null,
+    val footerBackground: String? = null,
+    val footerPrimary: String? = null,
+    val success: String? = null,
+    val warning: String? = null,
+    val danger: String? = null,
+    val info: String? = null,
+    val chart: String? = null,
+    val money: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.background != null) put("background", (this@GetPortalThemeResponseDraftOption1PaletteDark.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.surface != null) put("surface", (this@GetPortalThemeResponseDraftOption1PaletteDark.surface?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.surfaceAlt != null) put("surfaceAlt", (this@GetPortalThemeResponseDraftOption1PaletteDark.surfaceAlt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.ink != null) put("ink", (this@GetPortalThemeResponseDraftOption1PaletteDark.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.muted != null) put("muted", (this@GetPortalThemeResponseDraftOption1PaletteDark.muted?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.faint != null) put("faint", (this@GetPortalThemeResponseDraftOption1PaletteDark.faint?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.line != null) put("line", (this@GetPortalThemeResponseDraftOption1PaletteDark.line?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.lineStrong != null) put("lineStrong", (this@GetPortalThemeResponseDraftOption1PaletteDark.lineStrong?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.primary != null) put("primary", (this@GetPortalThemeResponseDraftOption1PaletteDark.primary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.onPrimary != null) put("onPrimary", (this@GetPortalThemeResponseDraftOption1PaletteDark.onPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.primarySoft != null) put("primarySoft", (this@GetPortalThemeResponseDraftOption1PaletteDark.primarySoft?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.headerBackground != null) put("header_background", (this@GetPortalThemeResponseDraftOption1PaletteDark.headerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.headerPrimary != null) put("header_primary", (this@GetPortalThemeResponseDraftOption1PaletteDark.headerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.sidebar != null) put("sidebar", (this@GetPortalThemeResponseDraftOption1PaletteDark.sidebar?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.footerBackground != null) put("footer_background", (this@GetPortalThemeResponseDraftOption1PaletteDark.footerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.footerPrimary != null) put("footer_primary", (this@GetPortalThemeResponseDraftOption1PaletteDark.footerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.success != null) put("success", (this@GetPortalThemeResponseDraftOption1PaletteDark.success?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.warning != null) put("warning", (this@GetPortalThemeResponseDraftOption1PaletteDark.warning?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.danger != null) put("danger", (this@GetPortalThemeResponseDraftOption1PaletteDark.danger?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.info != null) put("info", (this@GetPortalThemeResponseDraftOption1PaletteDark.info?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.chart != null) put("chart", (this@GetPortalThemeResponseDraftOption1PaletteDark.chart?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PaletteDark.money != null) put("money", (this@GetPortalThemeResponseDraftOption1PaletteDark.money?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1PaletteDark {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1PaletteDark(
+                background = o["background"]?.orNull()?.let { it.string() },
+                surface = o["surface"]?.orNull()?.let { it.string() },
+                surfaceAlt = o["surfaceAlt"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                muted = o["muted"]?.orNull()?.let { it.string() },
+                faint = o["faint"]?.orNull()?.let { it.string() },
+                line = o["line"]?.orNull()?.let { it.string() },
+                lineStrong = o["lineStrong"]?.orNull()?.let { it.string() },
+                primary = o["primary"]?.orNull()?.let { it.string() },
+                onPrimary = o["onPrimary"]?.orNull()?.let { it.string() },
+                primarySoft = o["primarySoft"]?.orNull()?.let { it.string() },
+                headerBackground = o["header_background"]?.orNull()?.let { it.string() },
+                headerPrimary = o["header_primary"]?.orNull()?.let { it.string() },
+                sidebar = o["sidebar"]?.orNull()?.let { it.string() },
+                footerBackground = o["footer_background"]?.orNull()?.let { it.string() },
+                footerPrimary = o["footer_primary"]?.orNull()?.let { it.string() },
+                success = o["success"]?.orNull()?.let { it.string() },
+                warning = o["warning"]?.orNull()?.let { it.string() },
+                danger = o["danger"]?.orNull()?.let { it.string() },
+                info = o["info"]?.orNull()?.let { it.string() },
+                chart = o["chart"]?.orNull()?.let { it.string() },
+                money = o["money"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1FontsFacesItem(
+    val family: String,
+    val src: String,
+    val format: String? = null,
+    val weight: JsonValue? = null,
+    val style: String? = null,
+    val display: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("family", JsonValue.Str(this@GetPortalThemeResponseDraftOption1FontsFacesItem.family))
+        put("src", JsonValue.Str(this@GetPortalThemeResponseDraftOption1FontsFacesItem.src))
+        if (this@GetPortalThemeResponseDraftOption1FontsFacesItem.format != null) put("format", (this@GetPortalThemeResponseDraftOption1FontsFacesItem.format?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1FontsFacesItem.weight != null) put("weight", (this@GetPortalThemeResponseDraftOption1FontsFacesItem.weight?.let { it } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1FontsFacesItem.style != null) put("style", (this@GetPortalThemeResponseDraftOption1FontsFacesItem.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1FontsFacesItem.display != null) put("display", (this@GetPortalThemeResponseDraftOption1FontsFacesItem.display?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1FontsFacesItem {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1FontsFacesItem(
+                family = o.field("family").string(),
+                src = o.field("src").string(),
+                format = o["format"]?.orNull()?.let { it.string() },
+                weight = o["weight"]?.orNull()?.let { it },
+                style = o["style"]?.orNull()?.let { it.string() },
+                display = o["display"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Fonts(
+    val faces: List<GetPortalThemeResponseDraftOption1FontsFacesItem>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1Fonts.faces != null) put("faces", (this@GetPortalThemeResponseDraftOption1Fonts.faces?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Fonts {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Fonts(
+                faces = o["faces"]?.orNull()?.let { it.array().map { GetPortalThemeResponseDraftOption1FontsFacesItem.fromJson(it) } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Typography(
+    val baseSize: Double? = null,
+    val headingScale: Double? = null,
+    val headingWeight: Long? = null,
+    val bodyWeight: Long? = null,
+    val headingTransform: String? = null,
+    val headingTracking: Double? = null,
+    val bodyLeading: Double? = null,
+    val numerals: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1Typography.baseSize != null) put("baseSize", (this@GetPortalThemeResponseDraftOption1Typography.baseSize?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Typography.headingScale != null) put("headingScale", (this@GetPortalThemeResponseDraftOption1Typography.headingScale?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Typography.headingWeight != null) put("headingWeight", (this@GetPortalThemeResponseDraftOption1Typography.headingWeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Typography.bodyWeight != null) put("bodyWeight", (this@GetPortalThemeResponseDraftOption1Typography.bodyWeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Typography.headingTransform != null) put("headingTransform", (this@GetPortalThemeResponseDraftOption1Typography.headingTransform?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Typography.headingTracking != null) put("headingTracking", (this@GetPortalThemeResponseDraftOption1Typography.headingTracking?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Typography.bodyLeading != null) put("bodyLeading", (this@GetPortalThemeResponseDraftOption1Typography.bodyLeading?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Typography.numerals != null) put("numerals", (this@GetPortalThemeResponseDraftOption1Typography.numerals?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Typography {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Typography(
+                baseSize = o["baseSize"]?.orNull()?.let { it.double() },
+                headingScale = o["headingScale"]?.orNull()?.let { it.double() },
+                headingWeight = o["headingWeight"]?.orNull()?.let { it.long() },
+                bodyWeight = o["bodyWeight"]?.orNull()?.let { it.long() },
+                headingTransform = o["headingTransform"]?.orNull()?.let { it.string() },
+                headingTracking = o["headingTracking"]?.orNull()?.let { it.double() },
+                bodyLeading = o["bodyLeading"]?.orNull()?.let { it.double() },
+                numerals = o["numerals"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ComponentsCards(
+    val border: Boolean? = null,
+    val elevation: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1ComponentsCards.border != null) put("border", (this@GetPortalThemeResponseDraftOption1ComponentsCards.border?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ComponentsCards.elevation != null) put("elevation", (this@GetPortalThemeResponseDraftOption1ComponentsCards.elevation?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ComponentsCards {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ComponentsCards(
+                border = o["border"]?.orNull()?.let { it.bool() },
+                elevation = o["elevation"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ComponentsButtons(
+    val radius: Double? = null,
+    val case: String? = null,
+    val weight: Long? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1ComponentsButtons.radius != null) put("radius", (this@GetPortalThemeResponseDraftOption1ComponentsButtons.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ComponentsButtons.case != null) put("case", (this@GetPortalThemeResponseDraftOption1ComponentsButtons.case?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ComponentsButtons.weight != null) put("weight", (this@GetPortalThemeResponseDraftOption1ComponentsButtons.weight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ComponentsButtons.style != null) put("style", (this@GetPortalThemeResponseDraftOption1ComponentsButtons.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ComponentsButtons {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ComponentsButtons(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                case = o["case"]?.orNull()?.let { it.string() },
+                weight = o["weight"]?.orNull()?.let { it.long() },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ComponentsInputs(
+    val radius: Double? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1ComponentsInputs.radius != null) put("radius", (this@GetPortalThemeResponseDraftOption1ComponentsInputs.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ComponentsInputs.style != null) put("style", (this@GetPortalThemeResponseDraftOption1ComponentsInputs.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ComponentsInputs {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ComponentsInputs(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ComponentsFocusRing(
+    val color: String? = null,
+    val width: Double? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1ComponentsFocusRing.color != null) put("color", (this@GetPortalThemeResponseDraftOption1ComponentsFocusRing.color?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ComponentsFocusRing.width != null) put("width", (this@GetPortalThemeResponseDraftOption1ComponentsFocusRing.width?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ComponentsFocusRing {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ComponentsFocusRing(
+                color = o["color"]?.orNull()?.let { it.string() },
+                width = o["width"]?.orNull()?.let { it.double() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ComponentsLinks(
+    val underline: String? = null,
+    val color: String? = null,
+    val colorDark: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1ComponentsLinks.underline != null) put("underline", (this@GetPortalThemeResponseDraftOption1ComponentsLinks.underline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ComponentsLinks.color != null) put("color", (this@GetPortalThemeResponseDraftOption1ComponentsLinks.color?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ComponentsLinks.colorDark != null) put("colorDark", (this@GetPortalThemeResponseDraftOption1ComponentsLinks.colorDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ComponentsLinks {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ComponentsLinks(
+                underline = o["underline"]?.orNull()?.let { it.string() },
+                color = o["color"]?.orNull()?.let { it.string() },
+                colorDark = o["colorDark"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Components(
+    val radius: Double? = null,
+    val radiusSmall: Double? = null,
+    val shadow: String? = null,
+    val cards: GetPortalThemeResponseDraftOption1ComponentsCards? = null,
+    val buttons: GetPortalThemeResponseDraftOption1ComponentsButtons? = null,
+    val inputs: GetPortalThemeResponseDraftOption1ComponentsInputs? = null,
+    val focusRing: GetPortalThemeResponseDraftOption1ComponentsFocusRing? = null,
+    val links: GetPortalThemeResponseDraftOption1ComponentsLinks? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1Components.radius != null) put("radius", (this@GetPortalThemeResponseDraftOption1Components.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Components.radiusSmall != null) put("radiusSmall", (this@GetPortalThemeResponseDraftOption1Components.radiusSmall?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Components.shadow != null) put("shadow", (this@GetPortalThemeResponseDraftOption1Components.shadow?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Components.cards != null) put("cards", (this@GetPortalThemeResponseDraftOption1Components.cards?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Components.buttons != null) put("buttons", (this@GetPortalThemeResponseDraftOption1Components.buttons?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Components.inputs != null) put("inputs", (this@GetPortalThemeResponseDraftOption1Components.inputs?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Components.focusRing != null) put("focusRing", (this@GetPortalThemeResponseDraftOption1Components.focusRing?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Components.links != null) put("links", (this@GetPortalThemeResponseDraftOption1Components.links?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Components {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Components(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                radiusSmall = o["radiusSmall"]?.orNull()?.let { it.double() },
+                shadow = o["shadow"]?.orNull()?.let { it.string() },
+                cards = o["cards"]?.orNull()?.let { GetPortalThemeResponseDraftOption1ComponentsCards.fromJson(it) },
+                buttons = o["buttons"]?.orNull()?.let { GetPortalThemeResponseDraftOption1ComponentsButtons.fromJson(it) },
+                inputs = o["inputs"]?.orNull()?.let { GetPortalThemeResponseDraftOption1ComponentsInputs.fromJson(it) },
+                focusRing = o["focusRing"]?.orNull()?.let { GetPortalThemeResponseDraftOption1ComponentsFocusRing.fromJson(it) },
+                links = o["links"]?.orNull()?.let { GetPortalThemeResponseDraftOption1ComponentsLinks.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1AnnouncementLink(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponseDraftOption1AnnouncementLink.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponseDraftOption1AnnouncementLink.href))
+        if (this@GetPortalThemeResponseDraftOption1AnnouncementLink.newTab != null) put("newTab", (this@GetPortalThemeResponseDraftOption1AnnouncementLink.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1AnnouncementLink.translations != null) put("translations", (this@GetPortalThemeResponseDraftOption1AnnouncementLink.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1AnnouncementLink {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1AnnouncementLink(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Announcement(
+    val text: String,
+    val level: String? = null,
+    val link: GetPortalThemeResponseDraftOption1AnnouncementLink? = null,
+    val dismissible: Boolean? = null,
+    val background: String? = null,
+    val ink: String? = null,
+    val startsAt: String? = null,
+    val endsAt: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("text", JsonValue.Str(this@GetPortalThemeResponseDraftOption1Announcement.text))
+        if (this@GetPortalThemeResponseDraftOption1Announcement.level != null) put("level", (this@GetPortalThemeResponseDraftOption1Announcement.level?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Announcement.link != null) put("link", (this@GetPortalThemeResponseDraftOption1Announcement.link?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Announcement.dismissible != null) put("dismissible", (this@GetPortalThemeResponseDraftOption1Announcement.dismissible?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Announcement.background != null) put("background", (this@GetPortalThemeResponseDraftOption1Announcement.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Announcement.ink != null) put("ink", (this@GetPortalThemeResponseDraftOption1Announcement.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Announcement.startsAt != null) put("startsAt", (this@GetPortalThemeResponseDraftOption1Announcement.startsAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Announcement.endsAt != null) put("endsAt", (this@GetPortalThemeResponseDraftOption1Announcement.endsAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Announcement {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Announcement(
+                text = o.field("text").string(),
+                level = o["level"]?.orNull()?.let { it.string() },
+                link = o["link"]?.orNull()?.let { GetPortalThemeResponseDraftOption1AnnouncementLink.fromJson(it) },
+                dismissible = o["dismissible"]?.orNull()?.let { it.bool() },
+                background = o["background"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                startsAt = o["startsAt"]?.orNull()?.let { it.string() },
+                endsAt = o["endsAt"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem.href))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem.newTab != null) put("newTab", (this@GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem.translations != null) put("translations", (this@GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ChromeHeaderCta(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeHeaderCta.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeHeaderCta.href))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeaderCta.newTab != null) put("newTab", (this@GetPortalThemeResponseDraftOption1ChromeHeaderCta.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeaderCta.translations != null) put("translations", (this@GetPortalThemeResponseDraftOption1ChromeHeaderCta.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ChromeHeaderCta {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ChromeHeaderCta(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ChromeHeader(
+    val links: List<GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem>? = null,
+    val cta: GetPortalThemeResponseDraftOption1ChromeHeaderCta? = null,
+    val sticky: Boolean? = null,
+    val showLocaleSwitcher: Boolean? = null,
+    val showThemeToggle: Boolean? = null,
+    val brandAlign: String? = null,
+    val border: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeader.links != null) put("links", (this@GetPortalThemeResponseDraftOption1ChromeHeader.links?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeader.cta != null) put("cta", (this@GetPortalThemeResponseDraftOption1ChromeHeader.cta?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeader.sticky != null) put("sticky", (this@GetPortalThemeResponseDraftOption1ChromeHeader.sticky?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeader.showLocaleSwitcher != null) put("showLocaleSwitcher", (this@GetPortalThemeResponseDraftOption1ChromeHeader.showLocaleSwitcher?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeader.showThemeToggle != null) put("showThemeToggle", (this@GetPortalThemeResponseDraftOption1ChromeHeader.showThemeToggle?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeader.brandAlign != null) put("brandAlign", (this@GetPortalThemeResponseDraftOption1ChromeHeader.brandAlign?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeHeader.border != null) put("border", (this@GetPortalThemeResponseDraftOption1ChromeHeader.border?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ChromeHeader {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ChromeHeader(
+                links = o["links"]?.orNull()?.let { it.array().map { GetPortalThemeResponseDraftOption1ChromeHeaderLinksItem.fromJson(it) } },
+                cta = o["cta"]?.orNull()?.let { GetPortalThemeResponseDraftOption1ChromeHeaderCta.fromJson(it) },
+                sticky = o["sticky"]?.orNull()?.let { it.bool() },
+                showLocaleSwitcher = o["showLocaleSwitcher"]?.orNull()?.let { it.bool() },
+                showThemeToggle = o["showThemeToggle"]?.orNull()?.let { it.bool() },
+                brandAlign = o["brandAlign"]?.orNull()?.let { it.string() },
+                border = o["border"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem.href))
+        if (this@GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem.newTab != null) put("newTab", (this@GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem.translations != null) put("translations", (this@GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ChromeFooterColumnsItem(
+    val heading: String,
+    val links: List<GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("heading", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeFooterColumnsItem.heading))
+        put("links", JsonValue.Arr(this@GetPortalThemeResponseDraftOption1ChromeFooterColumnsItem.links.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ChromeFooterColumnsItem {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ChromeFooterColumnsItem(
+                heading = o.field("heading").string(),
+                links = o.field("links").array().map { GetPortalThemeResponseDraftOption1ChromeFooterColumnsItemLinksItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ChromeFooterSocialItem(
+    val platform: String,
+    val href: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("platform", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeFooterSocialItem.platform))
+        put("href", JsonValue.Str(this@GetPortalThemeResponseDraftOption1ChromeFooterSocialItem.href))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ChromeFooterSocialItem {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ChromeFooterSocialItem(
+                platform = o.field("platform").string(),
+                href = o.field("href").string(),
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1ChromeFooter(
+    val columns: List<GetPortalThemeResponseDraftOption1ChromeFooterColumnsItem>? = null,
+    val text: String? = null,
+    val social: List<GetPortalThemeResponseDraftOption1ChromeFooterSocialItem>? = null,
+    val showPoweredBy: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1ChromeFooter.columns != null) put("columns", (this@GetPortalThemeResponseDraftOption1ChromeFooter.columns?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeFooter.text != null) put("text", (this@GetPortalThemeResponseDraftOption1ChromeFooter.text?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeFooter.social != null) put("social", (this@GetPortalThemeResponseDraftOption1ChromeFooter.social?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1ChromeFooter.showPoweredBy != null) put("showPoweredBy", (this@GetPortalThemeResponseDraftOption1ChromeFooter.showPoweredBy?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1ChromeFooter {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1ChromeFooter(
+                columns = o["columns"]?.orNull()?.let { it.array().map { GetPortalThemeResponseDraftOption1ChromeFooterColumnsItem.fromJson(it) } },
+                text = o["text"]?.orNull()?.let { it.string() },
+                social = o["social"]?.orNull()?.let { it.array().map { GetPortalThemeResponseDraftOption1ChromeFooterSocialItem.fromJson(it) } },
+                showPoweredBy = o["showPoweredBy"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Chrome(
+    val header: GetPortalThemeResponseDraftOption1ChromeHeader? = null,
+    val footer: GetPortalThemeResponseDraftOption1ChromeFooter? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1Chrome.header != null) put("header", (this@GetPortalThemeResponseDraftOption1Chrome.header?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Chrome.footer != null) put("footer", (this@GetPortalThemeResponseDraftOption1Chrome.footer?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Chrome {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Chrome(
+                header = o["header"]?.orNull()?.let { GetPortalThemeResponseDraftOption1ChromeHeader.fromJson(it) },
+                footer = o["footer"]?.orNull()?.let { GetPortalThemeResponseDraftOption1ChromeFooter.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1PortalSectionsItem(
+    val id: String,
+    val enabled: Boolean? = null,
+    val title: String? = null,
+    val description: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetPortalThemeResponseDraftOption1PortalSectionsItem.id))
+        if (this@GetPortalThemeResponseDraftOption1PortalSectionsItem.enabled != null) put("enabled", (this@GetPortalThemeResponseDraftOption1PortalSectionsItem.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalSectionsItem.title != null) put("title", (this@GetPortalThemeResponseDraftOption1PortalSectionsItem.title?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalSectionsItem.description != null) put("description", (this@GetPortalThemeResponseDraftOption1PortalSectionsItem.description?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1PortalSectionsItem {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1PortalSectionsItem(
+                id = o.field("id").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                title = o["title"]?.orNull()?.let { it.string() },
+                description = o["description"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1PortalWelcomeCta(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@GetPortalThemeResponseDraftOption1PortalWelcomeCta.label))
+        put("href", JsonValue.Str(this@GetPortalThemeResponseDraftOption1PortalWelcomeCta.href))
+        if (this@GetPortalThemeResponseDraftOption1PortalWelcomeCta.newTab != null) put("newTab", (this@GetPortalThemeResponseDraftOption1PortalWelcomeCta.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalWelcomeCta.translations != null) put("translations", (this@GetPortalThemeResponseDraftOption1PortalWelcomeCta.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1PortalWelcomeCta {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1PortalWelcomeCta(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1PortalWelcome(
+    val title: String,
+    val body: String? = null,
+    val image: String? = null,
+    val cta: GetPortalThemeResponseDraftOption1PortalWelcomeCta? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("title", JsonValue.Str(this@GetPortalThemeResponseDraftOption1PortalWelcome.title))
+        if (this@GetPortalThemeResponseDraftOption1PortalWelcome.body != null) put("body", (this@GetPortalThemeResponseDraftOption1PortalWelcome.body?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalWelcome.image != null) put("image", (this@GetPortalThemeResponseDraftOption1PortalWelcome.image?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalWelcome.cta != null) put("cta", (this@GetPortalThemeResponseDraftOption1PortalWelcome.cta?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1PortalWelcome {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1PortalWelcome(
+                title = o.field("title").string(),
+                body = o["body"]?.orNull()?.let { it.string() },
+                image = o["image"]?.orNull()?.let { it.string() },
+                cta = o["cta"]?.orNull()?.let { GetPortalThemeResponseDraftOption1PortalWelcomeCta.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1PortalNavigation(
+    val primary: List<String>? = null,
+    val hidden: List<String>? = null,
+    val labels: Map<String, String>? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1PortalNavigation.primary != null) put("primary", (this@GetPortalThemeResponseDraftOption1PortalNavigation.primary?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalNavigation.hidden != null) put("hidden", (this@GetPortalThemeResponseDraftOption1PortalNavigation.hidden?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalNavigation.labels != null) put("labels", (this@GetPortalThemeResponseDraftOption1PortalNavigation.labels?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalNavigation.style != null) put("style", (this@GetPortalThemeResponseDraftOption1PortalNavigation.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1PortalNavigation {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1PortalNavigation(
+                primary = o["primary"]?.orNull()?.let { it.array().map { it.string() } },
+                hidden = o["hidden"]?.orNull()?.let { it.array().map { it.string() } },
+                labels = o["labels"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1PortalSignIn(
+    val title: String? = null,
+    val subtitle: String? = null,
+    val image: String? = null,
+    val layout: String? = null,
+    val footnote: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1PortalSignIn.title != null) put("title", (this@GetPortalThemeResponseDraftOption1PortalSignIn.title?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalSignIn.subtitle != null) put("subtitle", (this@GetPortalThemeResponseDraftOption1PortalSignIn.subtitle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalSignIn.image != null) put("image", (this@GetPortalThemeResponseDraftOption1PortalSignIn.image?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalSignIn.layout != null) put("layout", (this@GetPortalThemeResponseDraftOption1PortalSignIn.layout?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalSignIn.footnote != null) put("footnote", (this@GetPortalThemeResponseDraftOption1PortalSignIn.footnote?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1PortalSignIn {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1PortalSignIn(
+                title = o["title"]?.orNull()?.let { it.string() },
+                subtitle = o["subtitle"]?.orNull()?.let { it.string() },
+                image = o["image"]?.orNull()?.let { it.string() },
+                layout = o["layout"]?.orNull()?.let { it.string() },
+                footnote = o["footnote"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1PortalMoney(
+    val showCurrencyCode: Boolean? = null,
+    val compact: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1PortalMoney.showCurrencyCode != null) put("showCurrencyCode", (this@GetPortalThemeResponseDraftOption1PortalMoney.showCurrencyCode?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1PortalMoney.compact != null) put("compact", (this@GetPortalThemeResponseDraftOption1PortalMoney.compact?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1PortalMoney {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1PortalMoney(
+                showCurrencyCode = o["showCurrencyCode"]?.orNull()?.let { it.bool() },
+                compact = o["compact"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Portal(
+    val sections: List<GetPortalThemeResponseDraftOption1PortalSectionsItem>? = null,
+    val welcome: GetPortalThemeResponseDraftOption1PortalWelcome? = null,
+    val navigation: GetPortalThemeResponseDraftOption1PortalNavigation? = null,
+    val signIn: GetPortalThemeResponseDraftOption1PortalSignIn? = null,
+    val money: GetPortalThemeResponseDraftOption1PortalMoney? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1Portal.sections != null) put("sections", (this@GetPortalThemeResponseDraftOption1Portal.sections?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Portal.welcome != null) put("welcome", (this@GetPortalThemeResponseDraftOption1Portal.welcome?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Portal.navigation != null) put("navigation", (this@GetPortalThemeResponseDraftOption1Portal.navigation?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Portal.signIn != null) put("signIn", (this@GetPortalThemeResponseDraftOption1Portal.signIn?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Portal.money != null) put("money", (this@GetPortalThemeResponseDraftOption1Portal.money?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Portal {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Portal(
+                sections = o["sections"]?.orNull()?.let { it.array().map { GetPortalThemeResponseDraftOption1PortalSectionsItem.fromJson(it) } },
+                welcome = o["welcome"]?.orNull()?.let { GetPortalThemeResponseDraftOption1PortalWelcome.fromJson(it) },
+                navigation = o["navigation"]?.orNull()?.let { GetPortalThemeResponseDraftOption1PortalNavigation.fromJson(it) },
+                signIn = o["signIn"]?.orNull()?.let { GetPortalThemeResponseDraftOption1PortalSignIn.fromJson(it) },
+                money = o["money"]?.orNull()?.let { GetPortalThemeResponseDraftOption1PortalMoney.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1SettingsSchemaItem(
+    val key: String,
+    val type: String,
+    val label: String? = null,
+    val default: JsonValue? = null,
+    val options: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("key", JsonValue.Str(this@GetPortalThemeResponseDraftOption1SettingsSchemaItem.key))
+        put("type", JsonValue.Str(this@GetPortalThemeResponseDraftOption1SettingsSchemaItem.type))
+        if (this@GetPortalThemeResponseDraftOption1SettingsSchemaItem.label != null) put("label", (this@GetPortalThemeResponseDraftOption1SettingsSchemaItem.label?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1SettingsSchemaItem.default != null) put("default", (this@GetPortalThemeResponseDraftOption1SettingsSchemaItem.default?.let { it } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1SettingsSchemaItem.options != null) put("options", (this@GetPortalThemeResponseDraftOption1SettingsSchemaItem.options?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1SettingsSchemaItem {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1SettingsSchemaItem(
+                key = o.field("key").string(),
+                type = o.field("type").string(),
+                label = o["label"]?.orNull()?.let { it.string() },
+                default = o["default"]?.orNull()?.let { it },
+                options = o["options"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1CssSnippetsItem(
+    val name: String,
+    val css: String,
+    val enabled: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("name", JsonValue.Str(this@GetPortalThemeResponseDraftOption1CssSnippetsItem.name))
+        put("css", JsonValue.Str(this@GetPortalThemeResponseDraftOption1CssSnippetsItem.css))
+        if (this@GetPortalThemeResponseDraftOption1CssSnippetsItem.enabled != null) put("enabled", (this@GetPortalThemeResponseDraftOption1CssSnippetsItem.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1CssSnippetsItem {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1CssSnippetsItem(
+                name = o.field("name").string(),
+                css = o.field("css").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Mobile(
+    val fontScale: Double? = null,
+    val density: String? = null,
+    val logoUrl: String? = null,
+    val hideSections: List<String>? = null,
+    val css: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1Mobile.fontScale != null) put("fontScale", (this@GetPortalThemeResponseDraftOption1Mobile.fontScale?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Mobile.density != null) put("density", (this@GetPortalThemeResponseDraftOption1Mobile.density?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Mobile.logoUrl != null) put("logoUrl", (this@GetPortalThemeResponseDraftOption1Mobile.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Mobile.hideSections != null) put("hideSections", (this@GetPortalThemeResponseDraftOption1Mobile.hideSections?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Mobile.css != null) put("css", (this@GetPortalThemeResponseDraftOption1Mobile.css?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Mobile {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Mobile(
+                fontScale = o["fontScale"]?.orNull()?.let { it.double() },
+                density = o["density"]?.orNull()?.let { it.string() },
+                logoUrl = o["logoUrl"]?.orNull()?.let { it.string() },
+                hideSections = o["hideSections"]?.orNull()?.let { it.array().map { it.string() } },
+                css = o["css"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1Embed(
+    val enabled: Boolean? = null,
+    val allowedOrigins: List<String>? = null,
+    val hideChrome: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1Embed.enabled != null) put("enabled", (this@GetPortalThemeResponseDraftOption1Embed.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Embed.allowedOrigins != null) put("allowedOrigins", (this@GetPortalThemeResponseDraftOption1Embed.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1Embed.hideChrome != null) put("hideChrome", (this@GetPortalThemeResponseDraftOption1Embed.hideChrome?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1Embed {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1Embed(
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
+                hideChrome = o["hideChrome"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponseDraftOption1(
+    val primaryColor: String? = null,
+    val primaryColorDark: String? = null,
+    val accentColor: String? = null,
+    val palette: GetPortalThemeResponseDraftOption1Palette? = null,
+    val paletteDark: GetPortalThemeResponseDraftOption1PaletteDark? = null,
+    val colorScheme: String? = null,
+    val colorSchemeStrict: Boolean? = null,
+    val contentWidth: String? = null,
+    val density: String? = null,
+    val font: String? = null,
+    val customFontUrl: String? = null,
+    val customFontFamily: String? = null,
+    val headingFontFamily: String? = null,
+    val bodyFontFamily: String? = null,
+    val moneyFontFamily: String? = null,
+    val monoFontFamily: String? = null,
+    val fonts: GetPortalThemeResponseDraftOption1Fonts? = null,
+    val typography: GetPortalThemeResponseDraftOption1Typography? = null,
+    val brandName: JsonValue? = null,
+    val logoUrl: String? = null,
+    val logoUrlLight: String? = null,
+    val logoUrlDark: String? = null,
+    val logoMark: String? = null,
+    val logoIncludesName: Boolean? = null,
+    val logoDarkMode: String? = null,
+    val logoHeight: Double? = null,
+    val faviconUrl: String? = null,
+    val pageTitle: String? = null,
+    val components: GetPortalThemeResponseDraftOption1Components? = null,
+    val announcement: GetPortalThemeResponseDraftOption1Announcement? = null,
+    val chrome: GetPortalThemeResponseDraftOption1Chrome? = null,
+    val portal: GetPortalThemeResponseDraftOption1Portal? = null,
+    val stringOverrides: Map<String, Map<String, String>>? = null,
+    val settingsSchema: List<GetPortalThemeResponseDraftOption1SettingsSchemaItem>? = null,
+    val settings: Map<String, JsonValue>? = null,
+    val customCss: String? = null,
+    val cssSnippets: List<GetPortalThemeResponseDraftOption1CssSnippetsItem>? = null,
+    val mobile: GetPortalThemeResponseDraftOption1Mobile? = null,
+    val embed: GetPortalThemeResponseDraftOption1Embed? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@GetPortalThemeResponseDraftOption1.primaryColor != null) put("primaryColor", (this@GetPortalThemeResponseDraftOption1.primaryColor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.primaryColorDark != null) put("primaryColorDark", (this@GetPortalThemeResponseDraftOption1.primaryColorDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.accentColor != null) put("accentColor", (this@GetPortalThemeResponseDraftOption1.accentColor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.palette != null) put("palette", (this@GetPortalThemeResponseDraftOption1.palette?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.paletteDark != null) put("paletteDark", (this@GetPortalThemeResponseDraftOption1.paletteDark?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.colorScheme != null) put("colorScheme", (this@GetPortalThemeResponseDraftOption1.colorScheme?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.colorSchemeStrict != null) put("colorSchemeStrict", (this@GetPortalThemeResponseDraftOption1.colorSchemeStrict?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.contentWidth != null) put("contentWidth", (this@GetPortalThemeResponseDraftOption1.contentWidth?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.density != null) put("density", (this@GetPortalThemeResponseDraftOption1.density?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.font != null) put("font", (this@GetPortalThemeResponseDraftOption1.font?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.customFontUrl != null) put("customFontUrl", (this@GetPortalThemeResponseDraftOption1.customFontUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.customFontFamily != null) put("customFontFamily", (this@GetPortalThemeResponseDraftOption1.customFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.headingFontFamily != null) put("headingFontFamily", (this@GetPortalThemeResponseDraftOption1.headingFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.bodyFontFamily != null) put("bodyFontFamily", (this@GetPortalThemeResponseDraftOption1.bodyFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.moneyFontFamily != null) put("moneyFontFamily", (this@GetPortalThemeResponseDraftOption1.moneyFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.monoFontFamily != null) put("monoFontFamily", (this@GetPortalThemeResponseDraftOption1.monoFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.fonts != null) put("fonts", (this@GetPortalThemeResponseDraftOption1.fonts?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.typography != null) put("typography", (this@GetPortalThemeResponseDraftOption1.typography?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.brandName != null) put("brandName", (this@GetPortalThemeResponseDraftOption1.brandName?.let { it } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.logoUrl != null) put("logoUrl", (this@GetPortalThemeResponseDraftOption1.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.logoUrlLight != null) put("logoUrlLight", (this@GetPortalThemeResponseDraftOption1.logoUrlLight?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.logoUrlDark != null) put("logoUrlDark", (this@GetPortalThemeResponseDraftOption1.logoUrlDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.logoMark != null) put("logoMark", (this@GetPortalThemeResponseDraftOption1.logoMark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.logoIncludesName != null) put("logoIncludesName", (this@GetPortalThemeResponseDraftOption1.logoIncludesName?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.logoDarkMode != null) put("logoDarkMode", (this@GetPortalThemeResponseDraftOption1.logoDarkMode?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.logoHeight != null) put("logoHeight", (this@GetPortalThemeResponseDraftOption1.logoHeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.faviconUrl != null) put("faviconUrl", (this@GetPortalThemeResponseDraftOption1.faviconUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.pageTitle != null) put("pageTitle", (this@GetPortalThemeResponseDraftOption1.pageTitle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.components != null) put("components", (this@GetPortalThemeResponseDraftOption1.components?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.announcement != null) put("announcement", (this@GetPortalThemeResponseDraftOption1.announcement?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.chrome != null) put("chrome", (this@GetPortalThemeResponseDraftOption1.chrome?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.portal != null) put("portal", (this@GetPortalThemeResponseDraftOption1.portal?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.stringOverrides != null) put("stringOverrides", (this@GetPortalThemeResponseDraftOption1.stringOverrides?.let { JsonValue.Obj(it.mapValues { JsonValue.Obj(it.value.mapValues { JsonValue.Str(it.value) }) }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.settingsSchema != null) put("settingsSchema", (this@GetPortalThemeResponseDraftOption1.settingsSchema?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.settings != null) put("settings", (this@GetPortalThemeResponseDraftOption1.settings?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.customCss != null) put("customCss", (this@GetPortalThemeResponseDraftOption1.customCss?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.cssSnippets != null) put("cssSnippets", (this@GetPortalThemeResponseDraftOption1.cssSnippets?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.mobile != null) put("mobile", (this@GetPortalThemeResponseDraftOption1.mobile?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@GetPortalThemeResponseDraftOption1.embed != null) put("embed", (this@GetPortalThemeResponseDraftOption1.embed?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponseDraftOption1 {
+            val o = json.obj()
+            return GetPortalThemeResponseDraftOption1(
+                primaryColor = o["primaryColor"]?.orNull()?.let { it.string() },
+                primaryColorDark = o["primaryColorDark"]?.orNull()?.let { it.string() },
+                accentColor = o["accentColor"]?.orNull()?.let { it.string() },
+                palette = o["palette"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Palette.fromJson(it) },
+                paletteDark = o["paletteDark"]?.orNull()?.let { GetPortalThemeResponseDraftOption1PaletteDark.fromJson(it) },
+                colorScheme = o["colorScheme"]?.orNull()?.let { it.string() },
+                colorSchemeStrict = o["colorSchemeStrict"]?.orNull()?.let { it.bool() },
+                contentWidth = o["contentWidth"]?.orNull()?.let { it.string() },
+                density = o["density"]?.orNull()?.let { it.string() },
+                font = o["font"]?.orNull()?.let { it.string() },
+                customFontUrl = o["customFontUrl"]?.orNull()?.let { it.string() },
+                customFontFamily = o["customFontFamily"]?.orNull()?.let { it.string() },
+                headingFontFamily = o["headingFontFamily"]?.orNull()?.let { it.string() },
+                bodyFontFamily = o["bodyFontFamily"]?.orNull()?.let { it.string() },
+                moneyFontFamily = o["moneyFontFamily"]?.orNull()?.let { it.string() },
+                monoFontFamily = o["monoFontFamily"]?.orNull()?.let { it.string() },
+                fonts = o["fonts"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Fonts.fromJson(it) },
+                typography = o["typography"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Typography.fromJson(it) },
+                brandName = o["brandName"]?.orNull()?.let { it },
+                logoUrl = o["logoUrl"]?.orNull()?.let { it.string() },
+                logoUrlLight = o["logoUrlLight"]?.orNull()?.let { it.string() },
+                logoUrlDark = o["logoUrlDark"]?.orNull()?.let { it.string() },
+                logoMark = o["logoMark"]?.orNull()?.let { it.string() },
+                logoIncludesName = o["logoIncludesName"]?.orNull()?.let { it.bool() },
+                logoDarkMode = o["logoDarkMode"]?.orNull()?.let { it.string() },
+                logoHeight = o["logoHeight"]?.orNull()?.let { it.double() },
+                faviconUrl = o["faviconUrl"]?.orNull()?.let { it.string() },
+                pageTitle = o["pageTitle"]?.orNull()?.let { it.string() },
+                components = o["components"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Components.fromJson(it) },
+                announcement = o["announcement"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Announcement.fromJson(it) },
+                chrome = o["chrome"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Chrome.fromJson(it) },
+                portal = o["portal"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Portal.fromJson(it) },
+                stringOverrides = o["stringOverrides"]?.orNull()?.let { it.obj().mapValues { it.value.obj().mapValues { it.value.string() } } },
+                settingsSchema = o["settingsSchema"]?.orNull()?.let { it.array().map { GetPortalThemeResponseDraftOption1SettingsSchemaItem.fromJson(it) } },
+                settings = o["settings"]?.orNull()?.let { it.obj().mapValues { it.value } },
+                customCss = o["customCss"]?.orNull()?.let { it.string() },
+                cssSnippets = o["cssSnippets"]?.orNull()?.let { it.array().map { GetPortalThemeResponseDraftOption1CssSnippetsItem.fromJson(it) } },
+                mobile = o["mobile"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Mobile.fromJson(it) },
+                embed = o["embed"]?.orNull()?.let { GetPortalThemeResponseDraftOption1Embed.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeResponse(
+    val published: GetPortalThemeResponsePublished,
+    val draft: GetPortalThemeResponseDraftOption1? = null,
+    val hasDraft: Boolean,
+    val publishedAt: String? = null,
+    val updatedAt: String? = null,
+    val previewExpiresAt: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("published", this@GetPortalThemeResponse.published.toJson())
+        put("draft", (this@GetPortalThemeResponse.draft?.let { it.toJson() } ?: JsonValue.Null))
+        put("hasDraft", JsonValue.Bool(this@GetPortalThemeResponse.hasDraft))
+        put("publishedAt", (this@GetPortalThemeResponse.publishedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("updatedAt", (this@GetPortalThemeResponse.updatedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("previewExpiresAt", (this@GetPortalThemeResponse.previewExpiresAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeResponse {
+            val o = json.obj()
+            return GetPortalThemeResponse(
+                published = GetPortalThemeResponsePublished.fromJson(o.field("published")),
+                draft = o.field("draft").orNull()?.let { GetPortalThemeResponseDraftOption1.fromJson(it) },
+                hasDraft = o.field("hasDraft").bool(),
+                publishedAt = o.field("publishedAt").orNull()?.let { it.string() },
+                updatedAt = o.field("updatedAt").orNull()?.let { it.string() },
+                previewExpiresAt = o.field("previewExpiresAt").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+/** The theme as JSON Schema (draft 2020-12), for editors and validators. */
+typealias GetPortalThemeSchemaResponse = Map<String, JsonValue>
+
+data class GetPortalThemeCompiledResponse(
+    val css: String,
+    val view: Map<String, JsonValue>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("css", JsonValue.Str(this@GetPortalThemeCompiledResponse.css))
+        put("view", JsonValue.Obj(this@GetPortalThemeCompiledResponse.view.mapValues { it.value }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeCompiledResponse {
+            val o = json.obj()
+            return GetPortalThemeCompiledResponse(
+                css = o.field("css").string(),
+                view = o.field("view").obj().mapValues { it.value },
+            )
+        }
+    }
+}
+
+data class GetPortalThemeVersionsResponseDataItem(
+    val id: String,
+    val publishedBy: String? = null,
+    val note: String? = null,
+    val createdAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetPortalThemeVersionsResponseDataItem.id))
+        put("publishedBy", (this@GetPortalThemeVersionsResponseDataItem.publishedBy?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("note", (this@GetPortalThemeVersionsResponseDataItem.note?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createdAt", JsonValue.Str(this@GetPortalThemeVersionsResponseDataItem.createdAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeVersionsResponseDataItem {
+            val o = json.obj()
+            return GetPortalThemeVersionsResponseDataItem(
+                id = o.field("id").string(),
+                publishedBy = o.field("publishedBy").orNull()?.let { it.string() },
+                note = o.field("note").orNull()?.let { it.string() },
+                createdAt = o.field("createdAt").string(),
+            )
+        }
+    }
+}
+
+data class GetPortalThemeVersionsResponse(
+    val data: List<GetPortalThemeVersionsResponseDataItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("data", JsonValue.Arr(this@GetPortalThemeVersionsResponse.data.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetPortalThemeVersionsResponse {
+            val o = json.obj()
+            return GetPortalThemeVersionsResponse(
+                data = o.field("data").array().map { GetPortalThemeVersionsResponseDataItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemePreviewResponse(
+    val token: String,
+    val expiresAt: String,
+    val url: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("token", JsonValue.Str(this@PostPortalThemePreviewResponse.token))
+        put("expiresAt", JsonValue.Str(this@PostPortalThemePreviewResponse.expiresAt))
+        put("url", (this@PostPortalThemePreviewResponse.url?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemePreviewResponse {
+            val o = json.obj()
+            return PostPortalThemePreviewResponse(
+                token = o.field("token").string(),
+                expiresAt = o.field("expiresAt").string(),
+                url = o.field("url").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPalette(
+    val background: String? = null,
+    val surface: String? = null,
+    val surfaceAlt: String? = null,
+    val ink: String? = null,
+    val muted: String? = null,
+    val faint: String? = null,
+    val line: String? = null,
+    val lineStrong: String? = null,
+    val primary: String? = null,
+    val onPrimary: String? = null,
+    val primarySoft: String? = null,
+    val headerBackground: String? = null,
+    val headerPrimary: String? = null,
+    val sidebar: String? = null,
+    val footerBackground: String? = null,
+    val footerPrimary: String? = null,
+    val success: String? = null,
+    val warning: String? = null,
+    val danger: String? = null,
+    val info: String? = null,
+    val chart: String? = null,
+    val money: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.background != null) put("background", (this@PostPortalThemeImportBrandResponsePublishedPalette.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.surface != null) put("surface", (this@PostPortalThemeImportBrandResponsePublishedPalette.surface?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.surfaceAlt != null) put("surfaceAlt", (this@PostPortalThemeImportBrandResponsePublishedPalette.surfaceAlt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.ink != null) put("ink", (this@PostPortalThemeImportBrandResponsePublishedPalette.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.muted != null) put("muted", (this@PostPortalThemeImportBrandResponsePublishedPalette.muted?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.faint != null) put("faint", (this@PostPortalThemeImportBrandResponsePublishedPalette.faint?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.line != null) put("line", (this@PostPortalThemeImportBrandResponsePublishedPalette.line?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.lineStrong != null) put("lineStrong", (this@PostPortalThemeImportBrandResponsePublishedPalette.lineStrong?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.primary != null) put("primary", (this@PostPortalThemeImportBrandResponsePublishedPalette.primary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.onPrimary != null) put("onPrimary", (this@PostPortalThemeImportBrandResponsePublishedPalette.onPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.primarySoft != null) put("primarySoft", (this@PostPortalThemeImportBrandResponsePublishedPalette.primarySoft?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.headerBackground != null) put("header_background", (this@PostPortalThemeImportBrandResponsePublishedPalette.headerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.headerPrimary != null) put("header_primary", (this@PostPortalThemeImportBrandResponsePublishedPalette.headerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.sidebar != null) put("sidebar", (this@PostPortalThemeImportBrandResponsePublishedPalette.sidebar?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.footerBackground != null) put("footer_background", (this@PostPortalThemeImportBrandResponsePublishedPalette.footerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.footerPrimary != null) put("footer_primary", (this@PostPortalThemeImportBrandResponsePublishedPalette.footerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.success != null) put("success", (this@PostPortalThemeImportBrandResponsePublishedPalette.success?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.warning != null) put("warning", (this@PostPortalThemeImportBrandResponsePublishedPalette.warning?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.danger != null) put("danger", (this@PostPortalThemeImportBrandResponsePublishedPalette.danger?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.info != null) put("info", (this@PostPortalThemeImportBrandResponsePublishedPalette.info?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.chart != null) put("chart", (this@PostPortalThemeImportBrandResponsePublishedPalette.chart?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPalette.money != null) put("money", (this@PostPortalThemeImportBrandResponsePublishedPalette.money?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPalette {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPalette(
+                background = o["background"]?.orNull()?.let { it.string() },
+                surface = o["surface"]?.orNull()?.let { it.string() },
+                surfaceAlt = o["surfaceAlt"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                muted = o["muted"]?.orNull()?.let { it.string() },
+                faint = o["faint"]?.orNull()?.let { it.string() },
+                line = o["line"]?.orNull()?.let { it.string() },
+                lineStrong = o["lineStrong"]?.orNull()?.let { it.string() },
+                primary = o["primary"]?.orNull()?.let { it.string() },
+                onPrimary = o["onPrimary"]?.orNull()?.let { it.string() },
+                primarySoft = o["primarySoft"]?.orNull()?.let { it.string() },
+                headerBackground = o["header_background"]?.orNull()?.let { it.string() },
+                headerPrimary = o["header_primary"]?.orNull()?.let { it.string() },
+                sidebar = o["sidebar"]?.orNull()?.let { it.string() },
+                footerBackground = o["footer_background"]?.orNull()?.let { it.string() },
+                footerPrimary = o["footer_primary"]?.orNull()?.let { it.string() },
+                success = o["success"]?.orNull()?.let { it.string() },
+                warning = o["warning"]?.orNull()?.let { it.string() },
+                danger = o["danger"]?.orNull()?.let { it.string() },
+                info = o["info"]?.orNull()?.let { it.string() },
+                chart = o["chart"]?.orNull()?.let { it.string() },
+                money = o["money"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPaletteDark(
+    val background: String? = null,
+    val surface: String? = null,
+    val surfaceAlt: String? = null,
+    val ink: String? = null,
+    val muted: String? = null,
+    val faint: String? = null,
+    val line: String? = null,
+    val lineStrong: String? = null,
+    val primary: String? = null,
+    val onPrimary: String? = null,
+    val primarySoft: String? = null,
+    val headerBackground: String? = null,
+    val headerPrimary: String? = null,
+    val sidebar: String? = null,
+    val footerBackground: String? = null,
+    val footerPrimary: String? = null,
+    val success: String? = null,
+    val warning: String? = null,
+    val danger: String? = null,
+    val info: String? = null,
+    val chart: String? = null,
+    val money: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.background != null) put("background", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.surface != null) put("surface", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.surface?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.surfaceAlt != null) put("surfaceAlt", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.surfaceAlt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.ink != null) put("ink", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.muted != null) put("muted", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.muted?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.faint != null) put("faint", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.faint?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.line != null) put("line", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.line?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.lineStrong != null) put("lineStrong", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.lineStrong?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.primary != null) put("primary", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.primary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.onPrimary != null) put("onPrimary", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.onPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.primarySoft != null) put("primarySoft", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.primarySoft?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.headerBackground != null) put("header_background", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.headerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.headerPrimary != null) put("header_primary", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.headerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.sidebar != null) put("sidebar", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.sidebar?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.footerBackground != null) put("footer_background", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.footerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.footerPrimary != null) put("footer_primary", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.footerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.success != null) put("success", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.success?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.warning != null) put("warning", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.warning?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.danger != null) put("danger", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.danger?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.info != null) put("info", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.info?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.chart != null) put("chart", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.chart?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.money != null) put("money", (this@PostPortalThemeImportBrandResponsePublishedPaletteDark.money?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPaletteDark {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPaletteDark(
+                background = o["background"]?.orNull()?.let { it.string() },
+                surface = o["surface"]?.orNull()?.let { it.string() },
+                surfaceAlt = o["surfaceAlt"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                muted = o["muted"]?.orNull()?.let { it.string() },
+                faint = o["faint"]?.orNull()?.let { it.string() },
+                line = o["line"]?.orNull()?.let { it.string() },
+                lineStrong = o["lineStrong"]?.orNull()?.let { it.string() },
+                primary = o["primary"]?.orNull()?.let { it.string() },
+                onPrimary = o["onPrimary"]?.orNull()?.let { it.string() },
+                primarySoft = o["primarySoft"]?.orNull()?.let { it.string() },
+                headerBackground = o["header_background"]?.orNull()?.let { it.string() },
+                headerPrimary = o["header_primary"]?.orNull()?.let { it.string() },
+                sidebar = o["sidebar"]?.orNull()?.let { it.string() },
+                footerBackground = o["footer_background"]?.orNull()?.let { it.string() },
+                footerPrimary = o["footer_primary"]?.orNull()?.let { it.string() },
+                success = o["success"]?.orNull()?.let { it.string() },
+                warning = o["warning"]?.orNull()?.let { it.string() },
+                danger = o["danger"]?.orNull()?.let { it.string() },
+                info = o["info"]?.orNull()?.let { it.string() },
+                chart = o["chart"]?.orNull()?.let { it.string() },
+                money = o["money"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedFontsFacesItem(
+    val family: String,
+    val src: String,
+    val format: String? = null,
+    val weight: JsonValue? = null,
+    val style: String? = null,
+    val display: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("family", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.family))
+        put("src", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.src))
+        if (this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.format != null) put("format", (this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.format?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.weight != null) put("weight", (this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.weight?.let { it } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.style != null) put("style", (this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.display != null) put("display", (this@PostPortalThemeImportBrandResponsePublishedFontsFacesItem.display?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedFontsFacesItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedFontsFacesItem(
+                family = o.field("family").string(),
+                src = o.field("src").string(),
+                format = o["format"]?.orNull()?.let { it.string() },
+                weight = o["weight"]?.orNull()?.let { it },
+                style = o["style"]?.orNull()?.let { it.string() },
+                display = o["display"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedFonts(
+    val faces: List<PostPortalThemeImportBrandResponsePublishedFontsFacesItem>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedFonts.faces != null) put("faces", (this@PostPortalThemeImportBrandResponsePublishedFonts.faces?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedFonts {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedFonts(
+                faces = o["faces"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponsePublishedFontsFacesItem.fromJson(it) } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedTypography(
+    val baseSize: Double? = null,
+    val headingScale: Double? = null,
+    val headingWeight: Long? = null,
+    val bodyWeight: Long? = null,
+    val headingTransform: String? = null,
+    val headingTracking: Double? = null,
+    val bodyLeading: Double? = null,
+    val numerals: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedTypography.baseSize != null) put("baseSize", (this@PostPortalThemeImportBrandResponsePublishedTypography.baseSize?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedTypography.headingScale != null) put("headingScale", (this@PostPortalThemeImportBrandResponsePublishedTypography.headingScale?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedTypography.headingWeight != null) put("headingWeight", (this@PostPortalThemeImportBrandResponsePublishedTypography.headingWeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedTypography.bodyWeight != null) put("bodyWeight", (this@PostPortalThemeImportBrandResponsePublishedTypography.bodyWeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedTypography.headingTransform != null) put("headingTransform", (this@PostPortalThemeImportBrandResponsePublishedTypography.headingTransform?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedTypography.headingTracking != null) put("headingTracking", (this@PostPortalThemeImportBrandResponsePublishedTypography.headingTracking?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedTypography.bodyLeading != null) put("bodyLeading", (this@PostPortalThemeImportBrandResponsePublishedTypography.bodyLeading?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedTypography.numerals != null) put("numerals", (this@PostPortalThemeImportBrandResponsePublishedTypography.numerals?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedTypography {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedTypography(
+                baseSize = o["baseSize"]?.orNull()?.let { it.double() },
+                headingScale = o["headingScale"]?.orNull()?.let { it.double() },
+                headingWeight = o["headingWeight"]?.orNull()?.let { it.long() },
+                bodyWeight = o["bodyWeight"]?.orNull()?.let { it.long() },
+                headingTransform = o["headingTransform"]?.orNull()?.let { it.string() },
+                headingTracking = o["headingTracking"]?.orNull()?.let { it.double() },
+                bodyLeading = o["bodyLeading"]?.orNull()?.let { it.double() },
+                numerals = o["numerals"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedComponentsCards(
+    val border: Boolean? = null,
+    val elevation: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsCards.border != null) put("border", (this@PostPortalThemeImportBrandResponsePublishedComponentsCards.border?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsCards.elevation != null) put("elevation", (this@PostPortalThemeImportBrandResponsePublishedComponentsCards.elevation?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedComponentsCards {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedComponentsCards(
+                border = o["border"]?.orNull()?.let { it.bool() },
+                elevation = o["elevation"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedComponentsButtons(
+    val radius: Double? = null,
+    val case: String? = null,
+    val weight: Long? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsButtons.radius != null) put("radius", (this@PostPortalThemeImportBrandResponsePublishedComponentsButtons.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsButtons.case != null) put("case", (this@PostPortalThemeImportBrandResponsePublishedComponentsButtons.case?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsButtons.weight != null) put("weight", (this@PostPortalThemeImportBrandResponsePublishedComponentsButtons.weight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsButtons.style != null) put("style", (this@PostPortalThemeImportBrandResponsePublishedComponentsButtons.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedComponentsButtons {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedComponentsButtons(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                case = o["case"]?.orNull()?.let { it.string() },
+                weight = o["weight"]?.orNull()?.let { it.long() },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedComponentsInputs(
+    val radius: Double? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsInputs.radius != null) put("radius", (this@PostPortalThemeImportBrandResponsePublishedComponentsInputs.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsInputs.style != null) put("style", (this@PostPortalThemeImportBrandResponsePublishedComponentsInputs.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedComponentsInputs {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedComponentsInputs(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedComponentsFocusRing(
+    val color: String? = null,
+    val width: Double? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsFocusRing.color != null) put("color", (this@PostPortalThemeImportBrandResponsePublishedComponentsFocusRing.color?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsFocusRing.width != null) put("width", (this@PostPortalThemeImportBrandResponsePublishedComponentsFocusRing.width?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedComponentsFocusRing {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedComponentsFocusRing(
+                color = o["color"]?.orNull()?.let { it.string() },
+                width = o["width"]?.orNull()?.let { it.double() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedComponentsLinks(
+    val underline: String? = null,
+    val color: String? = null,
+    val colorDark: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsLinks.underline != null) put("underline", (this@PostPortalThemeImportBrandResponsePublishedComponentsLinks.underline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsLinks.color != null) put("color", (this@PostPortalThemeImportBrandResponsePublishedComponentsLinks.color?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponentsLinks.colorDark != null) put("colorDark", (this@PostPortalThemeImportBrandResponsePublishedComponentsLinks.colorDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedComponentsLinks {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedComponentsLinks(
+                underline = o["underline"]?.orNull()?.let { it.string() },
+                color = o["color"]?.orNull()?.let { it.string() },
+                colorDark = o["colorDark"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedComponents(
+    val radius: Double? = null,
+    val radiusSmall: Double? = null,
+    val shadow: String? = null,
+    val cards: PostPortalThemeImportBrandResponsePublishedComponentsCards? = null,
+    val buttons: PostPortalThemeImportBrandResponsePublishedComponentsButtons? = null,
+    val inputs: PostPortalThemeImportBrandResponsePublishedComponentsInputs? = null,
+    val focusRing: PostPortalThemeImportBrandResponsePublishedComponentsFocusRing? = null,
+    val links: PostPortalThemeImportBrandResponsePublishedComponentsLinks? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedComponents.radius != null) put("radius", (this@PostPortalThemeImportBrandResponsePublishedComponents.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponents.radiusSmall != null) put("radiusSmall", (this@PostPortalThemeImportBrandResponsePublishedComponents.radiusSmall?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponents.shadow != null) put("shadow", (this@PostPortalThemeImportBrandResponsePublishedComponents.shadow?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponents.cards != null) put("cards", (this@PostPortalThemeImportBrandResponsePublishedComponents.cards?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponents.buttons != null) put("buttons", (this@PostPortalThemeImportBrandResponsePublishedComponents.buttons?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponents.inputs != null) put("inputs", (this@PostPortalThemeImportBrandResponsePublishedComponents.inputs?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponents.focusRing != null) put("focusRing", (this@PostPortalThemeImportBrandResponsePublishedComponents.focusRing?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedComponents.links != null) put("links", (this@PostPortalThemeImportBrandResponsePublishedComponents.links?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedComponents {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedComponents(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                radiusSmall = o["radiusSmall"]?.orNull()?.let { it.double() },
+                shadow = o["shadow"]?.orNull()?.let { it.string() },
+                cards = o["cards"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedComponentsCards.fromJson(it) },
+                buttons = o["buttons"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedComponentsButtons.fromJson(it) },
+                inputs = o["inputs"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedComponentsInputs.fromJson(it) },
+                focusRing = o["focusRing"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedComponentsFocusRing.fromJson(it) },
+                links = o["links"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedComponentsLinks.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedAnnouncementLink(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedAnnouncementLink.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedAnnouncementLink.href))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncementLink.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponsePublishedAnnouncementLink.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncementLink.translations != null) put("translations", (this@PostPortalThemeImportBrandResponsePublishedAnnouncementLink.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedAnnouncementLink {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedAnnouncementLink(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedAnnouncement(
+    val text: String,
+    val level: String? = null,
+    val link: PostPortalThemeImportBrandResponsePublishedAnnouncementLink? = null,
+    val dismissible: Boolean? = null,
+    val background: String? = null,
+    val ink: String? = null,
+    val startsAt: String? = null,
+    val endsAt: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("text", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedAnnouncement.text))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.level != null) put("level", (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.level?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.link != null) put("link", (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.link?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.dismissible != null) put("dismissible", (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.dismissible?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.background != null) put("background", (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.ink != null) put("ink", (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.startsAt != null) put("startsAt", (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.startsAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.endsAt != null) put("endsAt", (this@PostPortalThemeImportBrandResponsePublishedAnnouncement.endsAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedAnnouncement {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedAnnouncement(
+                text = o.field("text").string(),
+                level = o["level"]?.orNull()?.let { it.string() },
+                link = o["link"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedAnnouncementLink.fromJson(it) },
+                dismissible = o["dismissible"]?.orNull()?.let { it.bool() },
+                background = o["background"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                startsAt = o["startsAt"]?.orNull()?.let { it.string() },
+                endsAt = o["endsAt"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem.href))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem.translations != null) put("translations", (this@PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedChromeHeaderCta(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeHeaderCta.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeHeaderCta.href))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeaderCta.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponsePublishedChromeHeaderCta.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeaderCta.translations != null) put("translations", (this@PostPortalThemeImportBrandResponsePublishedChromeHeaderCta.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedChromeHeaderCta {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedChromeHeaderCta(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedChromeHeader(
+    val links: List<PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem>? = null,
+    val cta: PostPortalThemeImportBrandResponsePublishedChromeHeaderCta? = null,
+    val sticky: Boolean? = null,
+    val showLocaleSwitcher: Boolean? = null,
+    val showThemeToggle: Boolean? = null,
+    val brandAlign: String? = null,
+    val border: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.links != null) put("links", (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.links?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.cta != null) put("cta", (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.cta?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.sticky != null) put("sticky", (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.sticky?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.showLocaleSwitcher != null) put("showLocaleSwitcher", (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.showLocaleSwitcher?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.showThemeToggle != null) put("showThemeToggle", (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.showThemeToggle?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.brandAlign != null) put("brandAlign", (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.brandAlign?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.border != null) put("border", (this@PostPortalThemeImportBrandResponsePublishedChromeHeader.border?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedChromeHeader {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedChromeHeader(
+                links = o["links"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponsePublishedChromeHeaderLinksItem.fromJson(it) } },
+                cta = o["cta"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedChromeHeaderCta.fromJson(it) },
+                sticky = o["sticky"]?.orNull()?.let { it.bool() },
+                showLocaleSwitcher = o["showLocaleSwitcher"]?.orNull()?.let { it.bool() },
+                showThemeToggle = o["showThemeToggle"]?.orNull()?.let { it.bool() },
+                brandAlign = o["brandAlign"]?.orNull()?.let { it.string() },
+                border = o["border"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem.href))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem.translations != null) put("translations", (this@PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItem(
+    val heading: String,
+    val links: List<PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("heading", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItem.heading))
+        put("links", JsonValue.Arr(this@PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItem.links.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItem(
+                heading = o.field("heading").string(),
+                links = o.field("links").array().map { PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItemLinksItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedChromeFooterSocialItem(
+    val platform: String,
+    val href: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("platform", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeFooterSocialItem.platform))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedChromeFooterSocialItem.href))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedChromeFooterSocialItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedChromeFooterSocialItem(
+                platform = o.field("platform").string(),
+                href = o.field("href").string(),
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedChromeFooter(
+    val columns: List<PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItem>? = null,
+    val text: String? = null,
+    val social: List<PostPortalThemeImportBrandResponsePublishedChromeFooterSocialItem>? = null,
+    val showPoweredBy: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeFooter.columns != null) put("columns", (this@PostPortalThemeImportBrandResponsePublishedChromeFooter.columns?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeFooter.text != null) put("text", (this@PostPortalThemeImportBrandResponsePublishedChromeFooter.text?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeFooter.social != null) put("social", (this@PostPortalThemeImportBrandResponsePublishedChromeFooter.social?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChromeFooter.showPoweredBy != null) put("showPoweredBy", (this@PostPortalThemeImportBrandResponsePublishedChromeFooter.showPoweredBy?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedChromeFooter {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedChromeFooter(
+                columns = o["columns"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponsePublishedChromeFooterColumnsItem.fromJson(it) } },
+                text = o["text"]?.orNull()?.let { it.string() },
+                social = o["social"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponsePublishedChromeFooterSocialItem.fromJson(it) } },
+                showPoweredBy = o["showPoweredBy"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedChrome(
+    val header: PostPortalThemeImportBrandResponsePublishedChromeHeader? = null,
+    val footer: PostPortalThemeImportBrandResponsePublishedChromeFooter? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedChrome.header != null) put("header", (this@PostPortalThemeImportBrandResponsePublishedChrome.header?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedChrome.footer != null) put("footer", (this@PostPortalThemeImportBrandResponsePublishedChrome.footer?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedChrome {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedChrome(
+                header = o["header"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedChromeHeader.fromJson(it) },
+                footer = o["footer"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedChromeFooter.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPortalSectionsItem(
+    val id: String,
+    val enabled: Boolean? = null,
+    val title: String? = null,
+    val description: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedPortalSectionsItem.id))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalSectionsItem.enabled != null) put("enabled", (this@PostPortalThemeImportBrandResponsePublishedPortalSectionsItem.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalSectionsItem.title != null) put("title", (this@PostPortalThemeImportBrandResponsePublishedPortalSectionsItem.title?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalSectionsItem.description != null) put("description", (this@PostPortalThemeImportBrandResponsePublishedPortalSectionsItem.description?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPortalSectionsItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPortalSectionsItem(
+                id = o.field("id").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                title = o["title"]?.orNull()?.let { it.string() },
+                description = o["description"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta.href))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta.translations != null) put("translations", (this@PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPortalWelcome(
+    val title: String,
+    val body: String? = null,
+    val image: String? = null,
+    val cta: PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("title", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedPortalWelcome.title))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalWelcome.body != null) put("body", (this@PostPortalThemeImportBrandResponsePublishedPortalWelcome.body?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalWelcome.image != null) put("image", (this@PostPortalThemeImportBrandResponsePublishedPortalWelcome.image?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalWelcome.cta != null) put("cta", (this@PostPortalThemeImportBrandResponsePublishedPortalWelcome.cta?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPortalWelcome {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPortalWelcome(
+                title = o.field("title").string(),
+                body = o["body"]?.orNull()?.let { it.string() },
+                image = o["image"]?.orNull()?.let { it.string() },
+                cta = o["cta"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedPortalWelcomeCta.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPortalNavigation(
+    val primary: List<String>? = null,
+    val hidden: List<String>? = null,
+    val labels: Map<String, String>? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalNavigation.primary != null) put("primary", (this@PostPortalThemeImportBrandResponsePublishedPortalNavigation.primary?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalNavigation.hidden != null) put("hidden", (this@PostPortalThemeImportBrandResponsePublishedPortalNavigation.hidden?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalNavigation.labels != null) put("labels", (this@PostPortalThemeImportBrandResponsePublishedPortalNavigation.labels?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalNavigation.style != null) put("style", (this@PostPortalThemeImportBrandResponsePublishedPortalNavigation.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPortalNavigation {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPortalNavigation(
+                primary = o["primary"]?.orNull()?.let { it.array().map { it.string() } },
+                hidden = o["hidden"]?.orNull()?.let { it.array().map { it.string() } },
+                labels = o["labels"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPortalSignIn(
+    val title: String? = null,
+    val subtitle: String? = null,
+    val image: String? = null,
+    val layout: String? = null,
+    val footnote: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.title != null) put("title", (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.title?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.subtitle != null) put("subtitle", (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.subtitle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.image != null) put("image", (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.image?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.layout != null) put("layout", (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.layout?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.footnote != null) put("footnote", (this@PostPortalThemeImportBrandResponsePublishedPortalSignIn.footnote?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPortalSignIn {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPortalSignIn(
+                title = o["title"]?.orNull()?.let { it.string() },
+                subtitle = o["subtitle"]?.orNull()?.let { it.string() },
+                image = o["image"]?.orNull()?.let { it.string() },
+                layout = o["layout"]?.orNull()?.let { it.string() },
+                footnote = o["footnote"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPortalMoney(
+    val showCurrencyCode: Boolean? = null,
+    val compact: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalMoney.showCurrencyCode != null) put("showCurrencyCode", (this@PostPortalThemeImportBrandResponsePublishedPortalMoney.showCurrencyCode?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortalMoney.compact != null) put("compact", (this@PostPortalThemeImportBrandResponsePublishedPortalMoney.compact?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPortalMoney {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPortalMoney(
+                showCurrencyCode = o["showCurrencyCode"]?.orNull()?.let { it.bool() },
+                compact = o["compact"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedPortal(
+    val sections: List<PostPortalThemeImportBrandResponsePublishedPortalSectionsItem>? = null,
+    val welcome: PostPortalThemeImportBrandResponsePublishedPortalWelcome? = null,
+    val navigation: PostPortalThemeImportBrandResponsePublishedPortalNavigation? = null,
+    val signIn: PostPortalThemeImportBrandResponsePublishedPortalSignIn? = null,
+    val money: PostPortalThemeImportBrandResponsePublishedPortalMoney? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedPortal.sections != null) put("sections", (this@PostPortalThemeImportBrandResponsePublishedPortal.sections?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortal.welcome != null) put("welcome", (this@PostPortalThemeImportBrandResponsePublishedPortal.welcome?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortal.navigation != null) put("navigation", (this@PostPortalThemeImportBrandResponsePublishedPortal.navigation?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortal.signIn != null) put("signIn", (this@PostPortalThemeImportBrandResponsePublishedPortal.signIn?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedPortal.money != null) put("money", (this@PostPortalThemeImportBrandResponsePublishedPortal.money?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedPortal {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedPortal(
+                sections = o["sections"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponsePublishedPortalSectionsItem.fromJson(it) } },
+                welcome = o["welcome"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedPortalWelcome.fromJson(it) },
+                navigation = o["navigation"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedPortalNavigation.fromJson(it) },
+                signIn = o["signIn"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedPortalSignIn.fromJson(it) },
+                money = o["money"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedPortalMoney.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem(
+    val key: String,
+    val type: String,
+    val label: String? = null,
+    val default: JsonValue? = null,
+    val options: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("key", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.key))
+        put("type", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.type))
+        if (this@PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.label != null) put("label", (this@PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.label?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.default != null) put("default", (this@PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.default?.let { it } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.options != null) put("options", (this@PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.options?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem(
+                key = o.field("key").string(),
+                type = o.field("type").string(),
+                label = o["label"]?.orNull()?.let { it.string() },
+                default = o["default"]?.orNull()?.let { it },
+                options = o["options"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedCssSnippetsItem(
+    val name: String,
+    val css: String,
+    val enabled: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("name", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedCssSnippetsItem.name))
+        put("css", JsonValue.Str(this@PostPortalThemeImportBrandResponsePublishedCssSnippetsItem.css))
+        if (this@PostPortalThemeImportBrandResponsePublishedCssSnippetsItem.enabled != null) put("enabled", (this@PostPortalThemeImportBrandResponsePublishedCssSnippetsItem.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedCssSnippetsItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedCssSnippetsItem(
+                name = o.field("name").string(),
+                css = o.field("css").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedMobile(
+    val fontScale: Double? = null,
+    val density: String? = null,
+    val logoUrl: String? = null,
+    val hideSections: List<String>? = null,
+    val css: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedMobile.fontScale != null) put("fontScale", (this@PostPortalThemeImportBrandResponsePublishedMobile.fontScale?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedMobile.density != null) put("density", (this@PostPortalThemeImportBrandResponsePublishedMobile.density?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedMobile.logoUrl != null) put("logoUrl", (this@PostPortalThemeImportBrandResponsePublishedMobile.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedMobile.hideSections != null) put("hideSections", (this@PostPortalThemeImportBrandResponsePublishedMobile.hideSections?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedMobile.css != null) put("css", (this@PostPortalThemeImportBrandResponsePublishedMobile.css?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedMobile {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedMobile(
+                fontScale = o["fontScale"]?.orNull()?.let { it.double() },
+                density = o["density"]?.orNull()?.let { it.string() },
+                logoUrl = o["logoUrl"]?.orNull()?.let { it.string() },
+                hideSections = o["hideSections"]?.orNull()?.let { it.array().map { it.string() } },
+                css = o["css"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponsePublishedEmbed(
+    val enabled: Boolean? = null,
+    val allowedOrigins: List<String>? = null,
+    val hideChrome: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublishedEmbed.enabled != null) put("enabled", (this@PostPortalThemeImportBrandResponsePublishedEmbed.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedEmbed.allowedOrigins != null) put("allowedOrigins", (this@PostPortalThemeImportBrandResponsePublishedEmbed.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublishedEmbed.hideChrome != null) put("hideChrome", (this@PostPortalThemeImportBrandResponsePublishedEmbed.hideChrome?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublishedEmbed {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublishedEmbed(
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
+                hideChrome = o["hideChrome"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+/** What partners see now. */
+data class PostPortalThemeImportBrandResponsePublished(
+    val primaryColor: String? = null,
+    val primaryColorDark: String? = null,
+    val accentColor: String? = null,
+    val palette: PostPortalThemeImportBrandResponsePublishedPalette? = null,
+    val paletteDark: PostPortalThemeImportBrandResponsePublishedPaletteDark? = null,
+    val colorScheme: String? = null,
+    val colorSchemeStrict: Boolean? = null,
+    val contentWidth: String? = null,
+    val density: String? = null,
+    val font: String? = null,
+    val customFontUrl: String? = null,
+    val customFontFamily: String? = null,
+    val headingFontFamily: String? = null,
+    val bodyFontFamily: String? = null,
+    val moneyFontFamily: String? = null,
+    val monoFontFamily: String? = null,
+    val fonts: PostPortalThemeImportBrandResponsePublishedFonts? = null,
+    val typography: PostPortalThemeImportBrandResponsePublishedTypography? = null,
+    val brandName: JsonValue? = null,
+    val logoUrl: String? = null,
+    val logoUrlLight: String? = null,
+    val logoUrlDark: String? = null,
+    val logoMark: String? = null,
+    val logoIncludesName: Boolean? = null,
+    val logoDarkMode: String? = null,
+    val logoHeight: Double? = null,
+    val faviconUrl: String? = null,
+    val pageTitle: String? = null,
+    val components: PostPortalThemeImportBrandResponsePublishedComponents? = null,
+    val announcement: PostPortalThemeImportBrandResponsePublishedAnnouncement? = null,
+    val chrome: PostPortalThemeImportBrandResponsePublishedChrome? = null,
+    val portal: PostPortalThemeImportBrandResponsePublishedPortal? = null,
+    val stringOverrides: Map<String, Map<String, String>>? = null,
+    val settingsSchema: List<PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem>? = null,
+    val settings: Map<String, JsonValue>? = null,
+    val customCss: String? = null,
+    val cssSnippets: List<PostPortalThemeImportBrandResponsePublishedCssSnippetsItem>? = null,
+    val mobile: PostPortalThemeImportBrandResponsePublishedMobile? = null,
+    val embed: PostPortalThemeImportBrandResponsePublishedEmbed? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponsePublished.primaryColor != null) put("primaryColor", (this@PostPortalThemeImportBrandResponsePublished.primaryColor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.primaryColorDark != null) put("primaryColorDark", (this@PostPortalThemeImportBrandResponsePublished.primaryColorDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.accentColor != null) put("accentColor", (this@PostPortalThemeImportBrandResponsePublished.accentColor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.palette != null) put("palette", (this@PostPortalThemeImportBrandResponsePublished.palette?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.paletteDark != null) put("paletteDark", (this@PostPortalThemeImportBrandResponsePublished.paletteDark?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.colorScheme != null) put("colorScheme", (this@PostPortalThemeImportBrandResponsePublished.colorScheme?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.colorSchemeStrict != null) put("colorSchemeStrict", (this@PostPortalThemeImportBrandResponsePublished.colorSchemeStrict?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.contentWidth != null) put("contentWidth", (this@PostPortalThemeImportBrandResponsePublished.contentWidth?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.density != null) put("density", (this@PostPortalThemeImportBrandResponsePublished.density?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.font != null) put("font", (this@PostPortalThemeImportBrandResponsePublished.font?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.customFontUrl != null) put("customFontUrl", (this@PostPortalThemeImportBrandResponsePublished.customFontUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.customFontFamily != null) put("customFontFamily", (this@PostPortalThemeImportBrandResponsePublished.customFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.headingFontFamily != null) put("headingFontFamily", (this@PostPortalThemeImportBrandResponsePublished.headingFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.bodyFontFamily != null) put("bodyFontFamily", (this@PostPortalThemeImportBrandResponsePublished.bodyFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.moneyFontFamily != null) put("moneyFontFamily", (this@PostPortalThemeImportBrandResponsePublished.moneyFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.monoFontFamily != null) put("monoFontFamily", (this@PostPortalThemeImportBrandResponsePublished.monoFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.fonts != null) put("fonts", (this@PostPortalThemeImportBrandResponsePublished.fonts?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.typography != null) put("typography", (this@PostPortalThemeImportBrandResponsePublished.typography?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.brandName != null) put("brandName", (this@PostPortalThemeImportBrandResponsePublished.brandName?.let { it } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.logoUrl != null) put("logoUrl", (this@PostPortalThemeImportBrandResponsePublished.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.logoUrlLight != null) put("logoUrlLight", (this@PostPortalThemeImportBrandResponsePublished.logoUrlLight?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.logoUrlDark != null) put("logoUrlDark", (this@PostPortalThemeImportBrandResponsePublished.logoUrlDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.logoMark != null) put("logoMark", (this@PostPortalThemeImportBrandResponsePublished.logoMark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.logoIncludesName != null) put("logoIncludesName", (this@PostPortalThemeImportBrandResponsePublished.logoIncludesName?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.logoDarkMode != null) put("logoDarkMode", (this@PostPortalThemeImportBrandResponsePublished.logoDarkMode?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.logoHeight != null) put("logoHeight", (this@PostPortalThemeImportBrandResponsePublished.logoHeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.faviconUrl != null) put("faviconUrl", (this@PostPortalThemeImportBrandResponsePublished.faviconUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.pageTitle != null) put("pageTitle", (this@PostPortalThemeImportBrandResponsePublished.pageTitle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.components != null) put("components", (this@PostPortalThemeImportBrandResponsePublished.components?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.announcement != null) put("announcement", (this@PostPortalThemeImportBrandResponsePublished.announcement?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.chrome != null) put("chrome", (this@PostPortalThemeImportBrandResponsePublished.chrome?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.portal != null) put("portal", (this@PostPortalThemeImportBrandResponsePublished.portal?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.stringOverrides != null) put("stringOverrides", (this@PostPortalThemeImportBrandResponsePublished.stringOverrides?.let { JsonValue.Obj(it.mapValues { JsonValue.Obj(it.value.mapValues { JsonValue.Str(it.value) }) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.settingsSchema != null) put("settingsSchema", (this@PostPortalThemeImportBrandResponsePublished.settingsSchema?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.settings != null) put("settings", (this@PostPortalThemeImportBrandResponsePublished.settings?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.customCss != null) put("customCss", (this@PostPortalThemeImportBrandResponsePublished.customCss?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.cssSnippets != null) put("cssSnippets", (this@PostPortalThemeImportBrandResponsePublished.cssSnippets?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.mobile != null) put("mobile", (this@PostPortalThemeImportBrandResponsePublished.mobile?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponsePublished.embed != null) put("embed", (this@PostPortalThemeImportBrandResponsePublished.embed?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponsePublished {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponsePublished(
+                primaryColor = o["primaryColor"]?.orNull()?.let { it.string() },
+                primaryColorDark = o["primaryColorDark"]?.orNull()?.let { it.string() },
+                accentColor = o["accentColor"]?.orNull()?.let { it.string() },
+                palette = o["palette"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedPalette.fromJson(it) },
+                paletteDark = o["paletteDark"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedPaletteDark.fromJson(it) },
+                colorScheme = o["colorScheme"]?.orNull()?.let { it.string() },
+                colorSchemeStrict = o["colorSchemeStrict"]?.orNull()?.let { it.bool() },
+                contentWidth = o["contentWidth"]?.orNull()?.let { it.string() },
+                density = o["density"]?.orNull()?.let { it.string() },
+                font = o["font"]?.orNull()?.let { it.string() },
+                customFontUrl = o["customFontUrl"]?.orNull()?.let { it.string() },
+                customFontFamily = o["customFontFamily"]?.orNull()?.let { it.string() },
+                headingFontFamily = o["headingFontFamily"]?.orNull()?.let { it.string() },
+                bodyFontFamily = o["bodyFontFamily"]?.orNull()?.let { it.string() },
+                moneyFontFamily = o["moneyFontFamily"]?.orNull()?.let { it.string() },
+                monoFontFamily = o["monoFontFamily"]?.orNull()?.let { it.string() },
+                fonts = o["fonts"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedFonts.fromJson(it) },
+                typography = o["typography"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedTypography.fromJson(it) },
+                brandName = o["brandName"]?.orNull()?.let { it },
+                logoUrl = o["logoUrl"]?.orNull()?.let { it.string() },
+                logoUrlLight = o["logoUrlLight"]?.orNull()?.let { it.string() },
+                logoUrlDark = o["logoUrlDark"]?.orNull()?.let { it.string() },
+                logoMark = o["logoMark"]?.orNull()?.let { it.string() },
+                logoIncludesName = o["logoIncludesName"]?.orNull()?.let { it.bool() },
+                logoDarkMode = o["logoDarkMode"]?.orNull()?.let { it.string() },
+                logoHeight = o["logoHeight"]?.orNull()?.let { it.double() },
+                faviconUrl = o["faviconUrl"]?.orNull()?.let { it.string() },
+                pageTitle = o["pageTitle"]?.orNull()?.let { it.string() },
+                components = o["components"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedComponents.fromJson(it) },
+                announcement = o["announcement"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedAnnouncement.fromJson(it) },
+                chrome = o["chrome"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedChrome.fromJson(it) },
+                portal = o["portal"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedPortal.fromJson(it) },
+                stringOverrides = o["stringOverrides"]?.orNull()?.let { it.obj().mapValues { it.value.obj().mapValues { it.value.string() } } },
+                settingsSchema = o["settingsSchema"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponsePublishedSettingsSchemaItem.fromJson(it) } },
+                settings = o["settings"]?.orNull()?.let { it.obj().mapValues { it.value } },
+                customCss = o["customCss"]?.orNull()?.let { it.string() },
+                cssSnippets = o["cssSnippets"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponsePublishedCssSnippetsItem.fromJson(it) } },
+                mobile = o["mobile"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedMobile.fromJson(it) },
+                embed = o["embed"]?.orNull()?.let { PostPortalThemeImportBrandResponsePublishedEmbed.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Palette(
+    val background: String? = null,
+    val surface: String? = null,
+    val surfaceAlt: String? = null,
+    val ink: String? = null,
+    val muted: String? = null,
+    val faint: String? = null,
+    val line: String? = null,
+    val lineStrong: String? = null,
+    val primary: String? = null,
+    val onPrimary: String? = null,
+    val primarySoft: String? = null,
+    val headerBackground: String? = null,
+    val headerPrimary: String? = null,
+    val sidebar: String? = null,
+    val footerBackground: String? = null,
+    val footerPrimary: String? = null,
+    val success: String? = null,
+    val warning: String? = null,
+    val danger: String? = null,
+    val info: String? = null,
+    val chart: String? = null,
+    val money: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.background != null) put("background", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.surface != null) put("surface", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.surface?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.surfaceAlt != null) put("surfaceAlt", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.surfaceAlt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.ink != null) put("ink", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.muted != null) put("muted", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.muted?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.faint != null) put("faint", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.faint?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.line != null) put("line", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.line?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.lineStrong != null) put("lineStrong", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.lineStrong?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.primary != null) put("primary", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.primary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.onPrimary != null) put("onPrimary", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.onPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.primarySoft != null) put("primarySoft", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.primarySoft?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.headerBackground != null) put("header_background", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.headerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.headerPrimary != null) put("header_primary", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.headerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.sidebar != null) put("sidebar", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.sidebar?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.footerBackground != null) put("footer_background", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.footerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.footerPrimary != null) put("footer_primary", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.footerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.success != null) put("success", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.success?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.warning != null) put("warning", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.warning?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.danger != null) put("danger", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.danger?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.info != null) put("info", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.info?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.chart != null) put("chart", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.chart?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Palette.money != null) put("money", (this@PostPortalThemeImportBrandResponseDraftOption1Palette.money?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Palette {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Palette(
+                background = o["background"]?.orNull()?.let { it.string() },
+                surface = o["surface"]?.orNull()?.let { it.string() },
+                surfaceAlt = o["surfaceAlt"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                muted = o["muted"]?.orNull()?.let { it.string() },
+                faint = o["faint"]?.orNull()?.let { it.string() },
+                line = o["line"]?.orNull()?.let { it.string() },
+                lineStrong = o["lineStrong"]?.orNull()?.let { it.string() },
+                primary = o["primary"]?.orNull()?.let { it.string() },
+                onPrimary = o["onPrimary"]?.orNull()?.let { it.string() },
+                primarySoft = o["primarySoft"]?.orNull()?.let { it.string() },
+                headerBackground = o["header_background"]?.orNull()?.let { it.string() },
+                headerPrimary = o["header_primary"]?.orNull()?.let { it.string() },
+                sidebar = o["sidebar"]?.orNull()?.let { it.string() },
+                footerBackground = o["footer_background"]?.orNull()?.let { it.string() },
+                footerPrimary = o["footer_primary"]?.orNull()?.let { it.string() },
+                success = o["success"]?.orNull()?.let { it.string() },
+                warning = o["warning"]?.orNull()?.let { it.string() },
+                danger = o["danger"]?.orNull()?.let { it.string() },
+                info = o["info"]?.orNull()?.let { it.string() },
+                chart = o["chart"]?.orNull()?.let { it.string() },
+                money = o["money"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1PaletteDark(
+    val background: String? = null,
+    val surface: String? = null,
+    val surfaceAlt: String? = null,
+    val ink: String? = null,
+    val muted: String? = null,
+    val faint: String? = null,
+    val line: String? = null,
+    val lineStrong: String? = null,
+    val primary: String? = null,
+    val onPrimary: String? = null,
+    val primarySoft: String? = null,
+    val headerBackground: String? = null,
+    val headerPrimary: String? = null,
+    val sidebar: String? = null,
+    val footerBackground: String? = null,
+    val footerPrimary: String? = null,
+    val success: String? = null,
+    val warning: String? = null,
+    val danger: String? = null,
+    val info: String? = null,
+    val chart: String? = null,
+    val money: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.background != null) put("background", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.surface != null) put("surface", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.surface?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.surfaceAlt != null) put("surfaceAlt", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.surfaceAlt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.ink != null) put("ink", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.muted != null) put("muted", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.muted?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.faint != null) put("faint", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.faint?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.line != null) put("line", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.line?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.lineStrong != null) put("lineStrong", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.lineStrong?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.primary != null) put("primary", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.primary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.onPrimary != null) put("onPrimary", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.onPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.primarySoft != null) put("primarySoft", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.primarySoft?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.headerBackground != null) put("header_background", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.headerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.headerPrimary != null) put("header_primary", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.headerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.sidebar != null) put("sidebar", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.sidebar?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.footerBackground != null) put("footer_background", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.footerBackground?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.footerPrimary != null) put("footer_primary", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.footerPrimary?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.success != null) put("success", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.success?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.warning != null) put("warning", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.warning?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.danger != null) put("danger", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.danger?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.info != null) put("info", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.info?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.chart != null) put("chart", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.chart?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.money != null) put("money", (this@PostPortalThemeImportBrandResponseDraftOption1PaletteDark.money?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1PaletteDark {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1PaletteDark(
+                background = o["background"]?.orNull()?.let { it.string() },
+                surface = o["surface"]?.orNull()?.let { it.string() },
+                surfaceAlt = o["surfaceAlt"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                muted = o["muted"]?.orNull()?.let { it.string() },
+                faint = o["faint"]?.orNull()?.let { it.string() },
+                line = o["line"]?.orNull()?.let { it.string() },
+                lineStrong = o["lineStrong"]?.orNull()?.let { it.string() },
+                primary = o["primary"]?.orNull()?.let { it.string() },
+                onPrimary = o["onPrimary"]?.orNull()?.let { it.string() },
+                primarySoft = o["primarySoft"]?.orNull()?.let { it.string() },
+                headerBackground = o["header_background"]?.orNull()?.let { it.string() },
+                headerPrimary = o["header_primary"]?.orNull()?.let { it.string() },
+                sidebar = o["sidebar"]?.orNull()?.let { it.string() },
+                footerBackground = o["footer_background"]?.orNull()?.let { it.string() },
+                footerPrimary = o["footer_primary"]?.orNull()?.let { it.string() },
+                success = o["success"]?.orNull()?.let { it.string() },
+                warning = o["warning"]?.orNull()?.let { it.string() },
+                danger = o["danger"]?.orNull()?.let { it.string() },
+                info = o["info"]?.orNull()?.let { it.string() },
+                chart = o["chart"]?.orNull()?.let { it.string() },
+                money = o["money"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem(
+    val family: String,
+    val src: String,
+    val format: String? = null,
+    val weight: JsonValue? = null,
+    val style: String? = null,
+    val display: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("family", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.family))
+        put("src", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.src))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.format != null) put("format", (this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.format?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.weight != null) put("weight", (this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.weight?.let { it } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.style != null) put("style", (this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.display != null) put("display", (this@PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.display?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem(
+                family = o.field("family").string(),
+                src = o.field("src").string(),
+                format = o["format"]?.orNull()?.let { it.string() },
+                weight = o["weight"]?.orNull()?.let { it },
+                style = o["style"]?.orNull()?.let { it.string() },
+                display = o["display"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Fonts(
+    val faces: List<PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Fonts.faces != null) put("faces", (this@PostPortalThemeImportBrandResponseDraftOption1Fonts.faces?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Fonts {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Fonts(
+                faces = o["faces"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponseDraftOption1FontsFacesItem.fromJson(it) } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Typography(
+    val baseSize: Double? = null,
+    val headingScale: Double? = null,
+    val headingWeight: Long? = null,
+    val bodyWeight: Long? = null,
+    val headingTransform: String? = null,
+    val headingTracking: Double? = null,
+    val bodyLeading: Double? = null,
+    val numerals: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Typography.baseSize != null) put("baseSize", (this@PostPortalThemeImportBrandResponseDraftOption1Typography.baseSize?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Typography.headingScale != null) put("headingScale", (this@PostPortalThemeImportBrandResponseDraftOption1Typography.headingScale?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Typography.headingWeight != null) put("headingWeight", (this@PostPortalThemeImportBrandResponseDraftOption1Typography.headingWeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Typography.bodyWeight != null) put("bodyWeight", (this@PostPortalThemeImportBrandResponseDraftOption1Typography.bodyWeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Typography.headingTransform != null) put("headingTransform", (this@PostPortalThemeImportBrandResponseDraftOption1Typography.headingTransform?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Typography.headingTracking != null) put("headingTracking", (this@PostPortalThemeImportBrandResponseDraftOption1Typography.headingTracking?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Typography.bodyLeading != null) put("bodyLeading", (this@PostPortalThemeImportBrandResponseDraftOption1Typography.bodyLeading?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Typography.numerals != null) put("numerals", (this@PostPortalThemeImportBrandResponseDraftOption1Typography.numerals?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Typography {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Typography(
+                baseSize = o["baseSize"]?.orNull()?.let { it.double() },
+                headingScale = o["headingScale"]?.orNull()?.let { it.double() },
+                headingWeight = o["headingWeight"]?.orNull()?.let { it.long() },
+                bodyWeight = o["bodyWeight"]?.orNull()?.let { it.long() },
+                headingTransform = o["headingTransform"]?.orNull()?.let { it.string() },
+                headingTracking = o["headingTracking"]?.orNull()?.let { it.double() },
+                bodyLeading = o["bodyLeading"]?.orNull()?.let { it.double() },
+                numerals = o["numerals"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ComponentsCards(
+    val border: Boolean? = null,
+    val elevation: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsCards.border != null) put("border", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsCards.border?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsCards.elevation != null) put("elevation", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsCards.elevation?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ComponentsCards {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ComponentsCards(
+                border = o["border"]?.orNull()?.let { it.bool() },
+                elevation = o["elevation"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons(
+    val radius: Double? = null,
+    val case: String? = null,
+    val weight: Long? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.radius != null) put("radius", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.case != null) put("case", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.case?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.weight != null) put("weight", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.weight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.style != null) put("style", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                case = o["case"]?.orNull()?.let { it.string() },
+                weight = o["weight"]?.orNull()?.let { it.long() },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs(
+    val radius: Double? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs.radius != null) put("radius", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs.style != null) put("style", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing(
+    val color: String? = null,
+    val width: Double? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing.color != null) put("color", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing.color?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing.width != null) put("width", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing.width?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing(
+                color = o["color"]?.orNull()?.let { it.string() },
+                width = o["width"]?.orNull()?.let { it.double() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks(
+    val underline: String? = null,
+    val color: String? = null,
+    val colorDark: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks.underline != null) put("underline", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks.underline?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks.color != null) put("color", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks.color?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks.colorDark != null) put("colorDark", (this@PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks.colorDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks(
+                underline = o["underline"]?.orNull()?.let { it.string() },
+                color = o["color"]?.orNull()?.let { it.string() },
+                colorDark = o["colorDark"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Components(
+    val radius: Double? = null,
+    val radiusSmall: Double? = null,
+    val shadow: String? = null,
+    val cards: PostPortalThemeImportBrandResponseDraftOption1ComponentsCards? = null,
+    val buttons: PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons? = null,
+    val inputs: PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs? = null,
+    val focusRing: PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing? = null,
+    val links: PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Components.radius != null) put("radius", (this@PostPortalThemeImportBrandResponseDraftOption1Components.radius?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Components.radiusSmall != null) put("radiusSmall", (this@PostPortalThemeImportBrandResponseDraftOption1Components.radiusSmall?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Components.shadow != null) put("shadow", (this@PostPortalThemeImportBrandResponseDraftOption1Components.shadow?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Components.cards != null) put("cards", (this@PostPortalThemeImportBrandResponseDraftOption1Components.cards?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Components.buttons != null) put("buttons", (this@PostPortalThemeImportBrandResponseDraftOption1Components.buttons?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Components.inputs != null) put("inputs", (this@PostPortalThemeImportBrandResponseDraftOption1Components.inputs?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Components.focusRing != null) put("focusRing", (this@PostPortalThemeImportBrandResponseDraftOption1Components.focusRing?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Components.links != null) put("links", (this@PostPortalThemeImportBrandResponseDraftOption1Components.links?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Components {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Components(
+                radius = o["radius"]?.orNull()?.let { it.double() },
+                radiusSmall = o["radiusSmall"]?.orNull()?.let { it.double() },
+                shadow = o["shadow"]?.orNull()?.let { it.string() },
+                cards = o["cards"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1ComponentsCards.fromJson(it) },
+                buttons = o["buttons"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1ComponentsButtons.fromJson(it) },
+                inputs = o["inputs"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1ComponentsInputs.fromJson(it) },
+                focusRing = o["focusRing"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1ComponentsFocusRing.fromJson(it) },
+                links = o["links"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1ComponentsLinks.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink.href))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink.translations != null) put("translations", (this@PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Announcement(
+    val text: String,
+    val level: String? = null,
+    val link: PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink? = null,
+    val dismissible: Boolean? = null,
+    val background: String? = null,
+    val ink: String? = null,
+    val startsAt: String? = null,
+    val endsAt: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("text", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1Announcement.text))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.level != null) put("level", (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.level?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.link != null) put("link", (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.link?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.dismissible != null) put("dismissible", (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.dismissible?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.background != null) put("background", (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.background?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.ink != null) put("ink", (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.ink?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.startsAt != null) put("startsAt", (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.startsAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.endsAt != null) put("endsAt", (this@PostPortalThemeImportBrandResponseDraftOption1Announcement.endsAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Announcement {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Announcement(
+                text = o.field("text").string(),
+                level = o["level"]?.orNull()?.let { it.string() },
+                link = o["link"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1AnnouncementLink.fromJson(it) },
+                dismissible = o["dismissible"]?.orNull()?.let { it.bool() },
+                background = o["background"]?.orNull()?.let { it.string() },
+                ink = o["ink"]?.orNull()?.let { it.string() },
+                startsAt = o["startsAt"]?.orNull()?.let { it.string() },
+                endsAt = o["endsAt"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem.href))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem.translations != null) put("translations", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta.href))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta.translations != null) put("translations", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ChromeHeader(
+    val links: List<PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem>? = null,
+    val cta: PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta? = null,
+    val sticky: Boolean? = null,
+    val showLocaleSwitcher: Boolean? = null,
+    val showThemeToggle: Boolean? = null,
+    val brandAlign: String? = null,
+    val border: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.links != null) put("links", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.links?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.cta != null) put("cta", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.cta?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.sticky != null) put("sticky", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.sticky?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.showLocaleSwitcher != null) put("showLocaleSwitcher", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.showLocaleSwitcher?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.showThemeToggle != null) put("showThemeToggle", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.showThemeToggle?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.brandAlign != null) put("brandAlign", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.brandAlign?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.border != null) put("border", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.border?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ChromeHeader {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ChromeHeader(
+                links = o["links"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderLinksItem.fromJson(it) } },
+                cta = o["cta"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1ChromeHeaderCta.fromJson(it) },
+                sticky = o["sticky"]?.orNull()?.let { it.bool() },
+                showLocaleSwitcher = o["showLocaleSwitcher"]?.orNull()?.let { it.bool() },
+                showThemeToggle = o["showThemeToggle"]?.orNull()?.let { it.bool() },
+                brandAlign = o["brandAlign"]?.orNull()?.let { it.string() },
+                border = o["border"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem.href))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem.translations != null) put("translations", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItem(
+    val heading: String,
+    val links: List<PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("heading", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItem.heading))
+        put("links", JsonValue.Arr(this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItem.links.map { it.toJson() }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItem(
+                heading = o.field("heading").string(),
+                links = o.field("links").array().map { PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItemLinksItem.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ChromeFooterSocialItem(
+    val platform: String,
+    val href: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("platform", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterSocialItem.platform))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooterSocialItem.href))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ChromeFooterSocialItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ChromeFooterSocialItem(
+                platform = o.field("platform").string(),
+                href = o.field("href").string(),
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1ChromeFooter(
+    val columns: List<PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItem>? = null,
+    val text: String? = null,
+    val social: List<PostPortalThemeImportBrandResponseDraftOption1ChromeFooterSocialItem>? = null,
+    val showPoweredBy: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.columns != null) put("columns", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.columns?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.text != null) put("text", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.text?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.social != null) put("social", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.social?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.showPoweredBy != null) put("showPoweredBy", (this@PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.showPoweredBy?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1ChromeFooter {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1ChromeFooter(
+                columns = o["columns"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponseDraftOption1ChromeFooterColumnsItem.fromJson(it) } },
+                text = o["text"]?.orNull()?.let { it.string() },
+                social = o["social"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponseDraftOption1ChromeFooterSocialItem.fromJson(it) } },
+                showPoweredBy = o["showPoweredBy"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Chrome(
+    val header: PostPortalThemeImportBrandResponseDraftOption1ChromeHeader? = null,
+    val footer: PostPortalThemeImportBrandResponseDraftOption1ChromeFooter? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Chrome.header != null) put("header", (this@PostPortalThemeImportBrandResponseDraftOption1Chrome.header?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Chrome.footer != null) put("footer", (this@PostPortalThemeImportBrandResponseDraftOption1Chrome.footer?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Chrome {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Chrome(
+                header = o["header"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1ChromeHeader.fromJson(it) },
+                footer = o["footer"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1ChromeFooter.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem(
+    val id: String,
+    val enabled: Boolean? = null,
+    val title: String? = null,
+    val description: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem.id))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem.enabled != null) put("enabled", (this@PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem.title != null) put("title", (this@PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem.title?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem.description != null) put("description", (this@PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem.description?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem(
+                id = o.field("id").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                title = o["title"]?.orNull()?.let { it.string() },
+                description = o["description"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta(
+    val label: String,
+    val href: String,
+    val newTab: Boolean? = null,
+    val translations: Map<String, String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("label", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta.label))
+        put("href", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta.href))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta.newTab != null) put("newTab", (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta.newTab?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta.translations != null) put("translations", (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta.translations?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta(
+                label = o.field("label").string(),
+                href = o.field("href").string(),
+                newTab = o["newTab"]?.orNull()?.let { it.bool() },
+                translations = o["translations"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1PortalWelcome(
+    val title: String,
+    val body: String? = null,
+    val image: String? = null,
+    val cta: PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("title", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcome.title))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcome.body != null) put("body", (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcome.body?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcome.image != null) put("image", (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcome.image?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcome.cta != null) put("cta", (this@PostPortalThemeImportBrandResponseDraftOption1PortalWelcome.cta?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1PortalWelcome {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1PortalWelcome(
+                title = o.field("title").string(),
+                body = o["body"]?.orNull()?.let { it.string() },
+                image = o["image"]?.orNull()?.let { it.string() },
+                cta = o["cta"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1PortalWelcomeCta.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1PortalNavigation(
+    val primary: List<String>? = null,
+    val hidden: List<String>? = null,
+    val labels: Map<String, String>? = null,
+    val style: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.primary != null) put("primary", (this@PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.primary?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.hidden != null) put("hidden", (this@PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.hidden?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.labels != null) put("labels", (this@PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.labels?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.style != null) put("style", (this@PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.style?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1PortalNavigation {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1PortalNavigation(
+                primary = o["primary"]?.orNull()?.let { it.array().map { it.string() } },
+                hidden = o["hidden"]?.orNull()?.let { it.array().map { it.string() } },
+                labels = o["labels"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                style = o["style"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1PortalSignIn(
+    val title: String? = null,
+    val subtitle: String? = null,
+    val image: String? = null,
+    val layout: String? = null,
+    val footnote: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.title != null) put("title", (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.title?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.subtitle != null) put("subtitle", (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.subtitle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.image != null) put("image", (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.image?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.layout != null) put("layout", (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.layout?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.footnote != null) put("footnote", (this@PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.footnote?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1PortalSignIn {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1PortalSignIn(
+                title = o["title"]?.orNull()?.let { it.string() },
+                subtitle = o["subtitle"]?.orNull()?.let { it.string() },
+                image = o["image"]?.orNull()?.let { it.string() },
+                layout = o["layout"]?.orNull()?.let { it.string() },
+                footnote = o["footnote"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1PortalMoney(
+    val showCurrencyCode: Boolean? = null,
+    val compact: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalMoney.showCurrencyCode != null) put("showCurrencyCode", (this@PostPortalThemeImportBrandResponseDraftOption1PortalMoney.showCurrencyCode?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1PortalMoney.compact != null) put("compact", (this@PostPortalThemeImportBrandResponseDraftOption1PortalMoney.compact?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1PortalMoney {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1PortalMoney(
+                showCurrencyCode = o["showCurrencyCode"]?.orNull()?.let { it.bool() },
+                compact = o["compact"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Portal(
+    val sections: List<PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem>? = null,
+    val welcome: PostPortalThemeImportBrandResponseDraftOption1PortalWelcome? = null,
+    val navigation: PostPortalThemeImportBrandResponseDraftOption1PortalNavigation? = null,
+    val signIn: PostPortalThemeImportBrandResponseDraftOption1PortalSignIn? = null,
+    val money: PostPortalThemeImportBrandResponseDraftOption1PortalMoney? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Portal.sections != null) put("sections", (this@PostPortalThemeImportBrandResponseDraftOption1Portal.sections?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Portal.welcome != null) put("welcome", (this@PostPortalThemeImportBrandResponseDraftOption1Portal.welcome?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Portal.navigation != null) put("navigation", (this@PostPortalThemeImportBrandResponseDraftOption1Portal.navigation?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Portal.signIn != null) put("signIn", (this@PostPortalThemeImportBrandResponseDraftOption1Portal.signIn?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Portal.money != null) put("money", (this@PostPortalThemeImportBrandResponseDraftOption1Portal.money?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Portal {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Portal(
+                sections = o["sections"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponseDraftOption1PortalSectionsItem.fromJson(it) } },
+                welcome = o["welcome"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1PortalWelcome.fromJson(it) },
+                navigation = o["navigation"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1PortalNavigation.fromJson(it) },
+                signIn = o["signIn"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1PortalSignIn.fromJson(it) },
+                money = o["money"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1PortalMoney.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem(
+    val key: String,
+    val type: String,
+    val label: String? = null,
+    val default: JsonValue? = null,
+    val options: List<String>? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("key", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.key))
+        put("type", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.type))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.label != null) put("label", (this@PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.label?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.default != null) put("default", (this@PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.default?.let { it } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.options != null) put("options", (this@PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.options?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem(
+                key = o.field("key").string(),
+                type = o.field("type").string(),
+                label = o["label"]?.orNull()?.let { it.string() },
+                default = o["default"]?.orNull()?.let { it },
+                options = o["options"]?.orNull()?.let { it.array().map { it.string() } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem(
+    val name: String,
+    val css: String,
+    val enabled: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("name", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem.name))
+        put("css", JsonValue.Str(this@PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem.css))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem.enabled != null) put("enabled", (this@PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem(
+                name = o.field("name").string(),
+                css = o.field("css").string(),
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Mobile(
+    val fontScale: Double? = null,
+    val density: String? = null,
+    val logoUrl: String? = null,
+    val hideSections: List<String>? = null,
+    val css: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.fontScale != null) put("fontScale", (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.fontScale?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.density != null) put("density", (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.density?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.logoUrl != null) put("logoUrl", (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.hideSections != null) put("hideSections", (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.hideSections?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.css != null) put("css", (this@PostPortalThemeImportBrandResponseDraftOption1Mobile.css?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Mobile {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Mobile(
+                fontScale = o["fontScale"]?.orNull()?.let { it.double() },
+                density = o["density"]?.orNull()?.let { it.string() },
+                logoUrl = o["logoUrl"]?.orNull()?.let { it.string() },
+                hideSections = o["hideSections"]?.orNull()?.let { it.array().map { it.string() } },
+                css = o["css"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1Embed(
+    val enabled: Boolean? = null,
+    val allowedOrigins: List<String>? = null,
+    val hideChrome: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Embed.enabled != null) put("enabled", (this@PostPortalThemeImportBrandResponseDraftOption1Embed.enabled?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Embed.allowedOrigins != null) put("allowedOrigins", (this@PostPortalThemeImportBrandResponseDraftOption1Embed.allowedOrigins?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1Embed.hideChrome != null) put("hideChrome", (this@PostPortalThemeImportBrandResponseDraftOption1Embed.hideChrome?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1Embed {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1Embed(
+                enabled = o["enabled"]?.orNull()?.let { it.bool() },
+                allowedOrigins = o["allowedOrigins"]?.orNull()?.let { it.array().map { it.string() } },
+                hideChrome = o["hideChrome"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponseDraftOption1(
+    val primaryColor: String? = null,
+    val primaryColorDark: String? = null,
+    val accentColor: String? = null,
+    val palette: PostPortalThemeImportBrandResponseDraftOption1Palette? = null,
+    val paletteDark: PostPortalThemeImportBrandResponseDraftOption1PaletteDark? = null,
+    val colorScheme: String? = null,
+    val colorSchemeStrict: Boolean? = null,
+    val contentWidth: String? = null,
+    val density: String? = null,
+    val font: String? = null,
+    val customFontUrl: String? = null,
+    val customFontFamily: String? = null,
+    val headingFontFamily: String? = null,
+    val bodyFontFamily: String? = null,
+    val moneyFontFamily: String? = null,
+    val monoFontFamily: String? = null,
+    val fonts: PostPortalThemeImportBrandResponseDraftOption1Fonts? = null,
+    val typography: PostPortalThemeImportBrandResponseDraftOption1Typography? = null,
+    val brandName: JsonValue? = null,
+    val logoUrl: String? = null,
+    val logoUrlLight: String? = null,
+    val logoUrlDark: String? = null,
+    val logoMark: String? = null,
+    val logoIncludesName: Boolean? = null,
+    val logoDarkMode: String? = null,
+    val logoHeight: Double? = null,
+    val faviconUrl: String? = null,
+    val pageTitle: String? = null,
+    val components: PostPortalThemeImportBrandResponseDraftOption1Components? = null,
+    val announcement: PostPortalThemeImportBrandResponseDraftOption1Announcement? = null,
+    val chrome: PostPortalThemeImportBrandResponseDraftOption1Chrome? = null,
+    val portal: PostPortalThemeImportBrandResponseDraftOption1Portal? = null,
+    val stringOverrides: Map<String, Map<String, String>>? = null,
+    val settingsSchema: List<PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem>? = null,
+    val settings: Map<String, JsonValue>? = null,
+    val customCss: String? = null,
+    val cssSnippets: List<PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem>? = null,
+    val mobile: PostPortalThemeImportBrandResponseDraftOption1Mobile? = null,
+    val embed: PostPortalThemeImportBrandResponseDraftOption1Embed? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.primaryColor != null) put("primaryColor", (this@PostPortalThemeImportBrandResponseDraftOption1.primaryColor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.primaryColorDark != null) put("primaryColorDark", (this@PostPortalThemeImportBrandResponseDraftOption1.primaryColorDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.accentColor != null) put("accentColor", (this@PostPortalThemeImportBrandResponseDraftOption1.accentColor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.palette != null) put("palette", (this@PostPortalThemeImportBrandResponseDraftOption1.palette?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.paletteDark != null) put("paletteDark", (this@PostPortalThemeImportBrandResponseDraftOption1.paletteDark?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.colorScheme != null) put("colorScheme", (this@PostPortalThemeImportBrandResponseDraftOption1.colorScheme?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.colorSchemeStrict != null) put("colorSchemeStrict", (this@PostPortalThemeImportBrandResponseDraftOption1.colorSchemeStrict?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.contentWidth != null) put("contentWidth", (this@PostPortalThemeImportBrandResponseDraftOption1.contentWidth?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.density != null) put("density", (this@PostPortalThemeImportBrandResponseDraftOption1.density?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.font != null) put("font", (this@PostPortalThemeImportBrandResponseDraftOption1.font?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.customFontUrl != null) put("customFontUrl", (this@PostPortalThemeImportBrandResponseDraftOption1.customFontUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.customFontFamily != null) put("customFontFamily", (this@PostPortalThemeImportBrandResponseDraftOption1.customFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.headingFontFamily != null) put("headingFontFamily", (this@PostPortalThemeImportBrandResponseDraftOption1.headingFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.bodyFontFamily != null) put("bodyFontFamily", (this@PostPortalThemeImportBrandResponseDraftOption1.bodyFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.moneyFontFamily != null) put("moneyFontFamily", (this@PostPortalThemeImportBrandResponseDraftOption1.moneyFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.monoFontFamily != null) put("monoFontFamily", (this@PostPortalThemeImportBrandResponseDraftOption1.monoFontFamily?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.fonts != null) put("fonts", (this@PostPortalThemeImportBrandResponseDraftOption1.fonts?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.typography != null) put("typography", (this@PostPortalThemeImportBrandResponseDraftOption1.typography?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.brandName != null) put("brandName", (this@PostPortalThemeImportBrandResponseDraftOption1.brandName?.let { it } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.logoUrl != null) put("logoUrl", (this@PostPortalThemeImportBrandResponseDraftOption1.logoUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.logoUrlLight != null) put("logoUrlLight", (this@PostPortalThemeImportBrandResponseDraftOption1.logoUrlLight?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.logoUrlDark != null) put("logoUrlDark", (this@PostPortalThemeImportBrandResponseDraftOption1.logoUrlDark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.logoMark != null) put("logoMark", (this@PostPortalThemeImportBrandResponseDraftOption1.logoMark?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.logoIncludesName != null) put("logoIncludesName", (this@PostPortalThemeImportBrandResponseDraftOption1.logoIncludesName?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.logoDarkMode != null) put("logoDarkMode", (this@PostPortalThemeImportBrandResponseDraftOption1.logoDarkMode?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.logoHeight != null) put("logoHeight", (this@PostPortalThemeImportBrandResponseDraftOption1.logoHeight?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.faviconUrl != null) put("faviconUrl", (this@PostPortalThemeImportBrandResponseDraftOption1.faviconUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.pageTitle != null) put("pageTitle", (this@PostPortalThemeImportBrandResponseDraftOption1.pageTitle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.components != null) put("components", (this@PostPortalThemeImportBrandResponseDraftOption1.components?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.announcement != null) put("announcement", (this@PostPortalThemeImportBrandResponseDraftOption1.announcement?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.chrome != null) put("chrome", (this@PostPortalThemeImportBrandResponseDraftOption1.chrome?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.portal != null) put("portal", (this@PostPortalThemeImportBrandResponseDraftOption1.portal?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.stringOverrides != null) put("stringOverrides", (this@PostPortalThemeImportBrandResponseDraftOption1.stringOverrides?.let { JsonValue.Obj(it.mapValues { JsonValue.Obj(it.value.mapValues { JsonValue.Str(it.value) }) }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.settingsSchema != null) put("settingsSchema", (this@PostPortalThemeImportBrandResponseDraftOption1.settingsSchema?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.settings != null) put("settings", (this@PostPortalThemeImportBrandResponseDraftOption1.settings?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.customCss != null) put("customCss", (this@PostPortalThemeImportBrandResponseDraftOption1.customCss?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.cssSnippets != null) put("cssSnippets", (this@PostPortalThemeImportBrandResponseDraftOption1.cssSnippets?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.mobile != null) put("mobile", (this@PostPortalThemeImportBrandResponseDraftOption1.mobile?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandResponseDraftOption1.embed != null) put("embed", (this@PostPortalThemeImportBrandResponseDraftOption1.embed?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponseDraftOption1 {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponseDraftOption1(
+                primaryColor = o["primaryColor"]?.orNull()?.let { it.string() },
+                primaryColorDark = o["primaryColorDark"]?.orNull()?.let { it.string() },
+                accentColor = o["accentColor"]?.orNull()?.let { it.string() },
+                palette = o["palette"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Palette.fromJson(it) },
+                paletteDark = o["paletteDark"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1PaletteDark.fromJson(it) },
+                colorScheme = o["colorScheme"]?.orNull()?.let { it.string() },
+                colorSchemeStrict = o["colorSchemeStrict"]?.orNull()?.let { it.bool() },
+                contentWidth = o["contentWidth"]?.orNull()?.let { it.string() },
+                density = o["density"]?.orNull()?.let { it.string() },
+                font = o["font"]?.orNull()?.let { it.string() },
+                customFontUrl = o["customFontUrl"]?.orNull()?.let { it.string() },
+                customFontFamily = o["customFontFamily"]?.orNull()?.let { it.string() },
+                headingFontFamily = o["headingFontFamily"]?.orNull()?.let { it.string() },
+                bodyFontFamily = o["bodyFontFamily"]?.orNull()?.let { it.string() },
+                moneyFontFamily = o["moneyFontFamily"]?.orNull()?.let { it.string() },
+                monoFontFamily = o["monoFontFamily"]?.orNull()?.let { it.string() },
+                fonts = o["fonts"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Fonts.fromJson(it) },
+                typography = o["typography"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Typography.fromJson(it) },
+                brandName = o["brandName"]?.orNull()?.let { it },
+                logoUrl = o["logoUrl"]?.orNull()?.let { it.string() },
+                logoUrlLight = o["logoUrlLight"]?.orNull()?.let { it.string() },
+                logoUrlDark = o["logoUrlDark"]?.orNull()?.let { it.string() },
+                logoMark = o["logoMark"]?.orNull()?.let { it.string() },
+                logoIncludesName = o["logoIncludesName"]?.orNull()?.let { it.bool() },
+                logoDarkMode = o["logoDarkMode"]?.orNull()?.let { it.string() },
+                logoHeight = o["logoHeight"]?.orNull()?.let { it.double() },
+                faviconUrl = o["faviconUrl"]?.orNull()?.let { it.string() },
+                pageTitle = o["pageTitle"]?.orNull()?.let { it.string() },
+                components = o["components"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Components.fromJson(it) },
+                announcement = o["announcement"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Announcement.fromJson(it) },
+                chrome = o["chrome"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Chrome.fromJson(it) },
+                portal = o["portal"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Portal.fromJson(it) },
+                stringOverrides = o["stringOverrides"]?.orNull()?.let { it.obj().mapValues { it.value.obj().mapValues { it.value.string() } } },
+                settingsSchema = o["settingsSchema"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponseDraftOption1SettingsSchemaItem.fromJson(it) } },
+                settings = o["settings"]?.orNull()?.let { it.obj().mapValues { it.value } },
+                customCss = o["customCss"]?.orNull()?.let { it.string() },
+                cssSnippets = o["cssSnippets"]?.orNull()?.let { it.array().map { PostPortalThemeImportBrandResponseDraftOption1CssSnippetsItem.fromJson(it) } },
+                mobile = o["mobile"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Mobile.fromJson(it) },
+                embed = o["embed"]?.orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1Embed.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandResponse(
+    val published: PostPortalThemeImportBrandResponsePublished,
+    val draft: PostPortalThemeImportBrandResponseDraftOption1? = null,
+    val hasDraft: Boolean,
+    val publishedAt: String? = null,
+    val updatedAt: String? = null,
+    val previewExpiresAt: String? = null,
+    val applied: List<String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("published", this@PostPortalThemeImportBrandResponse.published.toJson())
+        put("draft", (this@PostPortalThemeImportBrandResponse.draft?.let { it.toJson() } ?: JsonValue.Null))
+        put("hasDraft", JsonValue.Bool(this@PostPortalThemeImportBrandResponse.hasDraft))
+        put("publishedAt", (this@PostPortalThemeImportBrandResponse.publishedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("updatedAt", (this@PostPortalThemeImportBrandResponse.updatedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("previewExpiresAt", (this@PostPortalThemeImportBrandResponse.previewExpiresAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("applied", JsonValue.Arr(this@PostPortalThemeImportBrandResponse.applied.map { JsonValue.Str(it) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandResponse {
+            val o = json.obj()
+            return PostPortalThemeImportBrandResponse(
+                published = PostPortalThemeImportBrandResponsePublished.fromJson(o.field("published")),
+                draft = o.field("draft").orNull()?.let { PostPortalThemeImportBrandResponseDraftOption1.fromJson(it) },
+                hasDraft = o.field("hasDraft").bool(),
+                publishedAt = o.field("publishedAt").orNull()?.let { it.string() },
+                updatedAt = o.field("updatedAt").orNull()?.let { it.string() },
+                previewExpiresAt = o.field("previewExpiresAt").orNull()?.let { it.string() },
+                applied = o.field("applied").array().map { it.string() },
+            )
+        }
+    }
+}
+
+data class GetStripeCreditsConnectionResponse(
+    val connected: Boolean,
+    val source: String? = null,
+    val connectedAt: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("connected", JsonValue.Bool(this@GetStripeCreditsConnectionResponse.connected))
+        put("source", (this@GetStripeCreditsConnectionResponse.source?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("connectedAt", (this@GetStripeCreditsConnectionResponse.connectedAt?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetStripeCreditsConnectionResponse {
+            val o = json.obj()
+            return GetStripeCreditsConnectionResponse(
+                connected = o.field("connected").bool(),
+                source = o.field("source").orNull()?.let { it.string() },
+                connectedAt = o.field("connectedAt").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class GetProgramsIdStripeCreditsResponse(
+    val programId: String,
+    val enabled: Boolean,
+    val referrerMatch: String,
+    val metadataKey: String? = null,
+    val refereeRewards: Boolean,
+    val keyConnected: Boolean,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("programId", JsonValue.Str(this@GetProgramsIdStripeCreditsResponse.programId))
+        put("enabled", JsonValue.Bool(this@GetProgramsIdStripeCreditsResponse.enabled))
+        put("referrerMatch", JsonValue.Str(this@GetProgramsIdStripeCreditsResponse.referrerMatch))
+        put("metadataKey", (this@GetProgramsIdStripeCreditsResponse.metadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("refereeRewards", JsonValue.Bool(this@GetProgramsIdStripeCreditsResponse.refereeRewards))
+        put("keyConnected", JsonValue.Bool(this@GetProgramsIdStripeCreditsResponse.keyConnected))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProgramsIdStripeCreditsResponse {
+            val o = json.obj()
+            return GetProgramsIdStripeCreditsResponse(
+                programId = o.field("programId").string(),
+                enabled = o.field("enabled").bool(),
+                referrerMatch = o.field("referrerMatch").string(),
+                metadataKey = o.field("metadataKey").orNull()?.let { it.string() },
+                refereeRewards = o.field("refereeRewards").bool(),
+                keyConnected = o.field("keyConnected").bool(),
+            )
+        }
+    }
+}
+
+data class GetProgramsIdStripeCreditsLogResponseDataItem(
+    val id: String,
+    val programId: String,
+    val sourceEventId: String,
+    val kind: String,
+    val commissionId: String? = null,
+    val partnerId: String? = null,
+    val customerRef: String? = null,
+    val amountMinor: Long,
+    val currency: String,
+    val stripeCustomerId: String? = null,
+    val status: String,
+    val attempts: Long,
+    val stripeBalanceTransactionId: String? = null,
+    val lastError: String? = null,
+    val createdAt: String,
+    val updatedAt: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponseDataItem.id))
+        put("programId", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponseDataItem.programId))
+        put("sourceEventId", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponseDataItem.sourceEventId))
+        put("kind", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponseDataItem.kind))
+        put("commissionId", (this@GetProgramsIdStripeCreditsLogResponseDataItem.commissionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("partnerId", (this@GetProgramsIdStripeCreditsLogResponseDataItem.partnerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("customerRef", (this@GetProgramsIdStripeCreditsLogResponseDataItem.customerRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("amountMinor", JsonValue.Num(this@GetProgramsIdStripeCreditsLogResponseDataItem.amountMinor.toDouble()))
+        put("currency", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponseDataItem.currency))
+        put("stripeCustomerId", (this@GetProgramsIdStripeCreditsLogResponseDataItem.stripeCustomerId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("status", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponseDataItem.status))
+        put("attempts", JsonValue.Num(this@GetProgramsIdStripeCreditsLogResponseDataItem.attempts.toDouble()))
+        put("stripeBalanceTransactionId", (this@GetProgramsIdStripeCreditsLogResponseDataItem.stripeBalanceTransactionId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("lastError", (this@GetProgramsIdStripeCreditsLogResponseDataItem.lastError?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("createdAt", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponseDataItem.createdAt))
+        put("updatedAt", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponseDataItem.updatedAt))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProgramsIdStripeCreditsLogResponseDataItem {
+            val o = json.obj()
+            return GetProgramsIdStripeCreditsLogResponseDataItem(
+                id = o.field("id").string(),
+                programId = o.field("programId").string(),
+                sourceEventId = o.field("sourceEventId").string(),
+                kind = o.field("kind").string(),
+                commissionId = o.field("commissionId").orNull()?.let { it.string() },
+                partnerId = o.field("partnerId").orNull()?.let { it.string() },
+                customerRef = o.field("customerRef").orNull()?.let { it.string() },
+                amountMinor = o.field("amountMinor").long(),
+                currency = o.field("currency").string(),
+                stripeCustomerId = o.field("stripeCustomerId").orNull()?.let { it.string() },
+                status = o.field("status").string(),
+                attempts = o.field("attempts").long(),
+                stripeBalanceTransactionId = o.field("stripeBalanceTransactionId").orNull()?.let { it.string() },
+                lastError = o.field("lastError").orNull()?.let { it.string() },
+                createdAt = o.field("createdAt").string(),
+                updatedAt = o.field("updatedAt").string(),
+            )
+        }
+    }
+}
+
+data class GetProgramsIdStripeCreditsLogResponse(
+    val `object`: String,
+    val data: List<GetProgramsIdStripeCreditsLogResponseDataItem>,
+    val hasMore: Boolean,
+    val nextCursor: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("object", JsonValue.Str(this@GetProgramsIdStripeCreditsLogResponse.`object`))
+        put("data", JsonValue.Arr(this@GetProgramsIdStripeCreditsLogResponse.data.map { it.toJson() }))
+        put("has_more", JsonValue.Bool(this@GetProgramsIdStripeCreditsLogResponse.hasMore))
+        put("next_cursor", (this@GetProgramsIdStripeCreditsLogResponse.nextCursor?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): GetProgramsIdStripeCreditsLogResponse {
+            val o = json.obj()
+            return GetProgramsIdStripeCreditsLogResponse(
+                `object` = o.field("object").string(),
+                data = o.field("data").array().map { GetProgramsIdStripeCreditsLogResponseDataItem.fromJson(it) },
+                hasMore = o.field("has_more").bool(),
+                nextCursor = o.field("next_cursor").orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
 data class PostWebhooksBillingConnectionIdResponseResultsItem(
     val duplicate: Boolean,
     val billingEventId: String? = null,
@@ -19975,6 +25546,32 @@ data class PostWebhooksStripeBillingResponse(
     }
 }
 
+data class PostWebhooksCookiemunchConsentResponse(
+    val received: Boolean,
+    val duplicate: Boolean? = null,
+    val ignored: Boolean? = null,
+    val reason: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("received", JsonValue.Bool(this@PostWebhooksCookiemunchConsentResponse.received))
+        if (this@PostWebhooksCookiemunchConsentResponse.duplicate != null) put("duplicate", (this@PostWebhooksCookiemunchConsentResponse.duplicate?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostWebhooksCookiemunchConsentResponse.ignored != null) put("ignored", (this@PostWebhooksCookiemunchConsentResponse.ignored?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PostWebhooksCookiemunchConsentResponse.reason != null) put("reason", (this@PostWebhooksCookiemunchConsentResponse.reason?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostWebhooksCookiemunchConsentResponse {
+            val o = json.obj()
+            return PostWebhooksCookiemunchConsentResponse(
+                received = o.field("received").bool(),
+                duplicate = o["duplicate"]?.orNull()?.let { it.bool() },
+                ignored = o["ignored"]?.orNull()?.let { it.bool() },
+                reason = o["reason"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
 data class PostApiPrivacyLookupResponse(
     val subjectId: String? = null,
     val status: String,
@@ -19995,23 +25592,23 @@ data class PostApiPrivacyLookupResponse(
     }
 }
 
-data class PostApiPrivacyRequestsResponse(
+data class PostApiPrivacyRequestsResponseValueOption1(
     val id: String,
     val status: String,
     val eta: String? = null,
     val detail: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("id", JsonValue.Str(this@PostApiPrivacyRequestsResponse.id))
-        put("status", JsonValue.Str(this@PostApiPrivacyRequestsResponse.status))
-        if (this@PostApiPrivacyRequestsResponse.eta != null) put("eta", (this@PostApiPrivacyRequestsResponse.eta?.let { JsonValue.Str(it) } ?: JsonValue.Null))
-        if (this@PostApiPrivacyRequestsResponse.detail != null) put("detail", (this@PostApiPrivacyRequestsResponse.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("id", JsonValue.Str(this@PostApiPrivacyRequestsResponseValueOption1.id))
+        put("status", JsonValue.Str(this@PostApiPrivacyRequestsResponseValueOption1.status))
+        if (this@PostApiPrivacyRequestsResponseValueOption1.eta != null) put("eta", (this@PostApiPrivacyRequestsResponseValueOption1.eta?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostApiPrivacyRequestsResponseValueOption1.detail != null) put("detail", (this@PostApiPrivacyRequestsResponseValueOption1.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
-        fun fromJson(json: JsonValue): PostApiPrivacyRequestsResponse {
+        fun fromJson(json: JsonValue): PostApiPrivacyRequestsResponseValueOption1 {
             val o = json.obj()
-            return PostApiPrivacyRequestsResponse(
+            return PostApiPrivacyRequestsResponseValueOption1(
                 id = o.field("id").string(),
                 status = o.field("status").string(),
                 eta = o["eta"]?.orNull()?.let { it.string() },
@@ -20021,32 +25618,97 @@ data class PostApiPrivacyRequestsResponse(
     }
 }
 
-data class GetApiPrivacyRequestsIdResponse(
+typealias PostApiPrivacyRequestsResponse = JsonValue
+
+data class GetApiPrivacyRequestsIdResponseValueOption1(
     val id: String,
-    val type: String,
     val status: String,
     val eta: String? = null,
     val detail: String? = null,
+    val type: String,
     val result: GetOpenapiJsonResponse? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("id", JsonValue.Str(this@GetApiPrivacyRequestsIdResponse.id))
-        put("type", JsonValue.Str(this@GetApiPrivacyRequestsIdResponse.type))
-        put("status", JsonValue.Str(this@GetApiPrivacyRequestsIdResponse.status))
-        if (this@GetApiPrivacyRequestsIdResponse.eta != null) put("eta", (this@GetApiPrivacyRequestsIdResponse.eta?.let { JsonValue.Str(it) } ?: JsonValue.Null))
-        if (this@GetApiPrivacyRequestsIdResponse.detail != null) put("detail", (this@GetApiPrivacyRequestsIdResponse.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
-        if (this@GetApiPrivacyRequestsIdResponse.result != null) put("result", (this@GetApiPrivacyRequestsIdResponse.result?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+        put("id", JsonValue.Str(this@GetApiPrivacyRequestsIdResponseValueOption1.id))
+        put("status", JsonValue.Str(this@GetApiPrivacyRequestsIdResponseValueOption1.status))
+        if (this@GetApiPrivacyRequestsIdResponseValueOption1.eta != null) put("eta", (this@GetApiPrivacyRequestsIdResponseValueOption1.eta?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@GetApiPrivacyRequestsIdResponseValueOption1.detail != null) put("detail", (this@GetApiPrivacyRequestsIdResponseValueOption1.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("type", JsonValue.Str(this@GetApiPrivacyRequestsIdResponseValueOption1.type))
+        if (this@GetApiPrivacyRequestsIdResponseValueOption1.result != null) put("result", (this@GetApiPrivacyRequestsIdResponseValueOption1.result?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
     })
 
     companion object {
-        fun fromJson(json: JsonValue): GetApiPrivacyRequestsIdResponse {
+        fun fromJson(json: JsonValue): GetApiPrivacyRequestsIdResponseValueOption1 {
             val o = json.obj()
-            return GetApiPrivacyRequestsIdResponse(
+            return GetApiPrivacyRequestsIdResponseValueOption1(
                 id = o.field("id").string(),
-                type = o.field("type").string(),
                 status = o.field("status").string(),
                 eta = o["eta"]?.orNull()?.let { it.string() },
                 detail = o["detail"]?.orNull()?.let { it.string() },
+                type = o.field("type").string(),
+                result = o["result"]?.orNull()?.let { it.obj().mapValues { it.value } },
+            )
+        }
+    }
+}
+
+typealias GetApiPrivacyRequestsIdResponse = JsonValue
+
+data class PostApiPrivacyRequestsIdCancelResponseRetentionItem(
+    val category: String,
+    val basis: String,
+    val until: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("category", JsonValue.Str(this@PostApiPrivacyRequestsIdCancelResponseRetentionItem.category))
+        put("basis", JsonValue.Str(this@PostApiPrivacyRequestsIdCancelResponseRetentionItem.basis))
+        if (this@PostApiPrivacyRequestsIdCancelResponseRetentionItem.until != null) put("until", (this@PostApiPrivacyRequestsIdCancelResponseRetentionItem.until?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostApiPrivacyRequestsIdCancelResponseRetentionItem {
+            val o = json.obj()
+            return PostApiPrivacyRequestsIdCancelResponseRetentionItem(
+                category = o.field("category").string(),
+                basis = o.field("basis").string(),
+                until = o["until"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostApiPrivacyRequestsIdCancelResponse(
+    val id: String,
+    val type: String,
+    val canonicalType: String,
+    val status: String,
+    val eta: String? = null,
+    val detail: String? = null,
+    val retention: List<PostApiPrivacyRequestsIdCancelResponseRetentionItem>? = null,
+    val result: GetOpenapiJsonResponse? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("id", JsonValue.Str(this@PostApiPrivacyRequestsIdCancelResponse.id))
+        put("type", JsonValue.Str(this@PostApiPrivacyRequestsIdCancelResponse.type))
+        put("canonicalType", JsonValue.Str(this@PostApiPrivacyRequestsIdCancelResponse.canonicalType))
+        put("status", JsonValue.Str(this@PostApiPrivacyRequestsIdCancelResponse.status))
+        if (this@PostApiPrivacyRequestsIdCancelResponse.eta != null) put("eta", (this@PostApiPrivacyRequestsIdCancelResponse.eta?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostApiPrivacyRequestsIdCancelResponse.detail != null) put("detail", (this@PostApiPrivacyRequestsIdCancelResponse.detail?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostApiPrivacyRequestsIdCancelResponse.retention != null) put("retention", (this@PostApiPrivacyRequestsIdCancelResponse.retention?.let { JsonValue.Arr(it.map { it.toJson() }) } ?: JsonValue.Null))
+        if (this@PostApiPrivacyRequestsIdCancelResponse.result != null) put("result", (this@PostApiPrivacyRequestsIdCancelResponse.result?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostApiPrivacyRequestsIdCancelResponse {
+            val o = json.obj()
+            return PostApiPrivacyRequestsIdCancelResponse(
+                id = o.field("id").string(),
+                type = o.field("type").string(),
+                canonicalType = o.field("canonicalType").string(),
+                status = o.field("status").string(),
+                eta = o["eta"]?.orNull()?.let { it.string() },
+                detail = o["detail"]?.orNull()?.let { it.string() },
+                retention = o["retention"]?.orNull()?.let { it.array().map { PostApiPrivacyRequestsIdCancelResponseRetentionItem.fromJson(it) } },
                 result = o["result"]?.orNull()?.let { it.obj().mapValues { it.value } },
             )
         }
@@ -20101,7 +25763,7 @@ data class GetApiPrivacyOrgsOrgIdRequestsIdResponse(
     val type: String,
     val status: String,
     val detail: String? = null,
-    val result: PostSupportCardsOrgIdAdapterResponse? = null,
+    val result: GetSupportPlatformChatlyAnswersResponse? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("id", JsonValue.Str(this@GetApiPrivacyOrgsOrgIdRequestsIdResponse.id))
@@ -20289,10 +25951,43 @@ data class PutOrgPortalAuthBodyOption2(
     }
 }
 
+data class PutOrgPortalAuthBodyOption3Claims(
+    val sub: String? = null,
+    val email: String? = null,
+    val name: String? = null,
+    val emailVerified: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PutOrgPortalAuthBodyOption3Claims.sub != null) put("sub", (this@PutOrgPortalAuthBodyOption3Claims.sub?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3Claims.email != null) put("email", (this@PutOrgPortalAuthBodyOption3Claims.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3Claims.name != null) put("name", (this@PutOrgPortalAuthBodyOption3Claims.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3Claims.emailVerified != null) put("emailVerified", (this@PutOrgPortalAuthBodyOption3Claims.emailVerified?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgPortalAuthBodyOption3Claims {
+            val o = json.obj()
+            return PutOrgPortalAuthBodyOption3Claims(
+                sub = o["sub"]?.orNull()?.let { it.string() },
+                email = o["email"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+                emailVerified = o["emailVerified"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
 data class PutOrgPortalAuthBodyOption3(
     val adapter: String,
-    val issuer: String,
-    val jwksUrl: String,
+    val preset: String? = null,
+    val tenant: String? = null,
+    val issuer: String? = null,
+    val jwksUrl: String? = null,
+    val keyType: String? = null,
+    val sharedSecret: String? = null,
+    val audience: String? = null,
+    val maxAgeS: Long? = null,
+    val claims: PutOrgPortalAuthBodyOption3Claims? = null,
     val trustEmailVerified: Boolean? = null,
     val autoEnrollProgramId: String? = null,
     val name: String? = null,
@@ -20300,8 +25995,15 @@ data class PutOrgPortalAuthBodyOption3(
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("adapter", JsonValue.Str(this@PutOrgPortalAuthBodyOption3.adapter))
-        put("issuer", JsonValue.Str(this@PutOrgPortalAuthBodyOption3.issuer))
-        put("jwksUrl", JsonValue.Str(this@PutOrgPortalAuthBodyOption3.jwksUrl))
+        if (this@PutOrgPortalAuthBodyOption3.preset != null) put("preset", (this@PutOrgPortalAuthBodyOption3.preset?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.tenant != null) put("tenant", (this@PutOrgPortalAuthBodyOption3.tenant?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.issuer != null) put("issuer", (this@PutOrgPortalAuthBodyOption3.issuer?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.jwksUrl != null) put("jwksUrl", (this@PutOrgPortalAuthBodyOption3.jwksUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.keyType != null) put("keyType", (this@PutOrgPortalAuthBodyOption3.keyType?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.sharedSecret != null) put("sharedSecret", (this@PutOrgPortalAuthBodyOption3.sharedSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.audience != null) put("audience", (this@PutOrgPortalAuthBodyOption3.audience?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.maxAgeS != null) put("maxAgeS", (this@PutOrgPortalAuthBodyOption3.maxAgeS?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption3.claims != null) put("claims", (this@PutOrgPortalAuthBodyOption3.claims?.let { it.toJson() } ?: JsonValue.Null))
         if (this@PutOrgPortalAuthBodyOption3.trustEmailVerified != null) put("trustEmailVerified", (this@PutOrgPortalAuthBodyOption3.trustEmailVerified?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PutOrgPortalAuthBodyOption3.autoEnrollProgramId != null) put("autoEnrollProgramId", (this@PutOrgPortalAuthBodyOption3.autoEnrollProgramId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PutOrgPortalAuthBodyOption3.name != null) put("name", (this@PutOrgPortalAuthBodyOption3.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -20313,12 +26015,54 @@ data class PutOrgPortalAuthBodyOption3(
             val o = json.obj()
             return PutOrgPortalAuthBodyOption3(
                 adapter = o.field("adapter").string(),
-                issuer = o.field("issuer").string(),
-                jwksUrl = o.field("jwksUrl").string(),
+                preset = o["preset"]?.orNull()?.let { it.string() },
+                tenant = o["tenant"]?.orNull()?.let { it.string() },
+                issuer = o["issuer"]?.orNull()?.let { it.string() },
+                jwksUrl = o["jwksUrl"]?.orNull()?.let { it.string() },
+                keyType = o["keyType"]?.orNull()?.let { it.string() },
+                sharedSecret = o["sharedSecret"]?.orNull()?.let { it.string() },
+                audience = o["audience"]?.orNull()?.let { it.string() },
+                maxAgeS = o["maxAgeS"]?.orNull()?.let { it.long() },
+                claims = o["claims"]?.orNull()?.let { PutOrgPortalAuthBodyOption3Claims.fromJson(it) },
                 trustEmailVerified = o["trustEmailVerified"]?.orNull()?.let { it.bool() },
                 autoEnrollProgramId = o["autoEnrollProgramId"]?.orNull()?.let { it.string() },
                 name = o["name"]?.orNull()?.let { it.string() },
                 loginUrl = o["loginUrl"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PutOrgPortalAuthBodyOption4(
+    val adapter: String,
+    val instanceId: String,
+    val trustEmailVerified: Boolean? = null,
+    val autoEnrollProgramId: String? = null,
+    val name: String? = null,
+    val loginUrl: String? = null,
+    val verifyErrorsSecret: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("adapter", JsonValue.Str(this@PutOrgPortalAuthBodyOption4.adapter))
+        put("instanceId", JsonValue.Str(this@PutOrgPortalAuthBodyOption4.instanceId))
+        if (this@PutOrgPortalAuthBodyOption4.trustEmailVerified != null) put("trustEmailVerified", (this@PutOrgPortalAuthBodyOption4.trustEmailVerified?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption4.autoEnrollProgramId != null) put("autoEnrollProgramId", (this@PutOrgPortalAuthBodyOption4.autoEnrollProgramId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption4.name != null) put("name", (this@PutOrgPortalAuthBodyOption4.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption4.loginUrl != null) put("loginUrl", (this@PutOrgPortalAuthBodyOption4.loginUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutOrgPortalAuthBodyOption4.verifyErrorsSecret != null) put("verifyErrorsSecret", (this@PutOrgPortalAuthBodyOption4.verifyErrorsSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgPortalAuthBodyOption4 {
+            val o = json.obj()
+            return PutOrgPortalAuthBodyOption4(
+                adapter = o.field("adapter").string(),
+                instanceId = o.field("instanceId").string(),
+                trustEmailVerified = o["trustEmailVerified"]?.orNull()?.let { it.bool() },
+                autoEnrollProgramId = o["autoEnrollProgramId"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+                loginUrl = o["loginUrl"]?.orNull()?.let { it.string() },
+                verifyErrorsSecret = o["verifyErrorsSecret"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -21244,6 +26988,191 @@ data class PatchProgramsIdBodyMobileAppOption1(
     }
 }
 
+data class PatchProgramsIdBodySettingsPublicPage(
+    val pitch: String? = null,
+    val autoApprove: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PatchProgramsIdBodySettingsPublicPage.pitch != null) put("pitch", (this@PatchProgramsIdBodySettingsPublicPage.pitch?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsPublicPage.autoApprove != null) put("autoApprove", (this@PatchProgramsIdBodySettingsPublicPage.autoApprove?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchProgramsIdBodySettingsPublicPage {
+            val o = json.obj()
+            return PatchProgramsIdBodySettingsPublicPage(
+                pitch = o["pitch"]?.orNull()?.let { it.string() },
+                autoApprove = o["autoApprove"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PatchProgramsIdBodySettingsRiskPolicy(
+    val holdBotScore: Double? = null,
+    val holdRiskScore: Double? = null,
+    val holdHighRiskLevel: Boolean? = null,
+    val holdDisposableEmail: Boolean? = null,
+    val holdVelocity: Long? = null,
+    val holdUnverifiedEmail: Boolean? = null,
+    val holdSelfReferral: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PatchProgramsIdBodySettingsRiskPolicy.holdBotScore != null) put("holdBotScore", (this@PatchProgramsIdBodySettingsRiskPolicy.holdBotScore?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsRiskPolicy.holdRiskScore != null) put("holdRiskScore", (this@PatchProgramsIdBodySettingsRiskPolicy.holdRiskScore?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsRiskPolicy.holdHighRiskLevel != null) put("holdHighRiskLevel", (this@PatchProgramsIdBodySettingsRiskPolicy.holdHighRiskLevel?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsRiskPolicy.holdDisposableEmail != null) put("holdDisposableEmail", (this@PatchProgramsIdBodySettingsRiskPolicy.holdDisposableEmail?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsRiskPolicy.holdVelocity != null) put("holdVelocity", (this@PatchProgramsIdBodySettingsRiskPolicy.holdVelocity?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsRiskPolicy.holdUnverifiedEmail != null) put("holdUnverifiedEmail", (this@PatchProgramsIdBodySettingsRiskPolicy.holdUnverifiedEmail?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsRiskPolicy.holdSelfReferral != null) put("holdSelfReferral", (this@PatchProgramsIdBodySettingsRiskPolicy.holdSelfReferral?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchProgramsIdBodySettingsRiskPolicy {
+            val o = json.obj()
+            return PatchProgramsIdBodySettingsRiskPolicy(
+                holdBotScore = o["holdBotScore"]?.orNull()?.let { it.double() },
+                holdRiskScore = o["holdRiskScore"]?.orNull()?.let { it.double() },
+                holdHighRiskLevel = o["holdHighRiskLevel"]?.orNull()?.let { it.bool() },
+                holdDisposableEmail = o["holdDisposableEmail"]?.orNull()?.let { it.bool() },
+                holdVelocity = o["holdVelocity"]?.orNull()?.let { it.long() },
+                holdUnverifiedEmail = o["holdUnverifiedEmail"]?.orNull()?.let { it.bool() },
+                holdSelfReferral = o["holdSelfReferral"]?.orNull()?.let { it.bool() },
+            )
+        }
+    }
+}
+
+data class PatchProgramsIdBodySettingsWidget(
+    val autoEnroll: Boolean? = null,
+    val destinationUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PatchProgramsIdBodySettingsWidget.autoEnroll != null) put("autoEnroll", (this@PatchProgramsIdBodySettingsWidget.autoEnroll?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsWidget.destinationUrl != null) put("destinationUrl", (this@PatchProgramsIdBodySettingsWidget.destinationUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchProgramsIdBodySettingsWidget {
+            val o = json.obj()
+            return PatchProgramsIdBodySettingsWidget(
+                autoEnroll = o["autoEnroll"]?.orNull()?.let { it.bool() },
+                destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PatchProgramsIdBodySettingsMobileAppOption1IosOption1(
+    val teamId: String,
+    val bundleId: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("teamId", JsonValue.Str(this@PatchProgramsIdBodySettingsMobileAppOption1IosOption1.teamId))
+        put("bundleId", JsonValue.Str(this@PatchProgramsIdBodySettingsMobileAppOption1IosOption1.bundleId))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchProgramsIdBodySettingsMobileAppOption1IosOption1 {
+            val o = json.obj()
+            return PatchProgramsIdBodySettingsMobileAppOption1IosOption1(
+                teamId = o.field("teamId").string(),
+                bundleId = o.field("bundleId").string(),
+            )
+        }
+    }
+}
+
+data class PatchProgramsIdBodySettingsMobileAppOption1AndroidOption1(
+    val packageName: String,
+    val sha256CertFingerprints: List<String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("packageName", JsonValue.Str(this@PatchProgramsIdBodySettingsMobileAppOption1AndroidOption1.packageName))
+        put("sha256CertFingerprints", JsonValue.Arr(this@PatchProgramsIdBodySettingsMobileAppOption1AndroidOption1.sha256CertFingerprints.map { JsonValue.Str(it) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchProgramsIdBodySettingsMobileAppOption1AndroidOption1 {
+            val o = json.obj()
+            return PatchProgramsIdBodySettingsMobileAppOption1AndroidOption1(
+                packageName = o.field("packageName").string(),
+                sha256CertFingerprints = o.field("sha256CertFingerprints").array().map { it.string() },
+            )
+        }
+    }
+}
+
+data class PatchProgramsIdBodySettingsMobileAppOption1(
+    val ios: PatchProgramsIdBodySettingsMobileAppOption1IosOption1? = null,
+    val android: PatchProgramsIdBodySettingsMobileAppOption1AndroidOption1? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PatchProgramsIdBodySettingsMobileAppOption1.ios != null) put("ios", (this@PatchProgramsIdBodySettingsMobileAppOption1.ios?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettingsMobileAppOption1.android != null) put("android", (this@PatchProgramsIdBodySettingsMobileAppOption1.android?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchProgramsIdBodySettingsMobileAppOption1 {
+            val o = json.obj()
+            return PatchProgramsIdBodySettingsMobileAppOption1(
+                ios = o["ios"]?.orNull()?.let { PatchProgramsIdBodySettingsMobileAppOption1IosOption1.fromJson(it) },
+                android = o["android"]?.orNull()?.let { PatchProgramsIdBodySettingsMobileAppOption1AndroidOption1.fromJson(it) },
+            )
+        }
+    }
+}
+
+data class PatchProgramsIdBodySettings(
+    val publicHandle: String? = null,
+    val publicPage: PatchProgramsIdBodySettingsPublicPage? = null,
+    val probabilisticPolicy: String? = null,
+    val selfReferralPolicy: String? = null,
+    val splitCommissions: Boolean? = null,
+    val utmTemplate: Map<String, String>? = null,
+    val allowPaidSearch: Boolean? = null,
+    val challengeLinks: Boolean? = null,
+    val settlement: String? = null,
+    val riskPolicy: PatchProgramsIdBodySettingsRiskPolicy? = null,
+    val widget: PatchProgramsIdBodySettingsWidget? = null,
+    val mobileApp: PatchProgramsIdBodySettingsMobileAppOption1? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PatchProgramsIdBodySettings.publicHandle != null) put("publicHandle", (this@PatchProgramsIdBodySettings.publicHandle?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.publicPage != null) put("publicPage", (this@PatchProgramsIdBodySettings.publicPage?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.probabilisticPolicy != null) put("probabilisticPolicy", (this@PatchProgramsIdBodySettings.probabilisticPolicy?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.selfReferralPolicy != null) put("selfReferralPolicy", (this@PatchProgramsIdBodySettings.selfReferralPolicy?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.splitCommissions != null) put("splitCommissions", (this@PatchProgramsIdBodySettings.splitCommissions?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.utmTemplate != null) put("utmTemplate", (this@PatchProgramsIdBodySettings.utmTemplate?.let { JsonValue.Obj(it.mapValues { JsonValue.Str(it.value) }) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.allowPaidSearch != null) put("allowPaidSearch", (this@PatchProgramsIdBodySettings.allowPaidSearch?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.challengeLinks != null) put("challengeLinks", (this@PatchProgramsIdBodySettings.challengeLinks?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.settlement != null) put("settlement", (this@PatchProgramsIdBodySettings.settlement?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.riskPolicy != null) put("riskPolicy", (this@PatchProgramsIdBodySettings.riskPolicy?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.widget != null) put("widget", (this@PatchProgramsIdBodySettings.widget?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBodySettings.mobileApp != null) put("mobileApp", (this@PatchProgramsIdBodySettings.mobileApp?.let { it.toJson() } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PatchProgramsIdBodySettings {
+            val o = json.obj()
+            return PatchProgramsIdBodySettings(
+                publicHandle = o["publicHandle"]?.orNull()?.let { it.string() },
+                publicPage = o["publicPage"]?.orNull()?.let { PatchProgramsIdBodySettingsPublicPage.fromJson(it) },
+                probabilisticPolicy = o["probabilisticPolicy"]?.orNull()?.let { it.string() },
+                selfReferralPolicy = o["selfReferralPolicy"]?.orNull()?.let { it.string() },
+                splitCommissions = o["splitCommissions"]?.orNull()?.let { it.bool() },
+                utmTemplate = o["utmTemplate"]?.orNull()?.let { it.obj().mapValues { it.value.string() } },
+                allowPaidSearch = o["allowPaidSearch"]?.orNull()?.let { it.bool() },
+                challengeLinks = o["challengeLinks"]?.orNull()?.let { it.bool() },
+                settlement = o["settlement"]?.orNull()?.let { it.string() },
+                riskPolicy = o["riskPolicy"]?.orNull()?.let { PatchProgramsIdBodySettingsRiskPolicy.fromJson(it) },
+                widget = o["widget"]?.orNull()?.let { PatchProgramsIdBodySettingsWidget.fromJson(it) },
+                mobileApp = o["mobileApp"]?.orNull()?.let { PatchProgramsIdBodySettingsMobileAppOption1.fromJson(it) },
+            )
+        }
+    }
+}
+
 data class PatchProgramsIdBody(
     val name: String? = null,
     val slug: String? = null,
@@ -21264,6 +27193,8 @@ data class PatchProgramsIdBody(
     val riskPolicy: PatchProgramsIdBodyRiskPolicy? = null,
     val widget: PatchProgramsIdBodyWidget? = null,
     val mobileApp: PatchProgramsIdBodyMobileAppOption1? = null,
+    val settings: PatchProgramsIdBodySettings? = null,
+    val destinationUrl: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PatchProgramsIdBody.name != null) put("name", (this@PatchProgramsIdBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -21285,6 +27216,8 @@ data class PatchProgramsIdBody(
         if (this@PatchProgramsIdBody.riskPolicy != null) put("riskPolicy", (this@PatchProgramsIdBody.riskPolicy?.let { it.toJson() } ?: JsonValue.Null))
         if (this@PatchProgramsIdBody.widget != null) put("widget", (this@PatchProgramsIdBody.widget?.let { it.toJson() } ?: JsonValue.Null))
         if (this@PatchProgramsIdBody.mobileApp != null) put("mobileApp", (this@PatchProgramsIdBody.mobileApp?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBody.settings != null) put("settings", (this@PatchProgramsIdBody.settings?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PatchProgramsIdBody.destinationUrl != null) put("destinationUrl", (this@PatchProgramsIdBody.destinationUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -21310,6 +27243,34 @@ data class PatchProgramsIdBody(
                 riskPolicy = o["riskPolicy"]?.orNull()?.let { PatchProgramsIdBodyRiskPolicy.fromJson(it) },
                 widget = o["widget"]?.orNull()?.let { PatchProgramsIdBodyWidget.fromJson(it) },
                 mobileApp = o["mobileApp"]?.orNull()?.let { PatchProgramsIdBodyMobileAppOption1.fromJson(it) },
+                settings = o["settings"]?.orNull()?.let { PatchProgramsIdBodySettings.fromJson(it) },
+                destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostProgramsIdReferrersBody(
+    val externalRef: String,
+    val email: String? = null,
+    val name: String? = null,
+    val code: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("externalRef", JsonValue.Str(this@PostProgramsIdReferrersBody.externalRef))
+        if (this@PostProgramsIdReferrersBody.email != null) put("email", (this@PostProgramsIdReferrersBody.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostProgramsIdReferrersBody.name != null) put("name", (this@PostProgramsIdReferrersBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostProgramsIdReferrersBody.code != null) put("code", (this@PostProgramsIdReferrersBody.code?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostProgramsIdReferrersBody {
+            val o = json.obj()
+            return PostProgramsIdReferrersBody(
+                externalRef = o.field("externalRef").string(),
+                email = o["email"]?.orNull()?.let { it.string() },
+                name = o["name"]?.orNull()?.let { it.string() },
+                code = o["code"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -21317,9 +27278,11 @@ data class PatchProgramsIdBody(
 
 data class PostProgramsIdEnrollmentsBody(
     val partnerId: String,
+    val externalRef: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("partnerId", JsonValue.Str(this@PostProgramsIdEnrollmentsBody.partnerId))
+        if (this@PostProgramsIdEnrollmentsBody.externalRef != null) put("externalRef", (this@PostProgramsIdEnrollmentsBody.externalRef?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -21327,6 +27290,7 @@ data class PostProgramsIdEnrollmentsBody(
             val o = json.obj()
             return PostProgramsIdEnrollmentsBody(
                 partnerId = o.field("partnerId").string(),
+                externalRef = o["externalRef"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -21402,6 +27366,7 @@ data class PostApiKeysBody(
     val mode: String? = null,
     val owner: String? = null,
     val expiresInDays: Long? = null,
+    val programIds: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("name", JsonValue.Str(this@PostApiKeysBody.name))
@@ -21412,6 +27377,7 @@ data class PostApiKeysBody(
         if (this@PostApiKeysBody.mode != null) put("mode", (this@PostApiKeysBody.mode?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostApiKeysBody.owner != null) put("owner", (this@PostApiKeysBody.owner?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostApiKeysBody.expiresInDays != null) put("expiresInDays", (this@PostApiKeysBody.expiresInDays?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PostApiKeysBody.programIds != null) put("programIds", (this@PostApiKeysBody.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -21426,6 +27392,7 @@ data class PostApiKeysBody(
                 mode = o["mode"]?.orNull()?.let { it.string() },
                 owner = o["owner"]?.orNull()?.let { it.string() },
                 expiresInDays = o["expiresInDays"]?.orNull()?.let { it.long() },
+                programIds = o["programIds"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -21435,11 +27402,13 @@ data class PatchApiKeysIdBody(
     val apiVersion: String? = null,
     val owner: String? = null,
     val expiresInDays: Long? = null,
+    val programIds: List<String>? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PatchApiKeysIdBody.apiVersion != null) put("apiVersion", (this@PatchApiKeysIdBody.apiVersion?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchApiKeysIdBody.owner != null) put("owner", (this@PatchApiKeysIdBody.owner?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchApiKeysIdBody.expiresInDays != null) put("expiresInDays", (this@PatchApiKeysIdBody.expiresInDays?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+        if (this@PatchApiKeysIdBody.programIds != null) put("programIds", (this@PatchApiKeysIdBody.programIds?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -21449,6 +27418,7 @@ data class PatchApiKeysIdBody(
                 apiVersion = o["apiVersion"]?.orNull()?.let { it.string() },
                 owner = o["owner"]?.orNull()?.let { it.string() },
                 expiresInDays = o["expiresInDays"]?.orNull()?.let { it.long() },
+                programIds = o["programIds"]?.orNull()?.let { it.array().map { it.string() } },
             )
         }
     }
@@ -22375,12 +28345,14 @@ data class PostBillingConnectionsBody(
     val name: String? = null,
     val webhookSecret: String? = null,
     val filter: PostBillingConnectionsBodyFilter? = null,
+    val customerRefMetadataKey: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("provider", JsonValue.Str(this@PostBillingConnectionsBody.provider))
         if (this@PostBillingConnectionsBody.name != null) put("name", (this@PostBillingConnectionsBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostBillingConnectionsBody.webhookSecret != null) put("webhookSecret", (this@PostBillingConnectionsBody.webhookSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostBillingConnectionsBody.filter != null) put("filter", (this@PostBillingConnectionsBody.filter?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PostBillingConnectionsBody.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@PostBillingConnectionsBody.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -22391,6 +28363,7 @@ data class PostBillingConnectionsBody(
                 name = o["name"]?.orNull()?.let { it.string() },
                 webhookSecret = o["webhookSecret"]?.orNull()?.let { it.string() },
                 filter = o["filter"]?.orNull()?.let { PostBillingConnectionsBodyFilter.fromJson(it) },
+                customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -22469,11 +28442,13 @@ data class PatchBillingConnectionsIdBody(
     val status: String? = null,
     val name: String? = null,
     val filter: PatchBillingConnectionsIdBodyFilterOption1? = null,
+    val customerRefMetadataKey: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         if (this@PatchBillingConnectionsIdBody.status != null) put("status", (this@PatchBillingConnectionsIdBody.status?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchBillingConnectionsIdBody.name != null) put("name", (this@PatchBillingConnectionsIdBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PatchBillingConnectionsIdBody.filter != null) put("filter", (this@PatchBillingConnectionsIdBody.filter?.let { it.toJson() } ?: JsonValue.Null))
+        if (this@PatchBillingConnectionsIdBody.customerRefMetadataKey != null) put("customerRefMetadataKey", (this@PatchBillingConnectionsIdBody.customerRefMetadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -22483,6 +28458,7 @@ data class PatchBillingConnectionsIdBody(
                 status = o["status"]?.orNull()?.let { it.string() },
                 name = o["name"]?.orNull()?.let { it.string() },
                 filter = o["filter"]?.orNull()?.let { PatchBillingConnectionsIdBodyFilterOption1.fromJson(it) },
+                customerRefMetadataKey = o["customerRefMetadataKey"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -23248,6 +29224,49 @@ data class PostPartnerOrgsOrgIdTaxFormBody(
             return PostPartnerOrgsOrgIdTaxFormBody(
                 type = o.field("type").string(),
                 data = o.field("data"),
+            )
+        }
+    }
+}
+
+data class PostPartnerApiTokensBody(
+    val name: String,
+    val scopes: List<String>? = null,
+    val expiresInDays: Long? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("name", JsonValue.Str(this@PostPartnerApiTokensBody.name))
+        if (this@PostPartnerApiTokensBody.scopes != null) put("scopes", (this@PostPartnerApiTokensBody.scopes?.let { JsonValue.Arr(it.map { JsonValue.Str(it) }) } ?: JsonValue.Null))
+        if (this@PostPartnerApiTokensBody.expiresInDays != null) put("expiresInDays", (this@PostPartnerApiTokensBody.expiresInDays?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPartnerApiTokensBody {
+            val o = json.obj()
+            return PostPartnerApiTokensBody(
+                name = o.field("name").string(),
+                scopes = o["scopes"]?.orNull()?.let { it.array().map { it.string() } },
+                expiresInDays = o["expiresInDays"]?.orNull()?.let { it.long() },
+            )
+        }
+    }
+}
+
+data class PostPartnersIdPortalLinkBody(
+    val programId: String,
+    val returnUrl: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("programId", JsonValue.Str(this@PostPartnersIdPortalLinkBody.programId))
+        if (this@PostPartnersIdPortalLinkBody.returnUrl != null) put("returnUrl", (this@PostPartnersIdPortalLinkBody.returnUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPartnersIdPortalLinkBody {
+            val o = json.obj()
+            return PostPartnersIdPortalLinkBody(
+                programId = o.field("programId").string(),
+                returnUrl = o["returnUrl"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -25048,6 +31067,7 @@ data class PostAuthConnectionsBody(
     val provider: String,
     val programId: String,
     val instanceId: String? = null,
+    val appId: String? = null,
     val autoEnrollUsers: Boolean? = null,
     val destinationUrl: String? = null,
     val name: String? = null,
@@ -25058,6 +31078,7 @@ data class PostAuthConnectionsBody(
         put("provider", JsonValue.Str(this@PostAuthConnectionsBody.provider))
         put("programId", JsonValue.Str(this@PostAuthConnectionsBody.programId))
         if (this@PostAuthConnectionsBody.instanceId != null) put("instanceId", (this@PostAuthConnectionsBody.instanceId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsBody.appId != null) put("appId", (this@PostAuthConnectionsBody.appId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsBody.autoEnrollUsers != null) put("autoEnrollUsers", (this@PostAuthConnectionsBody.autoEnrollUsers?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsBody.destinationUrl != null) put("destinationUrl", (this@PostAuthConnectionsBody.destinationUrl?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsBody.name != null) put("name", (this@PostAuthConnectionsBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
@@ -25072,6 +31093,7 @@ data class PostAuthConnectionsBody(
                 provider = o.field("provider").string(),
                 programId = o.field("programId").string(),
                 instanceId = o["instanceId"]?.orNull()?.let { it.string() },
+                appId = o["appId"]?.orNull()?.let { it.string() },
                 autoEnrollUsers = o["autoEnrollUsers"]?.orNull()?.let { it.bool() },
                 destinationUrl = o["destinationUrl"]?.orNull()?.let { it.string() },
                 name = o["name"]?.orNull()?.let { it.string() },
@@ -25253,13 +31275,15 @@ data class PostAuthConnectionsIdSignupsBody(
 
 data class PostAuthConnectionsIdPartnersBody(
     val customerRef: String,
-    val email: String,
+    val email: String? = null,
+    val emailHash: String? = null,
     val name: String? = null,
     val code: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("customerRef", JsonValue.Str(this@PostAuthConnectionsIdPartnersBody.customerRef))
-        put("email", JsonValue.Str(this@PostAuthConnectionsIdPartnersBody.email))
+        if (this@PostAuthConnectionsIdPartnersBody.email != null) put("email", (this@PostAuthConnectionsIdPartnersBody.email?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostAuthConnectionsIdPartnersBody.emailHash != null) put("emailHash", (this@PostAuthConnectionsIdPartnersBody.emailHash?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsIdPartnersBody.name != null) put("name", (this@PostAuthConnectionsIdPartnersBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
         if (this@PostAuthConnectionsIdPartnersBody.code != null) put("code", (this@PostAuthConnectionsIdPartnersBody.code?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
@@ -25269,7 +31293,8 @@ data class PostAuthConnectionsIdPartnersBody(
             val o = json.obj()
             return PostAuthConnectionsIdPartnersBody(
                 customerRef = o.field("customerRef").string(),
-                email = o.field("email").string(),
+                email = o["email"]?.orNull()?.let { it.string() },
+                emailHash = o["emailHash"]?.orNull()?.let { it.string() },
                 name = o["name"]?.orNull()?.let { it.string() },
                 code = o["code"]?.orNull()?.let { it.string() },
             )
@@ -25404,7 +31429,7 @@ data class PostAuthConnectionsInstallBody(
     }
 }
 
-data class PostOauthTokenBody(
+data class PostOauthTokenBodyOption1(
     val grantType: String,
     val code: String,
     val codeVerifier: String,
@@ -25412,22 +31437,109 @@ data class PostOauthTokenBody(
     val redirectUri: String,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
-        put("grant_type", JsonValue.Str(this@PostOauthTokenBody.grantType))
-        put("code", JsonValue.Str(this@PostOauthTokenBody.code))
-        put("code_verifier", JsonValue.Str(this@PostOauthTokenBody.codeVerifier))
-        put("client_id", JsonValue.Str(this@PostOauthTokenBody.clientId))
-        put("redirect_uri", JsonValue.Str(this@PostOauthTokenBody.redirectUri))
+        put("grant_type", JsonValue.Str(this@PostOauthTokenBodyOption1.grantType))
+        put("code", JsonValue.Str(this@PostOauthTokenBodyOption1.code))
+        put("code_verifier", JsonValue.Str(this@PostOauthTokenBodyOption1.codeVerifier))
+        put("client_id", JsonValue.Str(this@PostOauthTokenBodyOption1.clientId))
+        put("redirect_uri", JsonValue.Str(this@PostOauthTokenBodyOption1.redirectUri))
     })
 
     companion object {
-        fun fromJson(json: JsonValue): PostOauthTokenBody {
+        fun fromJson(json: JsonValue): PostOauthTokenBodyOption1 {
             val o = json.obj()
-            return PostOauthTokenBody(
+            return PostOauthTokenBodyOption1(
                 grantType = o.field("grant_type").string(),
                 code = o.field("code").string(),
                 codeVerifier = o.field("code_verifier").string(),
                 clientId = o.field("client_id").string(),
                 redirectUri = o.field("redirect_uri").string(),
+            )
+        }
+    }
+}
+
+data class PostOauthTokenBodyOption2(
+    val grantType: String,
+    val clientId: String? = null,
+    val clientSecret: String? = null,
+    val scope: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("grant_type", JsonValue.Str(this@PostOauthTokenBodyOption2.grantType))
+        if (this@PostOauthTokenBodyOption2.clientId != null) put("client_id", (this@PostOauthTokenBodyOption2.clientId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOauthTokenBodyOption2.clientSecret != null) put("client_secret", (this@PostOauthTokenBodyOption2.clientSecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOauthTokenBodyOption2.scope != null) put("scope", (this@PostOauthTokenBodyOption2.scope?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOauthTokenBodyOption2 {
+            val o = json.obj()
+            return PostOauthTokenBodyOption2(
+                grantType = o.field("grant_type").string(),
+                clientId = o["client_id"]?.orNull()?.let { it.string() },
+                clientSecret = o["client_secret"]?.orNull()?.let { it.string() },
+                scope = o["scope"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostOauthTokenBodyOption3(
+    val grantType: String,
+    val subjectToken: String,
+    val subjectTokenType: String,
+    val requestedTokenType: String? = null,
+    val audience: String? = null,
+    val resource: String,
+    val scope: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("grant_type", JsonValue.Str(this@PostOauthTokenBodyOption3.grantType))
+        put("subject_token", JsonValue.Str(this@PostOauthTokenBodyOption3.subjectToken))
+        put("subject_token_type", JsonValue.Str(this@PostOauthTokenBodyOption3.subjectTokenType))
+        if (this@PostOauthTokenBodyOption3.requestedTokenType != null) put("requested_token_type", (this@PostOauthTokenBodyOption3.requestedTokenType?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOauthTokenBodyOption3.audience != null) put("audience", (this@PostOauthTokenBodyOption3.audience?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("resource", JsonValue.Str(this@PostOauthTokenBodyOption3.resource))
+        if (this@PostOauthTokenBodyOption3.scope != null) put("scope", (this@PostOauthTokenBodyOption3.scope?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOauthTokenBodyOption3 {
+            val o = json.obj()
+            return PostOauthTokenBodyOption3(
+                grantType = o.field("grant_type").string(),
+                subjectToken = o.field("subject_token").string(),
+                subjectTokenType = o.field("subject_token_type").string(),
+                requestedTokenType = o["requested_token_type"]?.orNull()?.let { it.string() },
+                audience = o["audience"]?.orNull()?.let { it.string() },
+                resource = o.field("resource").string(),
+                scope = o["scope"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostProductLinksBody(
+    val partner: String,
+    val name: String? = null,
+    val scopes: List<String>,
+    val expiresAt: JsonValue? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("partner", JsonValue.Str(this@PostProductLinksBody.partner))
+        if (this@PostProductLinksBody.name != null) put("name", (this@PostProductLinksBody.name?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        put("scopes", JsonValue.Arr(this@PostProductLinksBody.scopes.map { JsonValue.Str(it) }))
+        if (this@PostProductLinksBody.expiresAt != null) put("expires_at", (this@PostProductLinksBody.expiresAt?.let { it } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostProductLinksBody {
+            val o = json.obj()
+            return PostProductLinksBody(
+                partner = o.field("partner").string(),
+                name = o["name"]?.orNull()?.let { it.string() },
+                scopes = o.field("scopes").array().map { it.string() },
+                expiresAt = o["expires_at"]?.orNull()?.let { it },
             )
         }
     }
@@ -25814,6 +31926,78 @@ data class PutOrgTrackingConsentBody(
     }
 }
 
+data class PutOrgConsentPartnersCookiemunchBody(
+    val sites: List<String>,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("sites", JsonValue.Arr(this@PutOrgConsentPartnersCookiemunchBody.sites.map { JsonValue.Str(it) }))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutOrgConsentPartnersCookiemunchBody {
+            val o = json.obj()
+            return PutOrgConsentPartnersCookiemunchBody(
+                sites = o.field("sites").array().map { it.string() },
+            )
+        }
+    }
+}
+
+data class PostOrgConsentPartnersCookiemunchStampsCheckBody(
+    val stamp: String,
+    val cbid: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("stamp", JsonValue.Str(this@PostOrgConsentPartnersCookiemunchStampsCheckBody.stamp))
+        if (this@PostOrgConsentPartnersCookiemunchStampsCheckBody.cbid != null) put("cbid", (this@PostOrgConsentPartnersCookiemunchStampsCheckBody.cbid?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOrgConsentPartnersCookiemunchStampsCheckBody {
+            val o = json.obj()
+            return PostOrgConsentPartnersCookiemunchStampsCheckBody(
+                stamp = o.field("stamp").string(),
+                cbid = o["cbid"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostOrgsOrgIdPrivacyExecutorKeyBody(
+    val cbid: String? = null,
+    val linkId: String? = null,
+    val partner: String? = null,
+    val externalId: String? = null,
+    val orgId: String? = null,
+    val nonce: String? = null,
+    val iat: Long? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostOrgsOrgIdPrivacyExecutorKeyBody.cbid != null) put("cbid", (this@PostOrgsOrgIdPrivacyExecutorKeyBody.cbid?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOrgsOrgIdPrivacyExecutorKeyBody.linkId != null) put("linkId", (this@PostOrgsOrgIdPrivacyExecutorKeyBody.linkId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOrgsOrgIdPrivacyExecutorKeyBody.partner != null) put("partner", (this@PostOrgsOrgIdPrivacyExecutorKeyBody.partner?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOrgsOrgIdPrivacyExecutorKeyBody.externalId != null) put("externalId", (this@PostOrgsOrgIdPrivacyExecutorKeyBody.externalId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOrgsOrgIdPrivacyExecutorKeyBody.orgId != null) put("orgId", (this@PostOrgsOrgIdPrivacyExecutorKeyBody.orgId?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOrgsOrgIdPrivacyExecutorKeyBody.nonce != null) put("nonce", (this@PostOrgsOrgIdPrivacyExecutorKeyBody.nonce?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PostOrgsOrgIdPrivacyExecutorKeyBody.iat != null) put("iat", (this@PostOrgsOrgIdPrivacyExecutorKeyBody.iat?.let { JsonValue.Num(it.toDouble()) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostOrgsOrgIdPrivacyExecutorKeyBody {
+            val o = json.obj()
+            return PostOrgsOrgIdPrivacyExecutorKeyBody(
+                cbid = o["cbid"]?.orNull()?.let { it.string() },
+                linkId = o["linkId"]?.orNull()?.let { it.string() },
+                partner = o["partner"]?.orNull()?.let { it.string() },
+                externalId = o["externalId"]?.orNull()?.let { it.string() },
+                orgId = o["orgId"]?.orNull()?.let { it.string() },
+                nonce = o["nonce"]?.orNull()?.let { it.string() },
+                iat = o["iat"]?.orNull()?.let { it.long() },
+            )
+        }
+    }
+}
+
 data class PutOrgHostedPagesBodyConsent(
     val adapter: String,
     val config: Map<String, JsonValue>? = null,
@@ -25837,10 +32021,12 @@ data class PutOrgHostedPagesBodyConsent(
 data class PutOrgHostedPagesBodyChatOption1(
     val adapter: String,
     val config: Map<String, JsonValue>? = null,
+    val identitySecret: String? = null,
 ) {
     fun toJson(): JsonValue = JsonValue.Obj(buildMap {
         put("adapter", JsonValue.Str(this@PutOrgHostedPagesBodyChatOption1.adapter))
         if (this@PutOrgHostedPagesBodyChatOption1.config != null) put("config", (this@PutOrgHostedPagesBodyChatOption1.config?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+        if (this@PutOrgHostedPagesBodyChatOption1.identitySecret != null) put("identitySecret", (this@PutOrgHostedPagesBodyChatOption1.identitySecret?.let { JsonValue.Str(it) } ?: JsonValue.Null))
     })
 
     companion object {
@@ -25849,6 +32035,7 @@ data class PutOrgHostedPagesBodyChatOption1(
             return PutOrgHostedPagesBodyChatOption1(
                 adapter = o.field("adapter").string(),
                 config = o["config"]?.orNull()?.let { it.obj().mapValues { it.value } },
+                identitySecret = o["identitySecret"]?.orNull()?.let { it.string() },
             )
         }
     }
@@ -25872,6 +32059,86 @@ data class PutOrgHostedPagesBody(
                 consent = PutOrgHostedPagesBodyConsent.fromJson(o.field("consent")),
                 chat = o["chat"]?.orNull()?.let { PutOrgHostedPagesBodyChatOption1.fromJson(it) },
                 customOrigins = o["customOrigins"]?.orNull()?.let { it.obj().mapValues { it.value.array().map { it.string() } } },
+            )
+        }
+    }
+}
+
+data class PostPortalThemePublishBody(
+    val note: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemePublishBody.note != null) put("note", (this@PostPortalThemePublishBody.note?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemePublishBody {
+            val o = json.obj()
+            return PostPortalThemePublishBody(
+                note = o["note"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PostPortalThemeImportBrandBody(
+    val document: Map<String, JsonValue>? = null,
+    val url: String? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        if (this@PostPortalThemeImportBrandBody.document != null) put("document", (this@PostPortalThemeImportBrandBody.document?.let { JsonValue.Obj(it.mapValues { it.value }) } ?: JsonValue.Null))
+        if (this@PostPortalThemeImportBrandBody.url != null) put("url", (this@PostPortalThemeImportBrandBody.url?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PostPortalThemeImportBrandBody {
+            val o = json.obj()
+            return PostPortalThemeImportBrandBody(
+                document = o["document"]?.orNull()?.let { it.obj().mapValues { it.value } },
+                url = o["url"]?.orNull()?.let { it.string() },
+            )
+        }
+    }
+}
+
+data class PutStripeCreditsConnectionBody(
+    val secretKey: String,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("secretKey", JsonValue.Str(this@PutStripeCreditsConnectionBody.secretKey))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutStripeCreditsConnectionBody {
+            val o = json.obj()
+            return PutStripeCreditsConnectionBody(
+                secretKey = o.field("secretKey").string(),
+            )
+        }
+    }
+}
+
+data class PutProgramsIdStripeCreditsBody(
+    val enabled: Boolean,
+    val referrerMatch: String? = null,
+    val metadataKey: String? = null,
+    val refereeRewards: Boolean? = null,
+) {
+    fun toJson(): JsonValue = JsonValue.Obj(buildMap {
+        put("enabled", JsonValue.Bool(this@PutProgramsIdStripeCreditsBody.enabled))
+        if (this@PutProgramsIdStripeCreditsBody.referrerMatch != null) put("referrerMatch", (this@PutProgramsIdStripeCreditsBody.referrerMatch?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutProgramsIdStripeCreditsBody.metadataKey != null) put("metadataKey", (this@PutProgramsIdStripeCreditsBody.metadataKey?.let { JsonValue.Str(it) } ?: JsonValue.Null))
+        if (this@PutProgramsIdStripeCreditsBody.refereeRewards != null) put("refereeRewards", (this@PutProgramsIdStripeCreditsBody.refereeRewards?.let { JsonValue.Bool(it) } ?: JsonValue.Null))
+    })
+
+    companion object {
+        fun fromJson(json: JsonValue): PutProgramsIdStripeCreditsBody {
+            val o = json.obj()
+            return PutProgramsIdStripeCreditsBody(
+                enabled = o.field("enabled").bool(),
+                referrerMatch = o["referrerMatch"]?.orNull()?.let { it.string() },
+                metadataKey = o["metadataKey"]?.orNull()?.let { it.string() },
+                refereeRewards = o["refereeRewards"]?.orNull()?.let { it.bool() },
             )
         }
     }
