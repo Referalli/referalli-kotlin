@@ -5,6 +5,8 @@ package com.referalli
 
 /** Every webhook topic the API publishes. */
 object WebhookTopic {
+    /** `api_key.expiring`: An API key expires soon */
+    const val API_KEY_EXPIRING = "api_key.expiring"
     /** `billing_event.recorded`: A billing event was recorded */
     const val BILLING_EVENT_RECORDED = "billing_event.recorded"
     /** `click.recorded`: A tracked click was recorded */
@@ -25,6 +27,8 @@ object WebhookTopic {
     const val DISPUTE_RESOLVED = "dispute.resolved"
     /** `fraud.case_opened`: A fraud case was opened */
     const val FRAUD_CASE_OPENED = "fraud.case_opened"
+    /** `fx.rates_updated`: The org's FX rates changed */
+    const val FX_RATES_UPDATED = "fx.rates_updated"
     /** `partner.applied`: A partner applied to a program */
     const val PARTNER_APPLIED = "partner.applied"
     /** `partner.approved`: A partner was approved */
@@ -81,11 +85,13 @@ object WebhookTopic {
     const val WEBHOOK_ENDPOINT_RECOVERED = "webhook_endpoint.recovered"
 
     /** Every topic. */
-    val ALL: List<String> = listOf("billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "stripe_credit.applied", "stripe_credit.failed", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
+    val ALL: List<String> = listOf("api_key.expiring", "billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "fx.rates_updated", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "stripe_credit.applied", "stripe_credit.failed", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
 }
 
 /** A webhook event's payload, typed by topic. [Unknown] is a topic this SDK predates. */
 sealed class WebhookPayload {
+    /** `api_key.expiring` */
+    data class ApiKeyExpiring(val data: ApiKeyExpiringEventData) : WebhookPayload()
     /** `billing_event.recorded` */
     data class BillingEventRecorded(val data: BillingEventRecordedEventData) : WebhookPayload()
     /** `click.recorded` */
@@ -106,6 +112,8 @@ sealed class WebhookPayload {
     data class DisputeResolved(val data: DisputeResolvedEventData) : WebhookPayload()
     /** `fraud.case_opened` */
     data class FraudCaseOpened(val data: FraudCaseOpenedEventData) : WebhookPayload()
+    /** `fx.rates_updated` */
+    data class FxRatesUpdated(val data: FxRatesUpdatedEventData) : WebhookPayload()
     /** `partner.applied` */
     data class PartnerApplied(val data: PartnerAppliedEventData) : WebhookPayload()
     /** `partner.approved` */
@@ -165,6 +173,7 @@ sealed class WebhookPayload {
     companion object {
         fun decode(topic: String, data: JsonValue): WebhookPayload =
             when (topic) {
+                "api_key.expiring" -> ApiKeyExpiring(ApiKeyExpiringEventData.fromJson(data))
                 "billing_event.recorded" -> BillingEventRecorded(BillingEventRecordedEventData.fromJson(data))
                 "click.recorded" -> ClickRecorded(ClickRecordedEventData.fromJson(data))
                 "commission.earned" -> CommissionEarned(CommissionEarnedEventData.fromJson(data))
@@ -175,6 +184,7 @@ sealed class WebhookPayload {
                 "deal.submitted" -> DealSubmitted(DealSubmittedEventData.fromJson(data))
                 "dispute.resolved" -> DisputeResolved(DisputeResolvedEventData.fromJson(data))
                 "fraud.case_opened" -> FraudCaseOpened(FraudCaseOpenedEventData.fromJson(data))
+                "fx.rates_updated" -> FxRatesUpdated(FxRatesUpdatedEventData.fromJson(data))
                 "partner.applied" -> PartnerApplied(PartnerAppliedEventData.fromJson(data))
                 "partner.approved" -> PartnerApproved(PartnerApprovedEventData.fromJson(data))
                 "partner.enrolled" -> PartnerEnrolled(PartnerEnrolledEventData.fromJson(data))

@@ -408,12 +408,12 @@ fun ReferalliBlockingClient.getFraudCasesEach(status: String? = null, limit: Lon
     paginate { cursor -> getFraudCases(status = status, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getFxRates]: List FX rates. GET /v1/fx-rates */
-fun ReferalliBlockingClient.getFxRates(base: String? = null, quote: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<FxRate> =
-    runBlocking { this@getFxRates.client.getFxRates(base = base, quote = quote, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getFxRates(base: String? = null, quote: String? = null, effectiveAtGte: String? = null, effectiveAtLte: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<FxRate> =
+    runBlocking { this@getFxRates.client.getFxRates(base = base, quote = quote, effectiveAtGte = effectiveAtGte, effectiveAtLte = effectiveAtLte, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Every item of [getFxRates], following the pages (lazily, one request per page). */
-fun ReferalliBlockingClient.getFxRatesEach(base: String? = null, quote: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<FxRate> =
-    paginate { cursor -> getFxRates(base = base, quote = quote, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getFxRatesEach(base: String? = null, quote: String? = null, effectiveAtGte: String? = null, effectiveAtLte: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<FxRate> =
+    paginate { cursor -> getFxRates(base = base, quote = quote, effectiveAtGte = effectiveAtGte, effectiveAtLte = effectiveAtLte, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getGraphql]: Query the GraphQL read layer. GET /v1/graphql */
 fun ReferalliBlockingClient.getGraphql(idempotencyKey: String? = null): GetGraphqlResponse =
@@ -760,12 +760,12 @@ fun ReferalliBlockingClient.getPartnerReferralsIdTransparency(id: String, idempo
     runBlocking { this@getPartnerReferralsIdTransparency.client.getPartnerReferralsIdTransparency(id = id, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getPartners]: List partners. GET /v1/partners */
-fun ReferalliBlockingClient.getPartners(email: String? = null, externalRef: String? = null, status: String? = null, includeArchived: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<Partner> =
-    runBlocking { this@getPartners.client.getPartners(email = email, externalRef = externalRef, status = status, includeArchived = includeArchived, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getPartners(email: String? = null, externalRef: String? = null, programId: String? = null, status: String? = null, includeArchived: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<Partner> =
+    runBlocking { this@getPartners.client.getPartners(email = email, externalRef = externalRef, programId = programId, status = status, includeArchived = includeArchived, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Every item of [getPartners], following the pages (lazily, one request per page). */
-fun ReferalliBlockingClient.getPartnersEach(email: String? = null, externalRef: String? = null, status: String? = null, includeArchived: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<Partner> =
-    paginate { cursor -> getPartners(email = email, externalRef = externalRef, status = status, includeArchived = includeArchived, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getPartnersEach(email: String? = null, externalRef: String? = null, programId: String? = null, status: String? = null, includeArchived: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<Partner> =
+    paginate { cursor -> getPartners(email = email, externalRef = externalRef, programId = programId, status = status, includeArchived = includeArchived, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getPartnerSecurity]: Get my security settings. GET /v1/partner/security */
 fun ReferalliBlockingClient.getPartnerSecurity(idempotencyKey: String? = null): GetPartnerSecurityResponse =
@@ -1115,6 +1115,10 @@ fun ReferalliBlockingClient.getRoiSummary(from: String? = null, to: String? = nu
 fun ReferalliBlockingClient.getRoiTraceCustomerRef(customerRef: String, windowDays: Long? = null, format: String? = null, idempotencyKey: String? = null): RoiTrace =
     runBlocking { this@getRoiTraceCustomerRef.client.getRoiTraceCustomerRef(customerRef = customerRef, windowDays = windowDays, format = format, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.getSandboxStripeFixtures]: List Stripe event fixtures. GET /v1/sandbox/stripe-fixtures */
+fun ReferalliBlockingClient.getSandboxStripeFixtures(idempotencyKey: String? = null): GetSandboxStripeFixturesResponse =
+    runBlocking { this@getSandboxStripeFixtures.client.getSandboxStripeFixtures(idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.getSetupStatus]: Get setup progress. GET /v1/setup/status */
 fun ReferalliBlockingClient.getSetupStatus(idempotencyKey: String? = null): GetSetupStatusResponse =
     runBlocking { this@getSetupStatus.client.getSetupStatus(idempotencyKey = idempotencyKey) }
@@ -1212,12 +1216,12 @@ fun ReferalliBlockingClient.getWebhookDeliveriesId(id: String, idempotencyKey: S
     runBlocking { this@getWebhookDeliveriesId.client.getWebhookDeliveriesId(id = id, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getWebhookEndpoints]: List webhook endpoints. GET /v1/webhook-endpoints */
-fun ReferalliBlockingClient.getWebhookEndpoints(limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<WebhookEndpoint> =
-    runBlocking { this@getWebhookEndpoints.client.getWebhookEndpoints(limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getWebhookEndpoints(programId: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<WebhookEndpoint> =
+    runBlocking { this@getWebhookEndpoints.client.getWebhookEndpoints(programId = programId, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Every item of [getWebhookEndpoints], following the pages (lazily, one request per page). */
-fun ReferalliBlockingClient.getWebhookEndpointsEach(limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<WebhookEndpoint> =
-    paginate { cursor -> getWebhookEndpoints(limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getWebhookEndpointsEach(programId: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<WebhookEndpoint> =
+    paginate { cursor -> getWebhookEndpoints(programId = programId, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getWebhookEndpointsId]: Get a webhook endpoint. GET /v1/webhook-endpoints/{id} */
 fun ReferalliBlockingClient.getWebhookEndpointsId(id: String, idempotencyKey: String? = null): WebhookEndpoint =
@@ -1346,6 +1350,10 @@ fun ReferalliBlockingClient.postAnomaliesScan(idempotencyKey: String? = null): P
 /** Blocking [ReferalliClient.postApiKeys]: Create an API key. POST /v1/api-keys */
 fun ReferalliBlockingClient.postApiKeys(body: PostApiKeysBody, idempotencyKey: String? = null): PostApiKeysResponse =
     runBlocking { this@postApiKeys.client.postApiKeys(body = body, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.postApiKeysIdRotate]: Rotate an API key. POST /v1/api-keys/{id}/rotate */
+fun ReferalliBlockingClient.postApiKeysIdRotate(id: String, body: PostApiKeysIdRotateBody, idempotencyKey: String? = null): PostApiKeysIdRotateResponse =
+    runBlocking { this@postApiKeysIdRotate.client.postApiKeysIdRotate(id = id, body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postAssets]: Create a marketing asset. POST /v1/assets */
 fun ReferalliBlockingClient.postAssets(body: PostAssetsBody, idempotencyKey: String? = null): PostAssetsResponse =
@@ -1732,7 +1740,7 @@ fun ReferalliBlockingClient.postPartnerProgramsProgramIdApply(programId: String,
     runBlocking { this@postPartnerProgramsProgramIdApply.client.postPartnerProgramsProgramIdApply(programId = programId, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postPartners]: Create a partner. POST /v1/partners */
-fun ReferalliBlockingClient.postPartners(body: PostPartnersBody, idempotencyKey: String? = null): Partner =
+fun ReferalliBlockingClient.postPartners(body: PostPartnersBody, idempotencyKey: String? = null): PostPartnersResponse =
     runBlocking { this@postPartners.client.postPartners(body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postPartnerSecurityTotpDisable]: Turn off two-factor. POST /v1/partner/security/totp/disable */
@@ -1836,7 +1844,7 @@ fun ReferalliBlockingClient.postProgramsIdAutopriceRun(id: String, body: PostPro
     runBlocking { this@postProgramsIdAutopriceRun.client.postProgramsIdAutopriceRun(id = id, body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postProgramsIdEnrollments]: Enroll a partner. POST /v1/programs/{id}/enrollments */
-fun ReferalliBlockingClient.postProgramsIdEnrollments(id: String, body: PostProgramsIdEnrollmentsBody, idempotencyKey: String? = null): Enrollment =
+fun ReferalliBlockingClient.postProgramsIdEnrollments(id: String, body: PostProgramsIdEnrollmentsBody, idempotencyKey: String? = null): PostProgramsIdEnrollmentsResponse =
     runBlocking { this@postProgramsIdEnrollments.client.postProgramsIdEnrollments(id = id, body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postProgramsIdEnrollmentsEnrollmentIdApprove]: Approve an application. POST /v1/programs/{id}/enrollments/{enrollmentId}/approve */
@@ -1858,6 +1866,10 @@ fun ReferalliBlockingClient.postProgramsIdPromotions(id: String, body: PostProgr
 /** Blocking [ReferalliClient.postProgramsIdReferrers]: Make a user a referrer. POST /v1/programs/{id}/referrers */
 fun ReferalliBlockingClient.postProgramsIdReferrers(id: String, body: PostProgramsIdReferrersBody, idempotencyKey: String? = null): PostProgramsIdReferrersResponse =
     runBlocking { this@postProgramsIdReferrers.client.postProgramsIdReferrers(id = id, body = body, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.postProgramsIdStripeCreditsRequeue]: Requeue stuck Stripe balance credits. POST /v1/programs/{id}/stripe-credits/requeue */
+fun ReferalliBlockingClient.postProgramsIdStripeCreditsRequeue(id: String, body: PostProgramsIdStripeCreditsRequeueBody, idempotencyKey: String? = null): PostProgramsIdStripeCreditsRequeueResponse =
+    runBlocking { this@postProgramsIdStripeCreditsRequeue.client.postProgramsIdStripeCreditsRequeue(id = id, body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postPromotionsIdEnd]: End a promotion. POST /v1/promotions/{id}/end */
 fun ReferalliBlockingClient.postPromotionsIdEnd(id: String, idempotencyKey: String? = null): Promotion =
@@ -1906,6 +1918,10 @@ fun ReferalliBlockingClient.postRoiPatternsPatternReview(pattern: String, body: 
 /** Blocking [ReferalliClient.postSandboxSimulate]: Simulate billing history. POST /v1/sandbox/simulate */
 fun ReferalliBlockingClient.postSandboxSimulate(body: PostSandboxSimulateBody, idempotencyKey: String? = null): PostSandboxSimulateResponse =
     runBlocking { this@postSandboxSimulate.client.postSandboxSimulate(body = body, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.postSandboxStripeFixtures]: Send a Stripe event fixture. POST /v1/sandbox/stripe-fixtures */
+fun ReferalliBlockingClient.postSandboxStripeFixtures(body: PostSandboxStripeFixturesBody, idempotencyKey: String? = null): PostSandboxStripeFixturesResponse =
+    runBlocking { this@postSandboxStripeFixtures.client.postSandboxStripeFixtures(body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postSupportAppsAdapterTest]: Preview a support card. POST /v1/support/apps/{adapter}/test */
 fun ReferalliBlockingClient.postSupportAppsAdapterTest(adapter: String, body: PostSupportAppsAdapterTestBody, idempotencyKey: String? = null): PostSupportAppsAdapterTestResponse =
