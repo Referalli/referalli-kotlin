@@ -33,7 +33,7 @@ class ClientTest {
             ok(PARTNER),
         )
         val partner = client(t).postPartners(PostPartnersBody(email = "a@example.com"))
-        assertEquals("ptr_1", partner.id)
+        assertEquals(JsonValue.Str("ptr_1"), partner["id"])
         assertEquals(2, t.seen.size)
         val first = t.seen[0].headers
         assertEquals(first["idempotency-key"], t.seen[1].headers["idempotency-key"])
