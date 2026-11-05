@@ -15,6 +15,10 @@ class ModeMismatchError(status: Int, code: String, apiMessage: String, requestId
 class BadRequestError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
 
+/** `invalid_handoff_token` (HTTP 400). */
+class InvalidHandoffTokenError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
+    ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+
 /** `unauthorized` (HTTP 401). */
 class AuthenticationError(status: Int, code: String, apiMessage: String, requestId: String?, docsUrl: String?, details: JsonValue?, retryAfter: Double?) :
     ApiException(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
@@ -172,6 +176,7 @@ internal fun apiException(status: Int, code: String, apiMessage: String, request
         "validation_error" -> ValidationError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "mode_mismatch" -> ModeMismatchError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "bad_request" -> BadRequestError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
+        "invalid_handoff_token" -> InvalidHandoffTokenError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "unauthorized" -> AuthenticationError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "step_up_required" -> StepUpRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)
         "reauth_required" -> ReauthRequiredError(status, code, apiMessage, requestId, docsUrl, details, retryAfter)

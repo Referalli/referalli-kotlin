@@ -13,6 +13,12 @@ object WebhookTopic {
     const val ACCOUNT_CREDIT_REVERSED = "account_credit.reversed"
     /** `api_key.expiring`: An API key expires soon */
     const val API_KEY_EXPIRING = "api_key.expiring"
+    /** `billing_account.owner_changed`: A billing account's owner changed */
+    const val BILLING_ACCOUNT_OWNER_CHANGED = "billing_account.owner_changed"
+    /** `billing_event.expired`: A parked refund or dispute expired */
+    const val BILLING_EVENT_EXPIRED = "billing_event.expired"
+    /** `billing_event.held`: A payment was held for review */
+    const val BILLING_EVENT_HELD = "billing_event.held"
     /** `billing_event.recorded`: A billing event was recorded */
     const val BILLING_EVENT_RECORDED = "billing_event.recorded"
     /** `click.recorded`: A tracked click was recorded */
@@ -91,7 +97,7 @@ object WebhookTopic {
     const val WEBHOOK_ENDPOINT_RECOVERED = "webhook_endpoint.recovered"
 
     /** Every topic. */
-    val ALL: List<String> = listOf("account_credit.applied", "account_credit.failed", "account_credit.reversed", "api_key.expiring", "billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "fx.rates_updated", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "stripe_credit.applied", "stripe_credit.failed", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
+    val ALL: List<String> = listOf("account_credit.applied", "account_credit.failed", "account_credit.reversed", "api_key.expiring", "billing_account.owner_changed", "billing_event.expired", "billing_event.held", "billing_event.recorded", "click.recorded", "commission.earned", "commission.reversed", "commission.settled", "credit.redeemed", "customer.aliased", "deal.submitted", "dispute.resolved", "fraud.case_opened", "fx.rates_updated", "partner.applied", "partner.approved", "partner.enrolled", "partner.level_up", "payout.cancelled", "payout.failed", "payout.scheduled", "payout.sent", "payout.submitted", "privacy.request_completed", "referee_reward.earned", "referral.approved", "referral.created", "referral.held", "referral.paused", "referral.reassigned", "referral.rejected", "referral.resumed", "referral.voided", "roi.pattern_detected", "roi.payback_reached", "stripe_credit.applied", "stripe_credit.failed", "tax.form_delivered", "webhook_endpoint.disabled", "webhook_endpoint.failing", "webhook_endpoint.recovered")
 }
 
 /** A webhook event's payload, typed by topic. [Unknown] is a topic this SDK predates. */
@@ -104,6 +110,12 @@ sealed class WebhookPayload {
     data class AccountCreditReversed(val data: AccountCreditReversedEventData) : WebhookPayload()
     /** `api_key.expiring` */
     data class ApiKeyExpiring(val data: ApiKeyExpiringEventData) : WebhookPayload()
+    /** `billing_account.owner_changed` */
+    data class BillingAccountOwnerChanged(val data: BillingAccountOwnerChangedEventData) : WebhookPayload()
+    /** `billing_event.expired` */
+    data class BillingEventExpired(val data: BillingEventExpiredEventData) : WebhookPayload()
+    /** `billing_event.held` */
+    data class BillingEventHeld(val data: BillingEventHeldEventData) : WebhookPayload()
     /** `billing_event.recorded` */
     data class BillingEventRecorded(val data: BillingEventRecordedEventData) : WebhookPayload()
     /** `click.recorded` */
@@ -189,6 +201,9 @@ sealed class WebhookPayload {
                 "account_credit.failed" -> AccountCreditFailed(AccountCreditFailedEventData.fromJson(data))
                 "account_credit.reversed" -> AccountCreditReversed(AccountCreditReversedEventData.fromJson(data))
                 "api_key.expiring" -> ApiKeyExpiring(ApiKeyExpiringEventData.fromJson(data))
+                "billing_account.owner_changed" -> BillingAccountOwnerChanged(BillingAccountOwnerChangedEventData.fromJson(data))
+                "billing_event.expired" -> BillingEventExpired(BillingEventExpiredEventData.fromJson(data))
+                "billing_event.held" -> BillingEventHeld(BillingEventHeldEventData.fromJson(data))
                 "billing_event.recorded" -> BillingEventRecorded(BillingEventRecordedEventData.fromJson(data))
                 "click.recorded" -> ClickRecorded(ClickRecordedEventData.fromJson(data))
                 "commission.earned" -> CommissionEarned(CommissionEarnedEventData.fromJson(data))

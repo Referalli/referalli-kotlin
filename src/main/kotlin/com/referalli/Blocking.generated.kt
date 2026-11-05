@@ -19,6 +19,10 @@ fun ReferalliBlockingClient.deleteAssetsId(id: String, idempotencyKey: String? =
 fun ReferalliBlockingClient.deleteAuthConnectionsId(id: String, idempotencyKey: String? = null): Ok =
     runBlocking { this@deleteAuthConnectionsId.client.deleteAuthConnectionsId(id = id, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.deleteBillingAccountsAccountRef]: Delete a billing account. DELETE /v1/billing/accounts/{accountRef} */
+fun ReferalliBlockingClient.deleteBillingAccountsAccountRef(accountRef: String, idempotencyKey: String? = null): PutBillingAccountsAccountRefOwnerResponse =
+    runBlocking { this@deleteBillingAccountsAccountRef.client.deleteBillingAccountsAccountRef(accountRef = accountRef, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.deleteBillingConnectionsId]: Delete a billing connection. DELETE /v1/billing/connections/{id} */
 fun ReferalliBlockingClient.deleteBillingConnectionsId(id: String, idempotencyKey: String? = null): DeleteBillingConnectionsIdResponse =
     runBlocking { this@deleteBillingConnectionsId.client.deleteBillingConnectionsId(id = id, idempotencyKey = idempotencyKey) }
@@ -227,6 +231,10 @@ fun ReferalliBlockingClient.getAuthConnections(limit: Long? = null, startingAfte
 fun ReferalliBlockingClient.getAuthConnectionsEach(limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<AuthConnection> =
     paginate { cursor -> getAuthConnections(limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.getAuthConnectionsId]: Get an auth connection. GET /v1/auth/connections/{id} */
+fun ReferalliBlockingClient.getAuthConnectionsId(id: String, idempotencyKey: String? = null): AuthConnection =
+    runBlocking { this@getAuthConnectionsId.client.getAuthConnectionsId(id = id, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.getAuthConnectionsIdExport]: Export a user (signed protocol). GET /v1/auth/connections/{id}/export */
 fun ReferalliBlockingClient.getAuthConnectionsIdExport(id: String, customerRef: String, idempotencyKey: String? = null): GetAuthConnectionsIdExportResponse =
     runBlocking { this@getAuthConnectionsIdExport.client.getAuthConnectionsIdExport(id = id, customerRef = customerRef, idempotencyKey = idempotencyKey) }
@@ -242,6 +250,10 @@ fun ReferalliBlockingClient.getAuthConnectionsProviders(idempotencyKey: String? 
 /** Blocking [ReferalliClient.getAuthProviders]: List sign-in providers. GET /v1/auth/providers */
 fun ReferalliBlockingClient.getAuthProviders(idempotencyKey: String? = null): GetAuthProvidersResponse =
     runBlocking { this@getAuthProviders.client.getAuthProviders(idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.getBillingAccountsAccountRef]: Get a billing account's owner. GET /v1/billing/accounts/{accountRef} */
+fun ReferalliBlockingClient.getBillingAccountsAccountRef(accountRef: String, idempotencyKey: String? = null): GetBillingAccountsAccountRefResponse =
+    runBlocking { this@getBillingAccountsAccountRef.client.getBillingAccountsAccountRef(accountRef = accountRef, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getBillingConnections]: List billing connections. GET /v1/billing/connections */
 fun ReferalliBlockingClient.getBillingConnections(limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<BillingConnection> =
@@ -320,12 +332,12 @@ fun ReferalliBlockingClient.getCommissionRulesEach(programId: String? = null, li
     paginate { cursor -> getCommissionRules(programId = programId, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getCommissions]: List commission ledger events. GET /v1/commissions */
-fun ReferalliBlockingClient.getCommissions(partnerId: String? = null, programId: String? = null, type: String? = null, referralId: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<CommissionEvent> =
-    runBlocking { this@getCommissions.client.getCommissions(partnerId = partnerId, programId = programId, type = type, referralId = referralId, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getCommissions(partnerId: String? = null, programId: String? = null, type: String? = null, referralId: String? = null, customerRef: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<CommissionEvent> =
+    runBlocking { this@getCommissions.client.getCommissions(partnerId = partnerId, programId = programId, type = type, referralId = referralId, customerRef = customerRef, limit = limit, startingAfter = startingAfter, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Every item of [getCommissions], following the pages (lazily, one request per page). */
-fun ReferalliBlockingClient.getCommissionsEach(partnerId: String? = null, programId: String? = null, type: String? = null, referralId: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<CommissionEvent> =
-    paginate { cursor -> getCommissions(partnerId = partnerId, programId = programId, type = type, referralId = referralId, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getCommissionsEach(partnerId: String? = null, programId: String? = null, type: String? = null, referralId: String? = null, customerRef: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<CommissionEvent> =
+    paginate { cursor -> getCommissions(partnerId = partnerId, programId = programId, type = type, referralId = referralId, customerRef = customerRef, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getCommissionsId]: Get a commission. GET /v1/commissions/{id} */
 fun ReferalliBlockingClient.getCommissionsId(id: String, idempotencyKey: String? = null): CommissionLine =
@@ -590,6 +602,10 @@ fun ReferalliBlockingClient.getOrgTaxProfile(idempotencyKey: String? = null): Ta
 /** Blocking [ReferalliClient.getOrgTrackingConsent]: Get the tracker's consent default. GET /v1/org/tracking-consent */
 fun ReferalliBlockingClient.getOrgTrackingConsent(idempotencyKey: String? = null): GetOrgTrackingConsentResponse =
     runBlocking { this@getOrgTrackingConsent.client.getOrgTrackingConsent(idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.getOrgTrackingTokens]: Both modes' tracking tokens. GET /v1/org/tracking-tokens */
+fun ReferalliBlockingClient.getOrgTrackingTokens(idempotencyKey: String? = null): TrackingTokens =
+    runBlocking { this@getOrgTrackingTokens.client.getOrgTrackingTokens(idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getOutreach]: List outreach messages. GET /v1/outreach */
 fun ReferalliBlockingClient.getOutreach(limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<GetOutreachResponseDataItem> =
@@ -951,6 +967,10 @@ fun ReferalliBlockingClient.getPrograms(slug: String? = null, limit: Long? = nul
 fun ReferalliBlockingClient.getProgramsEach(slug: String? = null, limit: Long? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Sequence<Program> =
     paginate { cursor -> getPrograms(slug = slug, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.getProgramsHandleAvailability]: Check a public handle. GET /v1/programs/handle-availability */
+fun ReferalliBlockingClient.getProgramsHandleAvailability(handle: String, idempotencyKey: String? = null): GetProgramsHandleAvailabilityResponse =
+    runBlocking { this@getProgramsHandleAvailability.client.getProgramsHandleAvailability(handle = handle, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.getProgramsId]: Get a program. GET /v1/programs/{id} */
 fun ReferalliBlockingClient.getProgramsId(id: String, idempotencyKey: String? = null): Program =
     runBlocking { this@getProgramsId.client.getProgramsId(id = id, idempotencyKey = idempotencyKey) }
@@ -1020,8 +1040,8 @@ fun ReferalliBlockingClient.getProgramsIdStripeCreditsLogEach(id: String, limit:
     paginate { cursor -> getProgramsIdStripeCreditsLog(id = id, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getProgramsIdTerms]: Get a program's terms. GET /v1/programs/{id}/terms */
-fun ReferalliBlockingClient.getProgramsIdTerms(id: String, idempotencyKey: String? = null): ProgramTerms =
-    runBlocking { this@getProgramsIdTerms.client.getProgramsIdTerms(id = id, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getProgramsIdTerms(id: String, locale: String? = null, idempotencyKey: String? = null): ProgramTerms =
+    runBlocking { this@getProgramsIdTerms.client.getProgramsIdTerms(id = id, locale = locale, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getProgramsIdTermsAcceptances]: List terms acceptances. GET /v1/programs/{id}/terms-acceptances */
 fun ReferalliBlockingClient.getProgramsIdTermsAcceptances(id: String, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<GetProgramsIdTermsAcceptancesResponseDataItem> =
@@ -1040,8 +1060,8 @@ fun ReferalliBlockingClient.getProspectsEach(status: String? = null, limit: Long
     paginate { cursor -> getProspects(status = status, limit = limit, startingAfter = cursor, endingBefore = endingBefore, createdGte = createdGte, createdLte = createdLte, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getPublicProgramsHandle]: Get a program's public page. GET /v1/public/programs/{handle} */
-fun ReferalliBlockingClient.getPublicProgramsHandle(handle: String, idempotencyKey: String? = null): GetPublicProgramsHandleResponse =
-    runBlocking { this@getPublicProgramsHandle.client.getPublicProgramsHandle(handle = handle, idempotencyKey = idempotencyKey) }
+fun ReferalliBlockingClient.getPublicProgramsHandle(handle: String, locale: String? = null, idempotencyKey: String? = null): GetPublicProgramsHandleResponse =
+    runBlocking { this@getPublicProgramsHandle.client.getPublicProgramsHandle(handle = handle, locale = locale, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.getReferrals]: List referrals. GET /v1/referrals */
 fun ReferalliBlockingClient.getReferrals(programId: String? = null, partnerId: String? = null, status: String? = null, customerRef: String? = null, limit: Long? = null, startingAfter: String? = null, endingBefore: String? = null, createdGte: String? = null, createdLte: String? = null, idempotencyKey: String? = null): Page<Referral> =
@@ -1287,6 +1307,10 @@ fun ReferalliBlockingClient.patchApiKeysId(id: String, body: PatchApiKeysIdBody,
 fun ReferalliBlockingClient.patchAuthConnectionsId(id: String, body: PatchAuthConnectionsIdBody, idempotencyKey: String? = null): PatchAuthConnectionsIdResponse =
     runBlocking { this@patchAuthConnectionsId.client.patchAuthConnectionsId(id = id, body = body, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.patchAuthConnectionsIdOrigins]: Set a connection's allowed origins (signed protocol, PATCH). PATCH /v1/auth/connections/{id}/origins */
+fun ReferalliBlockingClient.patchAuthConnectionsIdOrigins(id: String, body: PatchAuthConnectionsIdOriginsBody, idempotencyKey: String? = null): PatchAuthConnectionsIdOriginsResponse =
+    runBlocking { this@patchAuthConnectionsIdOrigins.client.patchAuthConnectionsIdOrigins(id = id, body = body, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.patchBillingConnectionsId]: Update a billing connection. PATCH /v1/billing/connections/{id} */
 fun ReferalliBlockingClient.patchBillingConnectionsId(id: String, body: PatchBillingConnectionsIdBody, idempotencyKey: String? = null): BillingConnection =
     runBlocking { this@patchBillingConnectionsId.client.patchBillingConnectionsId(id = id, body = body, idempotencyKey = idempotencyKey) }
@@ -1395,6 +1419,10 @@ fun ReferalliBlockingClient.postAuthBackchannelLogout(body: PostAuthBackchannelL
 fun ReferalliBlockingClient.postAuthConnections(body: PostAuthConnectionsBody, idempotencyKey: String? = null): CreatedAuthConnection =
     runBlocking { this@postAuthConnections.client.postAuthConnections(body = body, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.postAuthConnectionsIdAccounts]: Set an organization's owner (signed protocol). POST /v1/auth/connections/{id}/accounts */
+fun ReferalliBlockingClient.postAuthConnectionsIdAccounts(id: String, body: PostAuthConnectionsIdAccountsBody, idempotencyKey: String? = null): PostAuthConnectionsIdAccountsResponse =
+    runBlocking { this@postAuthConnectionsIdAccounts.client.postAuthConnectionsIdAccounts(id = id, body = body, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.postAuthConnectionsIdAliases]: Change a user's id (signed protocol). POST /v1/auth/connections/{id}/aliases */
 fun ReferalliBlockingClient.postAuthConnectionsIdAliases(id: String, body: PostAuthConnectionsIdAliasesBody, idempotencyKey: String? = null): PostAuthConnectionsIdAliasesResponse =
     runBlocking { this@postAuthConnectionsIdAliases.client.postAuthConnectionsIdAliases(id = id, body = body, idempotencyKey = idempotencyKey) }
@@ -1455,6 +1483,10 @@ fun ReferalliBlockingClient.postBillingCheckout(body: PostBillingCheckoutBody, i
 fun ReferalliBlockingClient.postBillingConnections(body: PostBillingConnectionsBody, idempotencyKey: String? = null): CreatedBillingConnection =
     runBlocking { this@postBillingConnections.client.postBillingConnections(body = body, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.postBillingConnectionsIdEvents]: Send events to a generic connection. POST /v1/billing/connections/{id}/events */
+fun ReferalliBlockingClient.postBillingConnectionsIdEvents(id: String, body: PostBillingConnectionsIdEventsBody, idempotencyKey: String? = null): PostBillingConnectionsIdEventsResponse =
+    runBlocking { this@postBillingConnectionsIdEvents.client.postBillingConnectionsIdEvents(id = id, body = body, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.postBillingConnectionsIdRotateSecret]: Rotate the webhook signing secret. POST /v1/billing/connections/{id}/rotate-secret */
 fun ReferalliBlockingClient.postBillingConnectionsIdRotateSecret(id: String, idempotencyKey: String? = null): PostBillingConnectionsIdRotateSecretResponse =
     runBlocking { this@postBillingConnectionsIdRotateSecret.client.postBillingConnectionsIdRotateSecret(id = id, idempotencyKey = idempotencyKey) }
@@ -1462,6 +1494,10 @@ fun ReferalliBlockingClient.postBillingConnectionsIdRotateSecret(id: String, ide
 /** Blocking [ReferalliClient.postBillingConnectionsIdValueMappingPreview]: Preview the value mapping. POST /v1/billing/connections/{id}/value-mapping/preview */
 fun ReferalliBlockingClient.postBillingConnectionsIdValueMappingPreview(id: String, body: PostBillingConnectionsIdValueMappingPreviewBody, idempotencyKey: String? = null): ValueMappingPreview =
     runBlocking { this@postBillingConnectionsIdValueMappingPreview.client.postBillingConnectionsIdValueMappingPreview(id = id, body = body, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.postBillingEventsIdRelease]: Release a held payment. POST /v1/billing/events/{id}/release */
+fun ReferalliBlockingClient.postBillingEventsIdRelease(id: String, idempotencyKey: String? = null): PostBillingEventsIdReleaseResponse =
+    runBlocking { this@postBillingEventsIdRelease.client.postBillingEventsIdRelease(id = id, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.postBillingInternalCustomers]: Add an internal customer. POST /v1/billing/internal-customers */
 fun ReferalliBlockingClient.postBillingInternalCustomers(body: PostBillingInternalCustomersBody, idempotencyKey: String? = null): PostBillingInternalCustomersResponse =
@@ -1919,6 +1955,10 @@ fun ReferalliBlockingClient.postQualityRecompute(idempotencyKey: String? = null)
 fun ReferalliBlockingClient.postReferralsAssociate(body: PostReferralsAssociateBody, idempotencyKey: String? = null): AssociateResponse =
     runBlocking { this@postReferralsAssociate.client.postReferralsAssociate(body = body, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.postReferralsHandoffTokens]: Mint a hand-off token. POST /v1/referrals/handoff-tokens */
+fun ReferalliBlockingClient.postReferralsHandoffTokens(body: PostReferralsHandoffTokensBody, idempotencyKey: String? = null): HandoffToken =
+    runBlocking { this@postReferralsHandoffTokens.client.postReferralsHandoffTokens(body = body, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.postReferralsIdApprove]: Approve a held referral. POST /v1/referrals/{id}/approve */
 fun ReferalliBlockingClient.postReferralsIdApprove(id: String, idempotencyKey: String? = null): Referral =
     runBlocking { this@postReferralsIdApprove.client.postReferralsIdApprove(id = id, idempotencyKey = idempotencyKey) }
@@ -2035,9 +2075,17 @@ fun ReferalliBlockingClient.postZapierConversions(body: PostZapierConversionsBod
 fun ReferalliBlockingClient.postZapierHooks(body: PostZapierHooksBody, idempotencyKey: String? = null): ZapierHook =
     runBlocking { this@postZapierHooks.client.postZapierHooks(body = body, idempotencyKey = idempotencyKey) }
 
+/** Blocking [ReferalliClient.putAuthConnectionsIdOrigins]: Set a connection's allowed origins (signed protocol). PUT /v1/auth/connections/{id}/origins */
+fun ReferalliBlockingClient.putAuthConnectionsIdOrigins(id: String, body: PutAuthConnectionsIdOriginsBody, idempotencyKey: String? = null): PutAuthConnectionsIdOriginsResponse =
+    runBlocking { this@putAuthConnectionsIdOrigins.client.putAuthConnectionsIdOrigins(id = id, body = body, idempotencyKey = idempotencyKey) }
+
 /** Blocking [ReferalliClient.putAuthConnectionsIdSecret]: Set a vendor-issued secret. PUT /v1/auth/connections/{id}/secret */
 fun ReferalliBlockingClient.putAuthConnectionsIdSecret(id: String, body: PutAuthConnectionsIdSecretBody, idempotencyKey: String? = null): PutAuthConnectionsIdSecretResponse =
     runBlocking { this@putAuthConnectionsIdSecret.client.putAuthConnectionsIdSecret(id = id, body = body, idempotencyKey = idempotencyKey) }
+
+/** Blocking [ReferalliClient.putBillingAccountsAccountRefOwner]: Set a billing account's owner. PUT /v1/billing/accounts/{accountRef}/owner */
+fun ReferalliBlockingClient.putBillingAccountsAccountRefOwner(accountRef: String, body: PutBillingAccountsAccountRefOwnerBody, idempotencyKey: String? = null): PutBillingAccountsAccountRefOwnerResponse =
+    runBlocking { this@putBillingAccountsAccountRefOwner.client.putBillingAccountsAccountRefOwner(accountRef = accountRef, body = body, idempotencyKey = idempotencyKey) }
 
 /** Blocking [ReferalliClient.putBillingConnectionsIdCredentials]: Set provider API credentials. PUT /v1/billing/connections/{id}/credentials */
 fun ReferalliBlockingClient.putBillingConnectionsIdCredentials(id: String, body: PutBillingConnectionsIdCredentialsBody, idempotencyKey: String? = null): PutBillingConnectionsIdCredentialsResponse =

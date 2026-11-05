@@ -23,11 +23,11 @@ dependencyResolutionManagement {
 
 // build.gradle.kts
 dependencies {
-    implementation("com.github.Referalli:referalli-kotlin:0.2.0")
+    implementation("com.github.Referalli:referalli-kotlin:0.3.0")
 }
 ```
 
-Built by [JitPack](https://jitpack.io/#Referalli/referalli-kotlin) from the `0.2.0` tag. Once it is on Maven Central the coordinate becomes `com.referalli:referalli-kotlin`.
+Built by [JitPack](https://jitpack.io/#Referalli/referalli-kotlin) from the `0.3.0` tag. Once it is on Maven Central the coordinate becomes `com.referalli:referalli-kotlin`.
 
 ## Quickstart
 
